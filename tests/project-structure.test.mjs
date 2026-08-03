@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 const root = new URL("../", import.meta.url);
@@ -24,15 +24,45 @@ test("uses Expo Router as the native application foundation", async () => {
 });
 
 test("keeps forbidden integrations out of the design shell", async () => {
-  const [packageJson, todayScreen] = await Promise.all([
-    read("package.json"),
-    read("src/app/(tabs)/index.tsx"),
-  ]);
+  const packageJson = await read("package.json");
+  const sourceFiles = await readdir(new URL("src/", root), { recursive: true });
+  const source = await Promise.all(
+    sourceFiles
+      .filter((path) => path.endsWith(".ts") || path.endsWith(".tsx"))
+      .map((path) => read(`src/${path}`)),
+  ).then((files) => `${packageJson}\n${files.join("\n")}`);
 
-  const source = `${packageJson}\n${todayScreen}`;
   assert.doesNotMatch(source, /supabase/i);
   assert.doesNotMatch(source, /openai/i);
   assert.doesNotMatch(source, /\bfetch\s*\(/);
   assert.doesNotMatch(source, /signIn|signUp|auth/i);
 });
 
+test("ships the Today feed as typed reusable mobile components", async () => {
+  const [todayScreen, inventory] = await Promise.all([
+    read("src/app/(tabs)/index.tsx"),
+    readdir(new URL("src/components/", root), { recursive: true }),
+  ]);
+
+  for (const component of [
+    "CompanyLogo.tsx",
+    "MarketIndexCard.tsx",
+    "StockRow.tsx",
+    "StoryCard.tsx",
+    "EditorialHero.tsx",
+    "AIBriefingCard.tsx",
+    "EventCard.tsx",
+    "SourceCitation.tsx",
+    "EmptyState.tsx",
+    "SkeletonState.tsx",
+    "AppBottomSheet.tsx",
+    "SubscriptionPaywall.tsx",
+  ]) {
+    assert.ok(inventory.some((path) => path.endsWith(component)), `${component} should exist`);
+  }
+
+  assert.match(todayScreen, /RefreshControl/);
+  assert.match(todayScreen, /briefingOpen/);
+  assert.match(todayScreen, /marketIndices\.map/);
+  assert.match(todayScreen, /watchlist\.map/);
+});
