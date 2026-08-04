@@ -1,0 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import { PrimaryButton, TextButton } from "@/components/foundation/Buttons";
+import { OnboardingScaffold } from "@/components/onboarding/OnboardingScaffold";
+import { colors, radii, spacing, typography } from "@/theme/tokens";
+const points = [["pulse-outline", "See what moved and why"], ["bookmark-outline", "Follow the companies you care about"], ["notifications-outline", "Choose useful signals, not noise"]] as const;
+export default function WelcomeScreen() { const router = useRouter(); return <OnboardingScaffold back={false} description="A few quick choices make your local demo more relevant." footer={<><PrimaryButton label="Personalize my brief" onPress={() => router.push("/(onboarding)/experience")} /><TextButton label="Return to login" onPress={() => router.replace("/(auth)/login")} /></>} step={1} title="Smarter market insights. Better decisions."><View style={styles.hero}><Ionicons color={colors.teal} name="sparkles" size={34} /><Text style={styles.heroText}>Your daily market context, shaped around you.</Text></View>{points.map(([icon, text]) => <View key={text} style={styles.point}><View style={styles.icon}><Ionicons color={colors.teal} name={icon} size={20} /></View><Text style={styles.pointText}>{text}</Text></View>)}</OnboardingScaffold>; }
+const styles = StyleSheet.create({ hero: { gap: spacing.md, padding: spacing.xl, borderRadius: radii.hero, backgroundColor: colors.tealMuted, borderWidth: 1, borderColor: "#23584D" }, heroText: { ...typography.heading, color: colors.textPrimary }, point: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.sm }, icon: { width: 42, height: 42, borderRadius: 14, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }, pointText: { ...typography.body, flex: 1, color: colors.textSecondary } });

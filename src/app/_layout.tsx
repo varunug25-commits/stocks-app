@@ -4,8 +4,11 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/tokens";
+import { OnboardingProvider } from "@/features/onboarding/OnboardingProvider";
 
-const signalTheme = {
+export const unstable_settings = { initialRouteName: "splash" };
+
+const marketBriefTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
@@ -22,11 +25,16 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider value={signalTheme}>
+        <ThemeProvider value={marketBriefTheme}>
+          <OnboardingProvider>
           <StatusBar style="light" />
           <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="splash" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(onboarding)" />
             <Stack.Screen name="(tabs)" />
           </Stack>
+          </OnboardingProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

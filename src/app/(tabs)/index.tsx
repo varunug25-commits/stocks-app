@@ -127,7 +127,7 @@ export default function TodayScreen() {
 
           <Animated.View entering={enter(430)} style={styles.disclaimer}>
             <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={17} />
-            <Text style={styles.disclaimerText}>Demo market data and editorial content. Signal provides education, not investment advice.</Text>
+            <Text style={styles.disclaimerText}>Demo market data and editorial content. MarketBrief provides education, not investment advice.</Text>
           </Animated.View>
         </View>
       </ScrollView>
@@ -139,7 +139,7 @@ export default function TodayScreen() {
             <Text style={styles.sheetLabelText}>LOCAL MOCK BRIEFING</Text>
           </View>
           <Text style={styles.sheetTitle}>A constructive open, with one thing to watch.</Text>
-          <SourceCitation published="Updated for demo" source="Signal Editorial" />
+          <SourceCitation published="Updated for demo" source="MarketBrief Editorial" />
         </View>
         <View style={styles.pointList}>
           {briefingPoints.map((point, index) => (
@@ -293,4 +293,3 @@ const styles = StyleSheet.create({
     color: "#D8C79B",
   },
 });
-
