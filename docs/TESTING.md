@@ -13,4 +13,4 @@ Validate Splash, Login, Sign Up, Forgot Password, Email Verification, Welcome, E
 
 ## Device evidence
 
-Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. Android evidence is captured from the configured Android emulator. iPhone-size evidence uses the Expo web renderer at an iPhone viewport when Xcode/iOS Simulator is unavailable on the development Mac; this limitation is recorded in the milestone report and pull request.
+Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. This Mac has no Xcode/iOS Simulator, and its only installed Android 37 Play Store image repeatedly causes a System UI ANR under the available 8 GB RAM. The committed evidence therefore uses the Expo web renderer at exact 393×852 iPhone and 412×915 Android viewports. Native screenshots remain a documented follow-up validation item rather than being misrepresented.
