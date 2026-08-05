@@ -1,27 +1,26 @@
-# Signal Mobile — Project Control
+# MarketBrief Mobile — Project Control
 
 ## Product goal
 
-Signal is a calm, mobile-first market companion that helps an everyday investor understand what matters today. The first release is a polished native design shell built with realistic local mock data.
+MarketBrief is a calm, mobile-first market companion that helps an everyday investor understand what matters today. The current release remains a polished native design shell built with realistic local mock data.
 
 ## Current phase
 
-**Phase 1: Mobile foundation and Today screen**
+**Phase 2 Milestone 1: Mock authentication and onboarding UX**
 
 This phase delivers:
 
-- Expo and React Native foundation for iOS and Android;
-- Expo Router navigation with a bottom tab bar;
-- the dark Signal design system;
-- reusable finance-feed components;
-- a polished, scrollable Today screen; and
-- local mock data and interaction states.
+- the existing Expo, tab navigation, design system, and Today feed;
+- mock authentication and recovery screens;
+- a complete seven-step onboarding flow;
+- typed local preference persistence; and
+- automated tests, device-size screenshots, and milestone documentation.
 
 ## Explicitly out of scope
 
 Do not add these until a later approved phase:
 
-- authentication or user accounts;
+- real authentication or remote user accounts;
 - Supabase or any other database;
 - external market, news, logo, or media APIs;
 - AI model calls or generated analysis;
@@ -70,4 +69,3 @@ When requirements disagree, use this priority:
 3. This project-control document
 4. The design-system and architecture documents
 5. Existing implementation details
-

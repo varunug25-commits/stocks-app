@@ -1,4 +1,17 @@
-# Signal Mobile Component Inventory
+# MarketBrief Mobile Component Inventory
+
+## Phase 2 Milestone 1 additions
+
+- `AppScreen`: safe-area, scrolling, padding, and keyboard-aware screen frame.
+- `AppHeader`: native back/action header.
+- `PrimaryButton`, `SecondaryButton`, `TextButton`, `IconButton`: 44+ point actions with state feedback.
+- `FormField`, `PasswordField`: accessible input, focus, validation, and visibility controls.
+- `SelectionCard`, `MultiSelectChip`, `ProgressIndicator`: onboarding decisions and progress.
+- `AuthProviderButton`: honest mock Apple/Google actions.
+- `InlineError`, `LoadingOverlay`, `ErrorState`, `OfflineBanner`, `ConfirmationModal`, `DemoDataBadge`: reusable system states.
+- `LogoMark`: temporary original MarketBrief mark and wordmark.
+- `BottomSheet`: stable export for the existing gesture-driven sheet.
+- `AuthScaffold`, `OnboardingScaffold`: consistent mobile layouts for their respective flows.
 
 ## Foundation
 
@@ -40,4 +53,3 @@
 - Pressable components expose pressed and disabled states.
 - Shared tokens are imported from one theme module.
 - Platform differences are intentional and minimal.
-
