@@ -12,8 +12,22 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState);
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => { void loadOnboarding().then((saved) => { if (saved) dispatch({ type: "hydrate", value: saved }); setHydrated(true); }); }, []);
-  useEffect(() => { if (hydrated) void saveOnboarding(state); }, [hydrated, state]);
+  useEffect(() => {
+    let active = true;
+    async function hydrate() {
+      try {
+        const saved = await loadOnboarding();
+        if (active && saved) dispatch({ type: "hydrate", value: saved });
+      } catch {
+        // Storage can be unavailable; the in-memory defaults remain usable.
+      } finally {
+        if (active) setHydrated(true);
+      }
+    }
+    void hydrate();
+    return () => { active = false; };
+  }, []);
+  useEffect(() => { if (hydrated) void saveOnboarding(state).catch(() => undefined); }, [hydrated, state]);
   const value = useMemo(() => ({ state, dispatch, hydrated }), [state, hydrated]);
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;
 }

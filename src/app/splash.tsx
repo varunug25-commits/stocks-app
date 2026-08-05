@@ -4,13 +4,22 @@ import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { AppScreen } from "@/components/foundation/AppScreen";
 import { LogoMark } from "@/components/foundation/LogoMark";
+import { resolveSplashRoute } from "@/features/splash/resolveSplashRoute";
 import { loadMockSession, loadOnboarding } from "@/storage/preferences";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export default function SplashScreen() {
   const router = useRouter(); const reduceMotion = useReducedMotion(); const opacity = useSharedValue(.35);
   useEffect(() => { if (!reduceMotion) opacity.value = withRepeat(withTiming(1, { duration: 720 }), -1, true); }, [opacity, reduceMotion]);
-  useEffect(() => { const timer = setTimeout(() => { void Promise.all([loadMockSession(), loadOnboarding()]).then(([session, onboarding]) => router.replace(session && onboarding?.completed ? "/(tabs)" : "/(auth)/login")); }, 1350); return () => clearTimeout(timer); }, [router]);
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(() => {
+      void resolveSplashRoute({ loadSession: loadMockSession, loadOnboarding }).then((route) => {
+        if (active) router.replace(route);
+      });
+    }, 1350);
+    return () => { active = false; clearTimeout(timer); };
+  }, [router]);
   const animated = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return <AppScreen><View style={styles.center}><Animated.View entering={FadeIn.duration(420)}><LogoMark /></Animated.View><Animated.Text entering={FadeInDown.delay(120).duration(420)} style={styles.line}>Smarter market context, in one clear brief.</Animated.Text><Animated.View accessibilityLabel="Preparing your local demo" accessibilityRole="progressbar" style={[styles.loader, animated]} /></View><Text style={styles.note}>Private local demo · no account or live market connection</Text></AppScreen>;
 }

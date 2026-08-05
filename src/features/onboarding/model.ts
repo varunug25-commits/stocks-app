@@ -27,6 +27,24 @@ export const initialOnboardingState: OnboardingState = {
   experience: null, goals: [], interests: [], stocks: [], notificationsEnabled: false, completed: false,
 };
 
+function isUniqueSubset(values: unknown, allowed: readonly string[], limit?: number): values is string[] {
+  if (!Array.isArray(values) || !values.every((value) => typeof value === "string" && allowed.includes(value))) return false;
+  if (new Set(values).size !== values.length) return false;
+  return limit === undefined || values.length <= limit;
+}
+
+export function isOnboardingState(value: unknown): value is OnboardingState {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const candidate = value as Record<string, unknown>;
+  const allowedExperiences: readonly unknown[] = [null, ...EXPERIENCE_OPTIONS];
+  return allowedExperiences.includes(candidate.experience)
+    && isUniqueSubset(candidate.goals, GOAL_OPTIONS)
+    && isUniqueSubset(candidate.interests, INTEREST_OPTIONS)
+    && isUniqueSubset(candidate.stocks, MOCK_STOCKS.map((stock) => stock.symbol), 5)
+    && typeof candidate.notificationsEnabled === "boolean"
+    && typeof candidate.completed === "boolean";
+}
+
 export type OnboardingAction =
   | { type: "hydrate"; value: OnboardingState }
   | { type: "experience"; value: Experience }

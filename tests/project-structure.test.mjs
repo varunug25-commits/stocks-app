@@ -88,3 +88,14 @@ test("ships the Today feed as typed reusable mobile components", async () => {
   assert.match(todayScreen, /marketIndices\.map/);
   assert.match(todayScreen, /watchlist\.map/);
 });
+
+test("onboarding hydration and splash routing fail safely", async () => {
+  const [provider, splash] = await Promise.all([
+    read("src/features/onboarding/OnboardingProvider.tsx"),
+    read("src/app/splash.tsx"),
+  ]);
+  assert.match(provider, /catch\s*\{/);
+  assert.match(provider, /finally\s*\{/);
+  assert.match(provider, /setHydrated\(true\)/);
+  assert.match(splash, /resolveSplashRoute/);
+});

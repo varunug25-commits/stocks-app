@@ -7,6 +7,7 @@
 - Seven onboarding steps: Welcome, Experience, Goals, Interests, Stocks, Notifications, Completion.
 - Back-navigation state preservation, searchable local stocks, unique three-to-five stock rule, and completion summary.
 - AsyncStorage-backed typed persistence for experience, goals, interests, stocks, notification preference, completion, and mock session.
+- Runtime validation for persisted onboarding JSON, settled hydration after storage rejection, and a safe Splash-to-Login fallback.
 - Reusable mobile foundations listed in `COMPONENT_INVENTORY.md`.
 - Existing Today, Markets, Watchlist, and Profile routes preserved.
 
