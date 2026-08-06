@@ -9,18 +9,19 @@ async function read(path) {
 }
 
 test("uses Expo Router as the native application foundation", async () => {
-  const [packageJson, appConfig, rootLayout, tabsLayout] = await Promise.all([
+  const [packageJson, appConfig, rootLayout, tabsLayout, bottomTabBar] = await Promise.all([
     read("package.json"),
     read("app.json"),
     read("src/app/_layout.tsx"),
     read("src/app/(tabs)/_layout.tsx"),
+    read("src/components/navigation/BottomTabBar.tsx"),
   ]);
 
   assert.match(packageJson, /"main": "expo-router\/entry"/);
   assert.match(appConfig, /"userInterfaceStyle": "dark"/);
   assert.match(rootLayout, /GestureHandlerRootView/);
   assert.match(tabsLayout, /<Tabs/);
-  assert.match(tabsLayout, /Haptics\.selectionAsync/);
+  assert.match(bottomTabBar, /Haptics\.selectionAsync/);
 });
 
 test("keeps forbidden integrations out of the design shell", async () => {
