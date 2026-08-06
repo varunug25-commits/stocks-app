@@ -10,21 +10,20 @@ import { AIBriefingCard } from "@/components/finance/AIBriefingCard";
 import { EditorialHero } from "@/components/finance/EditorialHero";
 import { EventCard } from "@/components/finance/EventCard";
 import { MarketIndexCard } from "@/components/finance/MarketIndexCard";
-import { SourceCitation } from "@/components/finance/SourceCitation";
 import { StockRow } from "@/components/finance/StockRow";
 import { StoryCard } from "@/components/finance/StoryCard";
 import { IconButton } from "@/components/foundation/IconButton";
 import { DemoDataBadge, ErrorState, OfflineBanner } from "@/components/foundation/Feedback";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
-import { AppBottomSheet } from "@/components/system/AppBottomSheet";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
 import { MarketClosedState } from "@/components/market/MarketClosedState";
 import { MarketStatusBadge } from "@/components/market/MarketStatusBadge";
 import { TimestampLabel } from "@/components/market/TimestampLabel";
 import { marketStatus } from "@/data/markets";
-import { briefingPoints, events, leadStory, marketIndices, stories } from "@/data/today";
+import { events, leadStory, marketIndices, stories } from "@/data/today";
+import { generateBrief, latestBriefSeed } from "@/data/briefs";
 import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
 import { selectTodayWatchlist } from "@/features/watchlist/todayStocks";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
@@ -40,7 +39,6 @@ export default function TodayScreen() {
   const reduceMotion = useReducedMotion();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [briefingOpen, setBriefingOpen] = useState(false);
 
   useEffect(() => {
     if (preview === "loading") return;
@@ -50,6 +48,10 @@ export default function TodayScreen() {
 
   const personalizedStocks = useMemo(
     () => selectTodayWatchlist(watchlistState.symbols),
+    [watchlistState.symbols],
+  );
+  const morningBrief = useMemo(
+    () => generateBrief(latestBriefSeed("morning"), watchlistState.symbols),
     [watchlistState.symbols],
   );
   const greeting = onboardingState.experience === "New investor" ? "Good morning, new investor" : onboardingState.experience === "Advanced" ? "Good morning, market pro" : onboardingState.experience === "Intermediate" ? "Good morning, market watcher" : "Good morning, investor";
@@ -134,7 +136,10 @@ export default function TodayScreen() {
           </Animated.View>
 
           <Animated.View entering={animation(190)} style={styles.section}>
-            <AIBriefingCard onPress={() => setBriefingOpen(true)} points={briefingPoints} />
+            <AIBriefingCard
+              brief={morningBrief}
+              onPress={() => router.push(`/brief/${morningBrief.id}` as Href)}
+            />
           </Animated.View>
 
           <Animated.View entering={animation(250)} style={styles.section}>
@@ -179,29 +184,6 @@ export default function TodayScreen() {
           </Animated.View>
         </View>
       </ScrollView>
-
-      <AppBottomSheet onClose={() => setBriefingOpen(false)} title="Your 60-second brief" visible={briefingOpen}>
-        <View style={styles.sheetIntro}>
-          <View style={styles.sheetLabel}>
-            <Ionicons color={colors.teal} name="sparkles" size={14} />
-            <Text style={styles.sheetLabelText}>LOCAL MOCK BRIEFING</Text>
-          </View>
-          <Text style={styles.sheetTitle}>A constructive open, with one thing to watch.</Text>
-          <SourceCitation published="Updated for demo" source="MarketBrief Editorial" />
-        </View>
-        <View style={styles.pointList}>
-          {briefingPoints.map((point, index) => (
-            <View key={point} style={styles.pointRow}>
-              <View style={styles.pointNumber}><Text style={styles.pointNumberText}>{index + 1}</Text></View>
-              <Text style={styles.pointText}>{point}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.sheetNote}>
-          <Ionicons color={colors.warning} name="information-circle-outline" size={18} />
-          <Text style={styles.sheetNoteText}>This is handcrafted mock copy. No AI model or external market service is connected.</Text>
-        </View>
-      </AppBottomSheet>
     </Screen>
   );
 }
@@ -282,67 +264,5 @@ const styles = StyleSheet.create({
     ...typography.caption,
     flex: 1,
     color: colors.textTertiary,
-  },
-  sheetIntro: {
-    paddingBottom: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  sheetLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  sheetLabelText: {
-    ...typography.caption,
-    color: colors.teal,
-    letterSpacing: 0.85,
-  },
-  sheetTitle: {
-    ...typography.title,
-    color: colors.textPrimary,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  pointList: {
-    paddingVertical: spacing.sm,
-  },
-  pointRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  pointNumber: {
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    backgroundColor: colors.tealMuted,
-  },
-  pointNumberText: {
-    ...typography.caption,
-    color: colors.teal,
-  },
-  pointText: {
-    ...typography.body,
-    flex: 1,
-    color: colors.textSecondary,
-  },
-  sheetNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: "#2E2717",
-    borderWidth: 1,
-    borderColor: "#5A4923",
-  },
-  sheetNoteText: {
-    ...typography.caption,
-    flex: 1,
-    color: "#D8C79B",
   },
 });

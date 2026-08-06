@@ -38,6 +38,7 @@ test("Evening Recap generation includes close context and tomorrow signals", () 
   assert.equal(brief.type, "evening");
   assert.match(brief.marketDirection, /Nasdaq|S&P 500/);
   assert.match(brief.headline, /Growth led the close/);
+  assert.match(brief.changeSinceMorning ?? "", /opening|close/i);
   assert.ok(brief.positiveScenario);
   assert.ok(brief.riskScenario);
 });

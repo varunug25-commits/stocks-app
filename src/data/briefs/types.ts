@@ -48,6 +48,7 @@ export type GeneratedBrief = {
   developments: string[];
   marketContext: string;
   marketDirection: string;
+  changeSinceMorning?: string;
   watchlistImpacts: BriefStockImpact[];
   events: BriefEvent[];
   monitor: string[];

@@ -3,13 +3,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, radii, spacing, typography } from "@/theme/tokens";
+import type { GeneratedBrief } from "@/data/briefs";
 
 type AIBriefingCardProps = {
-  points: string[];
+  brief: GeneratedBrief;
   onPress: () => void;
 };
 
-export function AIBriefingCard({ points, onPress }: AIBriefingCardProps) {
+export function AIBriefingCard({ brief, onPress }: AIBriefingCardProps) {
   return (
     <LinearGradient colors={["#10211F", "#0D1718", "#101719"]} style={styles.card}>
       <View style={styles.header}>
@@ -24,15 +25,15 @@ export function AIBriefingCard({ points, onPress }: AIBriefingCardProps) {
           <Text style={styles.updated}>Prepared from local demo content</Text>
         </View>
       </View>
-      <Text style={styles.title}>What matters this morning</Text>
-      <Text numberOfLines={3} style={styles.summary}>{points[0]}</Text>
+      <Text style={styles.title}>{brief.headline}</Text>
+      <Text numberOfLines={3} style={styles.summary}>{brief.summary}</Text>
       <Pressable
-        accessibilityHint="Opens the complete mock briefing in a bottom sheet"
+        accessibilityHint="Opens the complete local Morning Brief"
         accessibilityRole="button"
         onPress={onPress}
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
       >
-        <Text style={styles.buttonText}>Read the 60-second brief</Text>
+        <Text style={styles.buttonText}>Read Morning Brief</Text>
         <Ionicons color={colors.background} name="arrow-forward" size={17} />
       </Pressable>
     </LinearGradient>
@@ -121,4 +122,3 @@ const styles = StyleSheet.create({
     color: colors.background,
   },
 });
-

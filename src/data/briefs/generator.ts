@@ -46,7 +46,9 @@ const eventsFor = (symbols: StockSymbol[]): BriefEvent[] => {
     detail:
       catalysts[symbol][0]?.detail ??
       "The next company update may change the current interpretation.",
-    kind: "catalyst" as const,
+    kind: catalysts[symbol][0]?.id.includes("earnings")
+      ? "earnings" as const
+      : "catalyst" as const,
     symbol,
   }));
   const filingEvent = symbols[0]
@@ -99,6 +101,9 @@ export function generateBrief(
       : template.developments,
     marketContext: template.marketContext,
     marketDirection: template.marketDirection,
+    changeSinceMorning: seed.type === "evening"
+      ? "The opening bid held into the close, market breadth improved late, and semiconductor leadership remained the clearest watchlist signal."
+      : undefined,
     watchlistImpacts,
     events: eventsFor(symbols),
     monitor: sufficientEvidence
