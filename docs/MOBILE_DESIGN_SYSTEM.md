@@ -94,3 +94,7 @@ Dark surfaces rely on tonal separation and borders more than heavy shadows. Use 
 - Charts have concise text summaries.
 - Lists expose item names, values, and changes as a single readable label.
 - Do not rely on swipe as the only way to perform an action.
+
+## Milestone 2 application
+
+The discovery shell extends the near-black/teal system with horizontal index and sector rails, full-width mover lists, compact demo/timestamp metadata, amber closed/offline treatments, and bottom-sheet progressive disclosure. Five bottom tabs retain large touch targets and selected-state icon, text, and surface cues. Motion remains subtle; haptics support navigation, filters, refresh, and sheet dismissal.

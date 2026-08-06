@@ -53,3 +53,12 @@
 - Pressable components expose pressed and disabled states.
 - Shared tokens are imported from one theme module.
 - Platform differences are intentional and minimal.
+
+## Milestone 2 additions
+
+- Navigation: `BottomTabBar`.
+- Markets: `MarketStatusBadge`, `SectorPerformanceCard`, `MarketMoverRow`, `FilterChip`, `MarketMoodCard`, `TimestampLabel`, `EarningsEventCard`, `EconomicEventCard`, and `MarketClosedState`.
+- Search: `SearchField` and `SearchResultRow`.
+- Shared states reused: `DemoDataBadge`, `OfflineBanner`, `ErrorState`, `EmptyState`, `SkeletonState`, and `AppBottomSheet`.
+
+These components preserve 44-point minimum interaction targets, accessible labels, and text/icon direction cues rather than relying on colour alone.

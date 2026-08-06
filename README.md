@@ -31,3 +31,9 @@ npm run doctor
 ```
 
 Product, architecture, decisions, testing, and milestone evidence live in [`docs/`](docs/).
+
+## Phase 2 Milestone 2
+
+The mobile shell now includes five native-first tabs: Today, Markets, Watchlist, Briefs, and Profile. Today is personalized from locally stored onboarding choices; Markets and global search use typed local mock data; all rows lead to honest preview sheets rather than dead ends. Briefs remains an explicit Milestone 4 preview.
+
+No backend authentication, Supabase, live market/news API, AI model, payment service, push service, or brokerage connection is included. See [the Milestone 2 report](docs/PHASE_2_MILESTONE_2_REPORT.md) for checks and screenshots.

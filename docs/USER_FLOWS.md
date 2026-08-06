@@ -27,3 +27,13 @@ Forgot Password → validate email → local confirmation → resend or change e
 7. Review the summary, persist completion, and enter Today.
 
 System back navigation is allowed and the provider retains choices made on earlier steps.
+
+## Milestone 2 flows
+
+1. Enter Today after onboarding and see selected companies, current local date, market status, events, stories, demo disclosure, and pull-to-refresh.
+2. Move among Today, Markets, Watchlist, Briefs, and Profile using the persistent bottom tabs.
+3. Scan Markets indices, sectors, movers, and events; change mover filters and open lightweight detail sheets.
+4. Search with recent/trending chips or a symbol/company name, clear the query, and open a stock preview.
+5. View onboarding choices in Watchlist and Profile. Add stock routes to search. Briefs clearly discloses its preview scope.
+
+Loading, empty, error, offline, and market-closed Today variants are reviewable without changing stored preferences.

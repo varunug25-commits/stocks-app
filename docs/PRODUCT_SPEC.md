@@ -19,4 +19,8 @@ The milestone establishes the entry experience: splash, mock authentication, loc
 
 ## Explicitly deferred
 
-Real authentication, Supabase, live market or news APIs, AI generation, payments, push permissions, Markets, Watchlist, Stock Details, Briefs, Alerts, Profile expansion, Paywall, and Legal screens.
+Real authentication, Supabase, live market or news APIs, AI generation, payments, push permissions, full Stock Details, complete Briefs, Alerts, Profile account expansion, Paywall, and Legal screens.
+
+## Phase 2 Milestone 2 delivery
+
+The approved local design shell now includes a personalized Today feed, complete local Markets discovery, symbol/company search, onboarding-connected Watchlist, Briefs preview, and local preference Profile. Stock detail, live data, AI-generated briefs, alerts, payments, and backend accounts remain deferred.

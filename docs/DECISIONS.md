@@ -15,3 +15,7 @@ One provider and pure reducer own onboarding choices. Screens stay focused on on
 ## ADR-004 — Design reference provenance
 
 `docs/design/marketbrief-full-ui-kit.png` is extracted from the user-provided master specification and retained only as the supplied internal implementation reference. New editorial imagery remains governed by the media policy.
+
+## ADR-005 — Local Milestone 2 discovery shell
+
+Keep all market/search content in typed local mock modules until the complete mobile shell is stable. Search and stock taps open preview sheets, avoiding dead controls while deferring full detail to Milestone 3. Today personalization uses persisted onboarding selections and experience level rather than inventing a stored user name. Deterministic query-driven states exist only for repeatable design validation. Brief generation remains deferred to Milestone 4.

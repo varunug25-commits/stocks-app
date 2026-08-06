@@ -77,3 +77,12 @@ Every data-driven section must support:
 - refresh state.
 
 The first phase demonstrates these primitives locally. No network state or persistence is added.
+
+## Milestone 2 route architecture
+
+- `/(tabs)` owns the five-tab mobile navigation shell.
+- `/` is Today; `/markets`, `/watchlist`, `/briefs`, and `/profile` are tab routes.
+- `/search` is a root-stack route reachable from Markets and Watchlist.
+- Today preview query states support loading, offline, closed, empty, and error design review.
+
+All Milestone 2 market and search content comes from local typed modules and the existing onboarding provider.
