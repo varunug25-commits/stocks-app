@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams } from "expo-router";
+import type { Href } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
@@ -31,6 +32,7 @@ import { colors, radii, spacing, typography } from "@/theme/tokens";
 const enter = (delay: number) => FadeInDown.duration(420).delay(delay).springify().damping(18);
 
 export default function TodayScreen() {
+  const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const { state } = useOnboarding();
   const reduceMotion = useReducedMotion();
@@ -104,7 +106,7 @@ export default function TodayScreen() {
               <Text style={styles.greeting}>{greeting}</Text>
               <Text style={styles.intro}>Here’s the market signal worth your attention.</Text>
             </View>
-            <IconButton accessibilityLabel="Notifications, one new" icon="notifications-outline" notification onPress={handleMockPress} />
+            <View style={styles.headerActions}><IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} /><IconButton accessibilityLabel="Notifications, one new" icon="notifications-outline" notification onPress={handleMockPress} /></View>
           </Animated.View>
 
           <Animated.View entering={animation(40)} style={styles.statusRow}><MarketStatusBadge status={preview === "closed" ? { ...marketStatus, state: "closed", label: "Market closed", detail: "Next session opens Monday at 9:30 AM ET" } : marketStatus} /><View style={styles.statusMeta}><DemoDataBadge /><TimestampLabel label="Updated 2 min ago" /></View></Animated.View>
@@ -133,9 +135,9 @@ export default function TodayScreen() {
           </Animated.View>
 
           <Animated.View entering={animation(250)} style={styles.section}>
-            <SectionHeader actionLabel="See all" onAction={handleMockPress} title="Moving in your watchlist" />
+            <SectionHeader actionLabel="See all" onAction={() => router.push("/watchlist" as Href)} title="Moving in your watchlist" />
             <View style={styles.stockList}>
-              {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={handleMockPress} stock={stock} />)}
+              {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} stock={stock} />)}
             </View>
           </Animated.View>
 
@@ -213,6 +215,7 @@ const styles = StyleSheet.create({
   headerCopy: {
     flex: 1,
   },
+  headerActions: { flexDirection: "row", gap: spacing.xs },
   date: {
     ...typography.caption,
     color: colors.teal,
