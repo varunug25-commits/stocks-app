@@ -90,11 +90,14 @@ export default function SearchScreen() {
                       isStockSymbol(stock.symbol) &&
                       state.symbols.includes(stock.symbol)
                     }
-                    disabled={state.symbols.length >= WATCHLIST_LIMIT}
                     key={stock.symbol}
                     onAdd={() => add(stock.symbol)}
                     onPress={() => open(stock.symbol)}
                     stock={stock}
+                    watchlistFull={
+                      state.symbols.length >= WATCHLIST_LIMIT &&
+                      !state.symbols.includes(stock.symbol as StockSymbol)
+                    }
                   />
                 ))}
               </View>
@@ -145,11 +148,14 @@ export default function SearchScreen() {
                     isStockSymbol(stock.symbol) &&
                     state.symbols.includes(stock.symbol)
                   }
-                  disabled={state.symbols.length >= WATCHLIST_LIMIT}
                   key={stock.symbol}
                   onAdd={() => add(stock.symbol)}
                   onPress={() => open(stock.symbol)}
                   stock={stock}
+                  watchlistFull={
+                    state.symbols.length >= WATCHLIST_LIMIT &&
+                    !state.symbols.includes(stock.symbol as StockSymbol)
+                  }
                 />
               ))}
             </View>

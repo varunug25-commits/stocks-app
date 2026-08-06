@@ -36,7 +36,9 @@ test("Milestone 2 screens provide required local and failure states", async () =
   assert.match(today, /preview === "closed"/);
   assert.match(today, /ErrorState/);
   assert.match(today, /EmptyState/);
-  assert.match(today, /state\.stocks/);
+  assert.match(today, /useWatchlist/);
+  assert.match(today, /watchlistState\.symbols/);
+  assert.doesNotMatch(today, /onboardingState\.stocks/);
   assert.match(today, /Intl\.DateTimeFormat/);
   assert.doesNotMatch(today, /MONDAY, AUGUST 3/);
   assert.match(today, /useReducedMotion/);

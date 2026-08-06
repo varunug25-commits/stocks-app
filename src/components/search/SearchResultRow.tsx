@@ -10,13 +10,13 @@ export function SearchResultRow({
   onPress,
   added = false,
   onAdd,
-  disabled = false,
+  watchlistFull = false,
 }: {
   stock: SearchStock;
   onPress: () => void;
   added?: boolean;
   onAdd?: () => void;
-  disabled?: boolean;
+  watchlistFull?: boolean;
 }) {
   const positive = stock.changePercent >= 0;
   return (
@@ -56,17 +56,19 @@ export function SearchResultRow({
           accessibilityLabel={
             added
               ? `${stock.symbol} already in watchlist`
+              : watchlistFull
+                ? "Watchlist full, view limit"
               : `Add ${stock.symbol} to watchlist`
           }
           accessibilityRole="button"
-          accessibilityState={{ disabled: added || disabled, selected: added }}
+          accessibilityState={{ disabled: added, selected: added }}
           disabled={added}
           onPress={onAdd}
           style={styles.add}
         >
           <Ionicons
             color={
-              added ? colors.positive : disabled ? colors.warning : colors.teal
+              added ? colors.positive : watchlistFull ? colors.warning : colors.teal
             }
             name={added ? "checkmark-circle" : "add-circle-outline"}
             size={23}

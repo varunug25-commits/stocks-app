@@ -34,7 +34,13 @@ export default function WatchlistScreen() {
   const [remove, setRemove] = useState<StockSymbol | null>(null);
   const [limit, setLimit] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  if (!hydrated || preview === "loading")
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = () => {
+    setRetrying(true);
+    router.replace("/watchlist" as Href);
+    setTimeout(() => setRetrying(false), 500);
+  };
+  if (!hydrated || retrying || preview === "loading")
     return (
       <Screen>
         <SkeletonState />
@@ -46,7 +52,7 @@ export default function WatchlistScreen() {
         <View style={s.center}>
           <ErrorState
             description="Your local watchlist could not be displayed. Your stored order remains untouched."
-            onRetry={() => undefined}
+            onRetry={handleRetry}
             title="Watchlist needs a refresh"
           />
         </View>
