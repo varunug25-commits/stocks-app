@@ -1,11 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { Sparkline } from "@/components/finance/Sparkline";
-import type { MarketIndex } from "@/data/today";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 type MarketIndexCardProps = {
-  index: MarketIndex;
+  index: { name: string; symbol: string; value: string; changePercent: number; session: string; trend: number[] };
 };
 
 export function MarketIndexCard({ index }: MarketIndexCardProps) {
@@ -102,4 +101,3 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 });
-

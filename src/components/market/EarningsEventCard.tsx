@@ -1,0 +1,6 @@
+import { StyleSheet, Text, View } from "react-native";
+import { CompanyLogo } from "@/components/finance/CompanyLogo";
+import type { EarningsEvent } from "@/data/markets";
+import { colors, radii, spacing, typography } from "@/theme/tokens";
+export function EarningsEventCard({ event }: { event: EarningsEvent }) { return <View accessibilityLabel={`${event.company} earnings, ${event.day}, ${event.timing}, ${event.estimate}`} style={styles.card}><CompanyLogo color="#4A6C85" name={event.company} size={40} symbol={event.symbol} /><View style={styles.copy}><Text style={styles.title}>{event.company} · {event.symbol}</Text><Text style={styles.detail}>{event.day} · {event.timing}</Text><Text style={styles.estimate}>{event.estimate}</Text></View></View>; }
+const styles = StyleSheet.create({ card: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, copy: { flex: 1 }, title: { ...typography.label, color: colors.textPrimary }, detail: { ...typography.caption, color: colors.textSecondary, marginTop: 3 }, estimate: { ...typography.caption, color: colors.teal, marginTop: 3 } });

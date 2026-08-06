@@ -1,0 +1,4 @@
+import { Pressable, StyleSheet, Text } from "react-native";
+import { colors, radii, spacing, typography } from "@/theme/tokens";
+export function FilterChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) { return <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={onPress} style={[styles.chip, selected && styles.selected]}><Text style={[styles.text, selected && styles.selectedText]}>{label}</Text></Pressable>; }
+const styles = StyleSheet.create({ chip: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md, borderRadius: radii.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, selected: { backgroundColor: colors.teal, borderColor: colors.teal }, text: { ...typography.label, color: colors.textSecondary }, selectedText: { color: colors.background } });
