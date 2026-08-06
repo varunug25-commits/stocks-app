@@ -47,3 +47,14 @@ Loading, empty, error, offline, and market-closed Today variants are reviewable 
 5. Continue through catalysts, statistics, filings, stories, and disclosure without encountering an implied trade or live-data action.
 
 The five-stock preview limit explains how to recover by removing a company. Reordering and removal both have visible button alternatives; no action depends on a swipe gesture.
+
+## Milestone 4 flows
+
+1. Open Briefs and switch between the latest Morning Brief and Evening Recap without changing watchlist membership.
+2. Read prior editions, open the filter sheet, and narrow history by saved, unread, Morning, or Evening.
+3. Open a Brief Detail, which marks the edition read; save/unsave it or invoke native sharing with clearly demo-labeled text.
+4. Scan executive summary, market context, ordered watchlist impact, catalysts, monitor list, scenarios, evidence, sources, and disclosure.
+5. Open a company from a watchlist-impact row and return through native stack back navigation.
+6. Open Today’s briefing card and arrive at the same latest Morning Brief route.
+
+An empty shared watchlist keeps useful market context but offers Search as the personalization action. Loading, offline, error/retry, empty-watchlist, and insufficient-evidence variants are deterministic review states. No flow performs a network request or presents a recommendation.

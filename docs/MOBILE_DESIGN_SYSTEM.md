@@ -102,3 +102,9 @@ The discovery shell extends the near-black/teal system with horizontal index and
 ## Milestone 3 application
 
 Stock Detail prioritizes identity, price, and chart before explanation and supporting research. The chart uses green/red semantics plus a text summary and scrub value; range controls are large pills. Why It Moved uses labeled FACT, INTERPRETATION, and UNCERTAINTY blocks so visual hierarchy never overstates confidence. Watchlist management stays full-width, uses explicit controls in addition to gestures, and presents limits and destructive confirmation in bottom sheets or native modals.
+
+## Milestone 4 application
+
+Briefs use a calm editorial rhythm rather than dashboard widgets: a full-width edition selector, one prominent hero, compact history rows, and long-form detail sections. Morning uses teal/green atmospheric surfaces; Evening uses a restrained indigo tint while preserving the shared dark system. Source and disclosure text remains at caption scale with readable line height rather than tiny legal copy.
+
+Status is communicated by words (`NEW`, `READ`, `SAVED`) and tonal pills. Evidence cards label `FACT`, `INTERPRETATION`, and `UNCERTAINTY`; amber is reserved for risk and missing-evidence states. Bottom-sheet filters keep controls progressive, Reanimated entrances respect reduced motion, Haptics support refresh/save interactions, and skeletons preserve layout during loading.
