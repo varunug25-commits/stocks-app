@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 
 import { AIBriefingCard } from "@/components/finance/AIBriefingCard";
 import { EditorialHero } from "@/components/finance/EditorialHero";
@@ -33,6 +33,7 @@ const enter = (delay: number) => FadeInDown.duration(420).delay(delay).springify
 export default function TodayScreen() {
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const { state } = useOnboarding();
+  const reduceMotion = useReducedMotion();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [briefingOpen, setBriefingOpen] = useState(false);
@@ -54,6 +55,7 @@ export default function TodayScreen() {
   }, [state.stocks]);
   const greeting = state.experience === "New investor" ? "Good morning, new investor" : state.experience === "Advanced" ? "Good morning, market pro" : state.experience === "Intermediate" ? "Good morning, market watcher" : "Good morning, investor";
   const today = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date()).toUpperCase();
+  const animation = (delay: number) => reduceMotion ? undefined : enter(delay);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -96,7 +98,7 @@ export default function TodayScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentColumn}>
-          <Animated.View entering={enter(0)} style={styles.header}>
+          <Animated.View entering={animation(0)} style={styles.header}>
             <View style={styles.headerCopy}>
               <Text style={styles.date}>{today}</Text>
               <Text style={styles.greeting}>{greeting}</Text>
@@ -105,11 +107,11 @@ export default function TodayScreen() {
             <IconButton accessibilityLabel="Notifications, one new" icon="notifications-outline" notification onPress={handleMockPress} />
           </Animated.View>
 
-          <Animated.View entering={enter(40)} style={styles.statusRow}><MarketStatusBadge status={preview === "closed" ? { ...marketStatus, state: "closed", label: "Market closed", detail: "Next session opens Monday at 9:30 AM ET" } : marketStatus} /><View style={styles.statusMeta}><DemoDataBadge /><TimestampLabel label="Updated 2 min ago" /></View></Animated.View>
+          <Animated.View entering={animation(40)} style={styles.statusRow}><MarketStatusBadge status={preview === "closed" ? { ...marketStatus, state: "closed", label: "Market closed", detail: "Next session opens Monday at 9:30 AM ET" } : marketStatus} /><View style={styles.statusMeta}><DemoDataBadge /><TimestampLabel label="Updated 2 min ago" /></View></Animated.View>
 
           {preview === "closed" ? <View style={styles.closedWrap}><MarketClosedState /></View> : null}
 
-          <Animated.View entering={enter(70)} style={styles.section}>
+          <Animated.View entering={animation(70)} style={styles.section}>
             <SectionHeader eyebrow="LIVE SNAPSHOT" title="Market pulse" />
             <ScrollView
               contentContainerStyle={styles.horizontalContent}
@@ -122,29 +124,29 @@ export default function TodayScreen() {
             </ScrollView>
           </Animated.View>
 
-          <Animated.View entering={enter(130)} style={styles.section}>
+          <Animated.View entering={animation(130)} style={styles.section}>
             <EditorialHero onPress={handleMockPress} story={leadStory} />
           </Animated.View>
 
-          <Animated.View entering={enter(190)} style={styles.section}>
+          <Animated.View entering={animation(190)} style={styles.section}>
             <AIBriefingCard onPress={() => setBriefingOpen(true)} points={briefingPoints} />
           </Animated.View>
 
-          <Animated.View entering={enter(250)} style={styles.section}>
+          <Animated.View entering={animation(250)} style={styles.section}>
             <SectionHeader actionLabel="See all" onAction={handleMockPress} title="Moving in your watchlist" />
             <View style={styles.stockList}>
               {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={handleMockPress} stock={stock} />)}
             </View>
           </Animated.View>
 
-          <Animated.View entering={enter(310)} style={styles.section}>
+          <Animated.View entering={animation(310)} style={styles.section}>
             <SectionHeader eyebrow="THIS WEEK" title="Events on your radar" />
             <View style={styles.eventList}>
               {events.map((event) => <EventCard event={event} key={event.id} />)}
             </View>
           </Animated.View>
 
-          <Animated.View entering={enter(370)} style={styles.section}>
+          <Animated.View entering={animation(370)} style={styles.section}>
             <SectionHeader actionLabel="Explore" onAction={handleMockPress} title="Keep reading" />
             <ScrollView
               contentContainerStyle={styles.horizontalContent}
@@ -157,7 +159,7 @@ export default function TodayScreen() {
             </ScrollView>
           </Animated.View>
 
-          <Animated.View entering={enter(430)} style={styles.disclaimer}>
+          <Animated.View entering={animation(430)} style={styles.disclaimer}>
             <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={17} />
             <Text style={styles.disclaimerText}>Demo market data and editorial content. MarketBrief provides education, not investment advice.</Text>
           </Animated.View>
