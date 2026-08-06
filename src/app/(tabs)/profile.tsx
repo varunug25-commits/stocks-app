@@ -1,12 +1,14 @@
-import { PlaceholderScreen } from "@/components/foundation/PlaceholderScreen";
+import { Ionicons } from "@expo/vector-icons";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { DemoDataBadge } from "@/components/foundation/Feedback";
+import { Screen } from "@/components/foundation/Screen";
+import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
+import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export default function ProfileScreen() {
-  return (
-    <PlaceholderScreen
-      description="Preferences and subscription details will be added after the core experience is stable."
-      icon="person-outline"
-      title="Profile"
-    />
-  );
+  const { state } = useOnboarding();
+  return <Screen><ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}><View style={styles.header}><View style={styles.avatar}><Ionicons color={colors.teal} name="person-outline" size={28} /></View><View style={styles.headerCopy}><Text style={styles.title}>Your profile</Text><Text style={styles.subtitle}>Local preferences for this demo shell</Text></View><DemoDataBadge /></View><Preference icon="analytics-outline" label="Experience" values={state.experience ? [state.experience] : ["Not selected"]} /><Preference icon="flag-outline" label="Goals" values={state.goals.length ? state.goals : ["Not selected"]} /><Preference icon="prism-outline" label="Interests" values={state.interests.length ? state.interests : ["Not selected"]} /><Preference icon="star-outline" label="Selected stocks" values={state.stocks.length ? state.stocks : ["None yet"]} /><View style={styles.setting}><View><Text style={styles.settingTitle}>Notifications</Text><Text style={styles.settingBody}>{state.notificationsEnabled ? "Enabled in local preference" : "Not enabled"}</Text></View><Ionicons color={state.notificationsEnabled ? colors.positive : colors.textTertiary} name={state.notificationsEnabled ? "checkmark-circle" : "remove-circle-outline"} size={24} /></View><View style={styles.notice}><Ionicons color={colors.warning} name="information-circle-outline" size={20} /><Text style={styles.noticeText}>This is not an account. Authentication, subscriptions, paywalls and legal settings are intentionally outside Milestone 2.</Text></View></ScrollView></Screen>;
 }
-
+function Preference({ icon, label, values }: { icon: keyof typeof Ionicons.glyphMap; label: string; values: string[] }) { return <View style={styles.card}><View style={styles.cardTitleRow}><Ionicons color={colors.teal} name={icon} size={20} /><Text style={styles.cardTitle}>{label}</Text></View><View style={styles.chips}>{values.map(value => <View key={value} style={styles.chip}><Text style={styles.chipText}>{value}</Text></View>)}</View></View>; }
+const styles = StyleSheet.create({ scroll: { width: "100%", maxWidth: 680, alignSelf: "center", padding: spacing.lg, paddingBottom: 118 }, header: { minHeight: 124, flexDirection: "row", alignItems: "center", gap: spacing.sm }, avatar: { width: 54, height: 54, alignItems: "center", justifyContent: "center", borderRadius: radii.md, backgroundColor: colors.tealMuted }, headerCopy: { flex: 1 }, title: { ...typography.title, color: colors.textPrimary }, subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 }, card: { padding: spacing.md, marginBottom: spacing.sm, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, cardTitleRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs }, cardTitle: { ...typography.label, color: colors.textPrimary }, chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.md }, chip: { minHeight: 36, justifyContent: "center", paddingHorizontal: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.surfaceSoft }, chipText: { ...typography.caption, color: colors.textSecondary }, setting: { minHeight: 68, flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: spacing.md, marginTop: spacing.xs, borderRadius: radii.lg, backgroundColor: colors.surface }, settingTitle: { ...typography.label, color: colors.textPrimary }, settingBody: { ...typography.caption, color: colors.textTertiary, marginTop: 2 }, notice: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg, padding: spacing.md, borderRadius: radii.lg, backgroundColor: "#292317", borderWidth: 1, borderColor: "#5A4923" }, noticeText: { ...typography.caption, flex: 1, color: "#D8C79B" } });
