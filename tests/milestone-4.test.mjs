@@ -47,7 +47,7 @@ test("Milestone 4 routes expose working states and actions", async () => {
   for (const state of ["loading", "offline", "error", "empty-watchlist"]) {
     assert.match(home + detail, new RegExp(state));
   }
-  assert.match(home, /router\.replace\("\/briefs"/);
+  assert.match(home, /router\.setParams\(\{ preview: undefined \}\)/);
   assert.match(home, /RefreshControl/);
   assert.match(detail, /insufficient/);
   assert.match(detail, /toggleSaved/);

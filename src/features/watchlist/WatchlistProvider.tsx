@@ -11,6 +11,7 @@ import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
 import {
   initialWatchlistState,
   migrateOnboardingStocks,
+  resolveHydratedWatchlist,
   watchlistReducer,
 } from "@/features/watchlist/model";
 import type {
@@ -36,7 +37,11 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
         if (active)
           dispatch({
             type: "hydrate",
-            value: saved ?? migrateOnboardingStocks(onboarding.stocks),
+            value: resolveHydratedWatchlist(
+              saved,
+              onboarding.stocks,
+              onboarding.completed,
+            ),
           });
       })
       .catch(() => {
@@ -52,7 +57,7 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     return () => {
       active = false;
     };
-  }, [onboarding.stocks, onboardingHydrated]);
+  }, [onboarding.completed, onboarding.stocks, onboardingHydrated]);
   useEffect(() => {
     if (hydrated) void saveWatchlist(state).catch(() => undefined);
   }, [hydrated, state]);

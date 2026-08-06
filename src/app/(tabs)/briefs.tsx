@@ -72,7 +72,7 @@ export default function BriefsScreen() {
 
   const retry = () => {
     setRetrying(true);
-    router.replace("/briefs" as Href);
+    router.setParams({ preview: undefined });
     setTimeout(() => setRetrying(false), 500);
   };
   const refresh = () => {

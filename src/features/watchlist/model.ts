@@ -54,6 +54,17 @@ export function migrateOnboardingStocks(symbols: string[]): WatchlistState {
     symbols: symbols.filter(isStockSymbol).slice(0, WATCHLIST_LIMIT),
   };
 }
+export function resolveHydratedWatchlist(
+  saved: WatchlistState | null,
+  onboardingSymbols: string[],
+  onboardingCompleted: boolean,
+) {
+  const migrated = migrateOnboardingStocks(onboardingSymbols);
+  if (!saved) return migrated;
+  if (!onboardingCompleted && saved.symbols.length === 0 && migrated.symbols.length)
+    return { ...saved, symbols: migrated.symbols };
+  return saved;
+}
 export function isWatchlistState(value: unknown): value is WatchlistState {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const state = value as Record<string, unknown>;
