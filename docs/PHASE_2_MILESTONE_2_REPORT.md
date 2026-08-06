@@ -40,7 +40,24 @@ Twenty-six viewport captures are stored in `docs/screenshots/phase-2-milestone-2
 - iPhone layout reference: 13 states at exactly 393 × 852.
 - States: Today normal/loading/offline/market closed; Markets overview/sectors/movers; Search default/results/empty; Watchlist; Briefs placeholder; Profile.
 
-These are responsive Expo web captures. Native Android testing is pending because no physical Android device was available. The iPhone set is a layout reference only; native iPhone verification is not claimed.
+These are responsive Expo web captures. The iPhone set is a layout reference only; native iPhone verification is not claimed.
+
+## User-performed native Android validation
+
+The user tested MarketBrief on a real Android phone and verified only the following:
+
+- the app launched successfully;
+- Splash and mock Login worked;
+- onboarding and stock selection worked;
+- Today opened;
+- Markets opened;
+- Search worked;
+- Watchlist opened;
+- the Briefs preview opened;
+- Profile opened; and
+- the overall Android UI looked good.
+
+This does not claim detailed performance, accessibility, low-memory, notification, payment, production, or native screenshot testing. Native iPhone validation remains pending.
 
 ## Known limitations and deferred work
 

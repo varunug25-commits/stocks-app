@@ -21,4 +21,5 @@ Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. This Mac has 
 - Tests cover five tabs, Briefs, onboarding-selected Today stocks, dynamic date implementation, Markets modules, symbol/company search, empty results, forbidden integrations, accessibility, onboarding, and storage resilience.
 - Responsive evidence uses exact web viewports: Android-sized 412 × 915 and iPhone reference 393 × 852.
 - The iPhone set is layout reference only; native iPhone validation is not claimed.
-- Native Android testing remains pending because no physical device was available. Web viewport evidence does not replace native validation.
+- The user later performed native Android smoke testing on a real phone. Verified scope: app launch, Splash, mock Login, onboarding, stock selection, Today, Markets, Search, Watchlist, Briefs preview, Profile, and an overall good UI impression.
+- That smoke test does not establish detailed performance, accessibility, low-memory, notification, payment, production, or native screenshot coverage. Native iPhone validation remains pending.

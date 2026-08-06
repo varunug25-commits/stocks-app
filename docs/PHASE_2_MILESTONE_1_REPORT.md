@@ -40,9 +40,13 @@ All 12 required screens were inspected at both viewport targets, producing 24 co
 
 Each set includes Splash, Login, Sign Up, Forgot Password, Email Verification, Welcome, Investor Experience, Goals, Interests, Stock Selection, Notification Introduction, and Completion.
 
-## Native-device limitation
+## Native-device validation
 
-Xcode and iOS Simulator are not installed on this Mac. The available Android 37 Play Store emulator was launched and inspected with adb, but its System UI became unresponsive under the host’s 8 GB RAM; Expo Go later terminated in Hermes after the system stall. Logcat showed the native runtime failure rather than an application JavaScript exception. To remain truthful, the committed images are Expo web-renderer screenshots at exact iPhone and Android viewport sizes, not native simulator captures. Native iOS and Android screenshot validation should be repeated on suitable hardware or CI before merge.
+Xcode and iOS Simulator are not installed on this Mac. The available Android 37 Play Store emulator was launched and inspected with adb, but its System UI became unresponsive under the host’s 8 GB RAM; Expo Go later terminated in Hermes after the system stall. The committed Milestone 1 images remain Expo web-renderer screenshots at exact iPhone and Android viewport sizes, not native simulator captures.
+
+The user subsequently tested the application on a real Android phone. The user verified that the app launched successfully; Splash and mock Login worked; onboarding and stock selection worked; and Today opened. The user reported that the overall Android UI looked good.
+
+This user-performed check does not claim detailed performance, accessibility, low-memory, notification, payment, production, or native screenshot validation. Native iOS validation remains pending.
 
 ## Files and architecture
 
