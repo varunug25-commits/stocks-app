@@ -98,3 +98,7 @@ Dark surfaces rely on tonal separation and borders more than heavy shadows. Use 
 ## Milestone 2 application
 
 The discovery shell extends the near-black/teal system with horizontal index and sector rails, full-width mover lists, compact demo/timestamp metadata, amber closed/offline treatments, and bottom-sheet progressive disclosure. Five bottom tabs retain large touch targets and selected-state icon, text, and surface cues. Motion remains subtle; haptics support navigation, filters, refresh, and sheet dismissal.
+
+## Milestone 3 application
+
+Stock Detail prioritizes identity, price, and chart before explanation and supporting research. The chart uses green/red semantics plus a text summary and scrub value; range controls are large pills. Why It Moved uses labeled FACT, INTERPRETATION, and UNCERTAINTY blocks so visual hierarchy never overstates confidence. Watchlist management stays full-width, uses explicit controls in addition to gestures, and presents limits and destructive confirmation in bottom sheets or native modals.

@@ -86,3 +86,12 @@ The first phase demonstrates these primitives locally. No network state or persi
 - Today preview query states support loading, offline, closed, empty, and error design review.
 
 All Milestone 2 market and search content comes from local typed modules and the existing onboarding provider.
+
+## Milestone 3 route architecture
+
+- `/stock/[symbol]` is a root-stack Stock Detail route reached from Today, Search, and Watchlist.
+- `/stock/[symbol]/why` progressively discloses the full Why It Moved evidence model.
+- `/search` owns recent/trending discovery and direct watchlist actions.
+- `/watchlist` owns add, remove, reorder, compact/expanded rows, and limit recovery.
+
+`WatchlistProvider` is the single source of truth for saved symbols, recent searches, per-symbol chart ranges, and dismissed notices. It validates persisted JSON and performs a one-time migration from onboarding stock choices. Typed modules under `src/data/stocks/` provide companies, prices, charts, statistics, insights, content, and sources without network calls.

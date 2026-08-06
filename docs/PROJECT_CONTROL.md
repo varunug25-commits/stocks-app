@@ -6,15 +6,15 @@ MarketBrief is a calm, mobile-first market companion that helps an everyday inve
 
 ## Current phase
 
-**Phase 2 Milestone 1: Mock authentication and onboarding UX**
+**Phase 2 Milestone 3: Local stock experience**
 
 This phase delivers:
 
-- the existing Expo, tab navigation, design system, and Today feed;
-- mock authentication and recovery screens;
-- a complete seven-step onboarding flow;
-- typed local preference persistence; and
-- automated tests, device-size screenshots, and milestone documentation.
+- persistent local Watchlist management with a five-stock preview limit;
+- symbol/company Search with recent and trending discovery;
+- Stock Detail with interactive chart ranges and supporting evidence;
+- a dedicated Why It Moved route separating fact, interpretation, and uncertainty; and
+- automated tests, Android-size screenshots, and milestone documentation.
 
 ## Explicitly out of scope
 

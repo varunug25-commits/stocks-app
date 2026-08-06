@@ -1,14 +1,14 @@
 # MarketBrief Mobile
 
-MarketBrief is a native-first personal finance briefing experience built with Expo and React Native. Phase 2 Milestone 1 adds a polished, entirely local authentication and seven-step onboarding shell around the existing Today feed.
+MarketBrief is a native-first personal finance briefing experience built with Expo and React Native. Phase 2 Milestone 3 adds a polished, entirely local watchlist and stock-research experience to the approved mobile shell.
 
 ## Current scope
 
-- splash, login, sign-up, forgot-password, and email-verification UI;
-- complete seven-step onboarding with preserved selections;
-- local persistence through AsyncStorage;
-- reusable dark mobile foundations with haptics and Reanimated motion;
-- realistic mock content only.
+- five-tab personalized finance shell plus global company search;
+- one persisted watchlist shared by onboarding, Today, Search, and Stock Detail;
+- interactive local stock charts, statistics, catalysts, filings, and stories;
+- evidence-separated “Why It Moved” explanations with sources and uncertainty;
+- realistic typed mock content only.
 
 There is no real authentication, backend, Supabase, market API, OpenAI integration, payment flow, or push-notification request.
 
@@ -32,8 +32,8 @@ npm run doctor
 
 Product, architecture, decisions, testing, and milestone evidence live in [`docs/`](docs/).
 
-## Phase 2 Milestone 2
+## Phase 2 Milestone 3
 
-The mobile shell now includes five native-first tabs: Today, Markets, Watchlist, Briefs, and Profile. Today is personalized from locally stored onboarding choices; Markets and global search use typed local mock data; all rows lead to honest preview sheets rather than dead ends. Briefs remains an explicit Milestone 4 preview.
+The mobile shell now includes persistent Watchlist management, enhanced Search, and premium-feeling Stock Detail and Why It Moved routes. Chart ranges and recent searches persist locally; the design includes honest loading, empty, offline, unavailable, full-list, and insufficient-evidence states. Briefs remains an explicit Milestone 4 preview.
 
-No backend authentication, Supabase, live market/news API, AI model, payment service, push service, or brokerage connection is included. See [the Milestone 2 report](docs/PHASE_2_MILESTONE_2_REPORT.md) for checks and screenshots.
+No backend authentication, Supabase, live market/news API, AI model, payment service, push service, or brokerage connection is included. See [the Milestone 3 report](docs/PHASE_2_MILESTONE_3_REPORT.md) for checks and screenshots.

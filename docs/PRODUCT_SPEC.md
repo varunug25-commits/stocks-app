@@ -24,3 +24,9 @@ Real authentication, Supabase, live market or news APIs, AI generation, payments
 ## Phase 2 Milestone 2 delivery
 
 The approved local design shell now includes a personalized Today feed, complete local Markets discovery, symbol/company search, onboarding-connected Watchlist, Briefs preview, and local preference Profile. Stock detail, live data, AI-generated briefs, alerts, payments, and backend accounts remain deferred.
+
+## Phase 2 Milestone 3 delivery
+
+Milestone 3 turns the preview watchlist into one persistent local collection shared across onboarding, Today, Search, Watchlist, and Stock Detail. It adds add/remove/reorder management, recent searches, five chart ranges, company statistics, catalysts, filings, stories, source metadata, freshness labeling, and an expanded Why It Moved explanation. All values and explanations are typed illustrative data; no investment recommendation or live-data implication is permitted.
+
+Success requires useful empty, loading, offline, unavailable, full-list, and insufficient-evidence states, plus non-swipe alternatives for every management action.

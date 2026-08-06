@@ -19,3 +19,11 @@ One provider and pure reducer own onboarding choices. Screens stay focused on on
 ## ADR-005 — Local Milestone 2 discovery shell
 
 Keep all market/search content in typed local mock modules until the complete mobile shell is stable. Search and stock taps open preview sheets, avoiding dead controls while deferring full detail to Milestone 3. Today personalization uses persisted onboarding selections and experience level rather than inventing a stored user name. Deterministic query-driven states exist only for repeatable design validation. Brief generation remains deferred to Milestone 4.
+
+## ADR-006 — One persisted watchlist domain
+
+Use one reducer-backed watchlist state for saved symbols, ordering, recent searches, chart ranges, and notice dismissal. Migrate valid onboarding symbols once, then persist only the new domain model. Screens dispatch typed actions rather than maintaining duplicate collections.
+
+## ADR-007 — Evidence-safe local explanations
+
+Model Why It Moved as local editorial presentation data with separate facts, interpretations, uncertainty, confidence, freshness, and source metadata. Show an insufficient-evidence state when the model is not supportable. Do not generate recommendations, price targets, or live claims.
