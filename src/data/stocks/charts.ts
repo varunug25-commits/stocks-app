@@ -30,10 +30,16 @@ export function getChartSeries(
 ): ChartPoint[] {
   const data = shapes[range];
   const end = data[data.length - 1] ?? 0;
-  return data.map((value, index) => ({
-    label: `Point ${index + 1}`,
-    value: Number(
-      (price * (1 + (value - end + offsets[symbol]) / 100)).toFixed(2),
-    ),
-  }));
+  return data.map((value, index) => {
+    const offsetTaper = 1 - index / Math.max(data.length - 1, 1);
+    return {
+      label: `Point ${index + 1}`,
+      value: Number(
+        (
+          price *
+          (1 + (value - end + offsets[symbol] * offsetTaper) / 100)
+        ).toFixed(2),
+      ),
+    };
+  });
 }

@@ -23,18 +23,20 @@ export function PriceChart({
 }) {
   const [width, setWidth] = useState(340);
   const [selected, setSelected] = useState(points.length - 1);
-  const path = useMemo(() => {
+  const coordinates = useMemo(() => {
     const values = points.map((p) => p.value),
       min = Math.min(...values),
       max = Math.max(...values),
       range = Math.max(max - min, 1);
     return points
-      .map(
-        (p, i) =>
-          `${i ? "L" : "M"} ${(i / (points.length - 1)) * width} ${H - 18 - ((p.value - min) / range) * (H - 42)}`,
-      )
-      .join(" ");
+      .map((p, i) => ({
+        x: (i / Math.max(points.length - 1, 1)) * width,
+        y: H - 18 - ((p.value - min) / range) * (H - 42),
+      }));
   }, [points, width]);
+  const path = coordinates
+    .map(({ x, y }, i) => `${i ? "L" : "M"} ${x} ${y}`)
+    .join(" ");
   const update = (x: number) =>
     setSelected(
       Math.max(
@@ -58,8 +60,9 @@ export function PriceChart({
         <Text style={s.summary}>The local series could not be prepared.</Text>
       </View>
     );
-  const point = points[selected]!;
-  const x = (selected / (points.length - 1)) * width;
+  const safeSelected = Math.min(selected, points.length - 1);
+  const point = points[safeSelected]!;
+  const coordinate = coordinates[safeSelected] ?? { x: width, y: H / 2 };
   return (
     <View
       accessibilityLabel={summary}
@@ -84,16 +87,14 @@ export function PriceChart({
         <Line
           stroke={colors.border}
           strokeDasharray="4 5"
-          x1={x}
-          x2={x}
+          x1={coordinate.x}
+          x2={coordinate.x}
           y1={24}
           y2={H - 10}
         />
         <Circle
-          cx={x}
-          cy={
-            path.split(" ").slice(selected * 3 + 2, selected * 3 + 3)[0] ?? 80
-          }
+          cx={coordinate.x}
+          cy={coordinate.y}
           fill={colors.background}
           r={6}
           stroke={positive ? colors.positive : colors.negative}

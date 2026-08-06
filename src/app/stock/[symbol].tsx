@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { CatalystCard } from "@/components/stock/CatalystCard";
 import { ChartRangeSelector } from "@/components/stock/ChartRangeSelector";
@@ -13,6 +14,7 @@ import { SourceList } from "@/components/stock/SourceList";
 import { StockHeader } from "@/components/stock/StockHeader";
 import { StoryRow } from "@/components/stock/StoryRow";
 import { WhyItMovedCard } from "@/components/stock/WhyItMovedCard";
+import { WatchlistLimitSheet } from "@/components/stock/WatchlistLimitSheet";
 import { OfflineBanner } from "@/components/foundation/Feedback";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
@@ -40,6 +42,7 @@ export default function StockDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; preview?: string }>();
   const { state, dispatch } = useWatchlist();
+  const [limitVisible, setLimitVisible] = useState(false);
   if (!isStockSymbol(params.symbol))
     return (
       <Screen>
@@ -57,11 +60,12 @@ export default function StockDetailScreen() {
   const insight = insights[symbol];
   const range = state.selectedRanges[symbol] ?? "1D";
   const added = state.symbols.includes(symbol);
-  const toggle = () =>
-    added
-      ? dispatch({ type: "remove", symbol })
-      : state.symbols.length < WATCHLIST_LIMIT &&
-        dispatch({ type: "add", symbol });
+  const toggle = () => {
+    if (added) return dispatch({ type: "remove", symbol });
+    if (state.symbols.length >= WATCHLIST_LIMIT)
+      return setLimitVisible(true);
+    dispatch({ type: "add", symbol });
+  };
   if (params.preview === "loading")
     return (
       <Screen>
@@ -99,6 +103,7 @@ export default function StockDetailScreen() {
         </View>
         <View style={styles.chartCard}>
           <PriceChart
+            key={`${symbol}-${range}`}
             points={getChartSeries(symbol, range, price.price)}
             positive={price.change >= 0}
             summary={summary}
@@ -172,6 +177,10 @@ export default function StockDetailScreen() {
           </Text>
         </View>
       </ScrollView>
+      <WatchlistLimitSheet
+        onClose={() => setLimitVisible(false)}
+        visible={limitVisible}
+      />
     </Screen>
   );
 }
