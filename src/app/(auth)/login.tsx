@@ -1,0 +1,18 @@
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { AuthScaffold } from "@/components/auth/AuthScaffold";
+import { AuthProviderButton } from "@/components/foundation/AuthProviderButton";
+import { PrimaryButton, TextButton } from "@/components/foundation/Buttons";
+import { InlineError, OfflineBanner } from "@/components/foundation/Feedback";
+import { FormField, PasswordField } from "@/components/foundation/FormField";
+import { saveMockSession } from "@/storage/preferences";
+import { colors, spacing, typography } from "@/theme/tokens";
+
+export default function LoginScreen() {
+  const router = useRouter(); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [remember, setRemember] = useState(true); const [loading, setLoading] = useState(false); const [error, setError] = useState(""); const [offline, setOffline] = useState(false);
+  const login = () => { if (!email.includes("@") || password.length < 6) { setError("Enter a valid email and a password with at least 6 characters."); return; } setError(""); setLoading(true); setTimeout(() => { void saveMockSession(remember); setLoading(false); router.push("/(onboarding)/welcome"); }, 650); };
+  const provider = () => { setError("Social sign-in is a visual demo. Use any valid email and 6-character password."); };
+  return <><AuthScaffold back={false} description="Your personalized market briefing is ready when you are." title="Welcome back"><FormField autoCapitalize="none" keyboardType="email-address" label="Email" onChangeText={setEmail} placeholder="you@example.com" value={email} /><PasswordField label="Password" onChangeText={setPassword} placeholder="At least 6 characters" value={password} />{error ? <InlineError message={error} /> : null}<View style={styles.row}><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: remember }} onPress={() => setRemember(!remember)} style={styles.remember}><View style={[styles.check, remember && styles.checked]}>{remember ? <Text style={styles.tick}>✓</Text> : null}</View><Text style={styles.small}>Remember me</Text></Pressable><TextButton label="Forgot password?" onPress={() => router.push("/(auth)/forgot-password")} /></View><PrimaryButton label="Log in" loading={loading} onPress={login} /><View style={styles.providers}><AuthProviderButton provider="Apple" onPress={provider} /><AuthProviderButton provider="Google" onPress={provider} /></View><View style={styles.join}><Text style={styles.small}>New to MarketBrief?</Text><TextButton label="Create account" onPress={() => router.push("/(auth)/sign-up")} /></View><TextButton label={offline ? "Hide offline state" : "Preview offline state"} onPress={() => setOffline(!offline)} /></AuthScaffold>{offline ? <View style={styles.banner}><OfflineBanner /></View> : null}</>;
+}
+const styles = StyleSheet.create({ row: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, remember: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.xs }, check: { width: 22, height: 22, alignItems: "center", justifyContent: "center", borderRadius: 7, borderWidth: 1, borderColor: colors.border }, checked: { backgroundColor: colors.teal, borderColor: colors.teal }, tick: { color: colors.background, fontWeight: "800" }, small: { ...typography.label, color: colors.textSecondary }, providers: { flexDirection: "row", gap: spacing.sm }, join: { flexDirection: "row", alignItems: "center", justifyContent: "center" }, banner: { position: "absolute", top: 0, left: 0, right: 0 } });

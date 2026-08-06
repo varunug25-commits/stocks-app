@@ -1,0 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import type { Sector } from "@/data/markets";
+import { colors, radii, spacing, typography } from "@/theme/tokens";
+
+export function SectorPerformanceCard({ sector, onPress }: { sector: Sector; onPress: () => void }) { const up = sector.changePercent >= 0; return <Pressable accessibilityLabel={`${sector.name} sector, ${up ? "up" : "down"} ${Math.abs(sector.changePercent).toFixed(2)} percent. Leaders ${sector.leaders}`} accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}><View style={styles.top}><Text style={styles.name}>{sector.name}</Text><Ionicons color={up ? colors.positive : colors.negative} name={up ? "trending-up" : "trending-down"} size={19} /></View><Text style={[styles.change, { color: up ? colors.positive : colors.negative }]}>{up ? "+" : "−"}{Math.abs(sector.changePercent).toFixed(2)}%</Text><Text numberOfLines={1} style={styles.leaders}>{sector.leaders}</Text></Pressable>; }
+const styles = StyleSheet.create({ card: { width: 174, padding: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, pressed: { opacity: .75 }, top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, name: { ...typography.label, color: colors.textPrimary }, change: { ...typography.heading, marginTop: spacing.md }, leaders: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xs } });

@@ -30,7 +30,7 @@ export function Sparkline({ points, positive, width = 72, height = 32 }: Sparkli
   const fillPath = path ? `${path} L${width},${height} L0,${height} Z` : "";
 
   return (
-    <Svg accessibilityElementsHidden height={height} width={width}>
+    <Svg height={height} width={width}>
       <Defs>
         <LinearGradient id={positive ? "sparkPositive" : "sparkNegative"} x1="0" x2="0" y1="0" y2="1">
           <Stop offset="0" stopColor={color} stopOpacity="0.24" />
@@ -42,4 +42,3 @@ export function Sparkline({ points, positive, width = 72, height = 32 }: Sparkli
     </Svg>
   );
 }
-

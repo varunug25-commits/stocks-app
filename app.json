@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "Signal",
-    "slug": "signal-mobile",
+    "name": "MarketBrief",
+    "slug": "marketbrief-mobile",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "signal",
+    "scheme": "marketbrief",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.varun.signal"
+      "bundleIdentifier": "com.varun.marketbrief"
     },
     "android": {
-      "package": "com.varun.signal",
+      "package": "com.varun.marketbrief",
       "predictiveBackGestureEnabled": true
     },
     "web": {

@@ -1,8 +1,18 @@
-# Signal Mobile Design System
+# MarketBrief Mobile Design System
+
+## Phase 2 interaction tokens
+
+- Focus ring: `#7BF4DC`, visually distinct from passive borders.
+- Disabled surface/text: `#263034` / `#6E797C`.
+- Pressed teal: `#2CC9AA`.
+- Overlay: near-opaque black for modal focus.
+- Motion durations: 160ms fast, 260ms standard, 420ms deliberate.
+
+Motion is subtle, purposeful, and reduced when the platform requests reduced motion. Haptics accompany selection, primary actions, tab changes, and successful onboarding completion. Forms remain keyboard-safe, touch targets are at least 44 points, and selected states always pair color with an icon or state semantics.
 
 ## Design principles
 
-Signal should feel editorial, calm, and useful—not like a compressed trading terminal. Each screen reveals the most important information first and lets the user progressively open details.
+MarketBrief should feel editorial, calm, and useful—not like a compressed trading terminal. Each screen reveals the most important information first and lets the user progressively open details.
 
 - Native first: respect safe areas, platform gestures, and familiar mobile patterns.
 - Glanceable: a user should understand the market tone within a few seconds.
@@ -85,3 +95,6 @@ Dark surfaces rely on tonal separation and borders more than heavy shadows. Use 
 - Lists expose item names, values, and changes as a single readable label.
 - Do not rely on swipe as the only way to perform an action.
 
+## Milestone 2 application
+
+The discovery shell extends the near-black/teal system with horizontal index and sector rails, full-width mover lists, compact demo/timestamp metadata, amber closed/offline treatments, and bottom-sheet progressive disclosure. Five bottom tabs retain large touch targets and selected-state icon, text, and surface cues. Motion remains subtle; haptics support navigation, filters, refresh, and sheet dismissal.

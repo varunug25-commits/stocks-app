@@ -7,6 +7,11 @@ export const colors = {
   borderSoft: "#172226",
   teal: "#42E8C6",
   tealMuted: "#12372F",
+  tealPressed: "#2CC9AA",
+  focus: "#7BF4DC",
+  disabled: "#263034",
+  disabledText: "#6E797C",
+  overlay: "#000000B8",
   positive: "#49D98A",
   negative: "#FF6B74",
   warning: "#F2B84B",
@@ -55,3 +60,8 @@ export const shadows = {
   },
 } as const;
 
+export const motion = {
+  fast: 160,
+  standard: 260,
+  deliberate: 420,
+} as const;

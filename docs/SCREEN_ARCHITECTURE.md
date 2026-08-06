@@ -1,4 +1,13 @@
-# Signal Mobile Screen Architecture
+# MarketBrief Mobile Screen Architecture
+
+## Phase 2 Milestone 1 route map
+
+- Root stack: Splash, Auth group, Onboarding group, existing Tabs group.
+- Auth group: Login, Sign Up, Forgot Password, Email Verification.
+- Onboarding group: Welcome, Experience, Goals, Interests, Stocks, Notifications, Completion.
+- Existing tabs remain Today, Markets, Watchlist, and Profile; this milestone does not expand them.
+
+Splash resolves only local state. Auth screens create no real identity. The onboarding provider sits above every route so back navigation preserves decisions, while typed storage helpers persist the completed profile separately from UI code.
 
 ## Navigation model
 
@@ -69,3 +78,11 @@ Every data-driven section must support:
 
 The first phase demonstrates these primitives locally. No network state or persistence is added.
 
+## Milestone 2 route architecture
+
+- `/(tabs)` owns the five-tab mobile navigation shell.
+- `/` is Today; `/markets`, `/watchlist`, `/briefs`, and `/profile` are tab routes.
+- `/search` is a root-stack route reachable from Markets and Watchlist.
+- Today preview query states support loading, offline, closed, empty, and error design review.
+
+All Milestone 2 market and search content comes from local typed modules and the existing onboarding provider.

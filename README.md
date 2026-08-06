@@ -1,27 +1,25 @@
-# Signal Mobile
+# MarketBrief Mobile
 
-Signal is a native-first market companion built with Expo and React Native. The current phase is a polished, local-data design shell for iPhone and Android.
+MarketBrief is a native-first personal finance briefing experience built with Expo and React Native. Phase 2 Milestone 1 adds a polished, entirely local authentication and seven-step onboarding shell around the existing Today feed.
 
 ## Current scope
 
-- Expo Router application foundation
-- dark mobile design system
-- bottom tab navigation
-- polished Today feed using local mock data
-- reusable finance and system-state components
+- splash, login, sign-up, forgot-password, and email-verification UI;
+- complete seven-step onboarding with preserved selections;
+- local persistence through AsyncStorage;
+- reusable dark mobile foundations with haptics and Reanimated motion;
+- realistic mock content only.
 
-Authentication, real APIs, databases, Supabase, and AI calls are intentionally excluded.
+There is no real authentication, backend, Supabase, market API, OpenAI integration, payment flow, or push-notification request.
 
 ## Run locally
-
-Requirements: Node.js 22 or newer and the Expo Go app, an iOS simulator, or an Android emulator.
 
 ```bash
 npm install
 npm start
 ```
 
-Then scan the QR code with Expo Go or press `i` for iOS / `a` for Android.
+Use `a` for Android, `i` for an installed iOS Simulator, or `w` for the browser preview.
 
 ## Quality checks
 
@@ -32,4 +30,10 @@ npm test
 npm run doctor
 ```
 
-Product and design decisions live in [`docs/`](./docs/).
+Product, architecture, decisions, testing, and milestone evidence live in [`docs/`](docs/).
+
+## Phase 2 Milestone 2
+
+The mobile shell now includes five native-first tabs: Today, Markets, Watchlist, Briefs, and Profile. Today is personalized from locally stored onboarding choices; Markets and global search use typed local mock data; all rows lead to honest preview sheets rather than dead ends. Briefs remains an explicit Milestone 4 preview.
+
+No backend authentication, Supabase, live market/news API, AI model, payment service, push service, or brokerage connection is included. See [the Milestone 2 report](docs/PHASE_2_MILESTONE_2_REPORT.md) for checks and screenshots.

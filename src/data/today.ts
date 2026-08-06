@@ -110,7 +110,7 @@ export const leadStory: Story = {
   category: "MARKET PULSE",
   title: "Rates ease as growth stocks find their footing",
   summary: "Treasury yields are drifting lower, giving technology and consumer names room to lead the morning session.",
-  source: "Signal Editorial",
+  source: "MarketBrief Editorial",
   published: "18 min ago",
   readTime: "4 min read",
   palette: ["#173B36", "#0A1114", "#22594F"],
@@ -123,7 +123,7 @@ export const stories: Story[] = [
     category: "SEMICONDUCTORS",
     title: "Chip spending stays resilient into the next cycle",
     summary: "Capital plans point to steady demand across AI infrastructure.",
-    source: "Signal Editorial",
+    source: "MarketBrief Editorial",
     published: "42 min ago",
     readTime: "3 min read",
     palette: ["#20294B", "#0C1018", "#4D5C9E"],
@@ -134,7 +134,7 @@ export const stories: Story[] = [
     category: "MACRO",
     title: "Oil steadies while the dollar gives back early gains",
     summary: "Cross-asset moves remain measured ahead of this week’s data.",
-    source: "Signal Editorial",
+    source: "MarketBrief Editorial",
     published: "1 hr ago",
     readTime: "5 min read",
     palette: ["#3D2D1A", "#100E0B", "#906A2D"],
@@ -169,4 +169,3 @@ export const events: MarketEvent[] = [
     tone: "macro",
   },
 ];
-
