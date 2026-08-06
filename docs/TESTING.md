@@ -23,3 +23,10 @@ Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. This Mac has 
 - The iPhone set is layout reference only; native iPhone validation is not claimed.
 - The user later performed native Android smoke testing on a real phone. Verified scope: app launch, Splash, mock Login, onboarding, stock selection, Today, Markets, Search, Watchlist, Briefs preview, Profile, and an overall good UI impression.
 - That smoke test does not establish detailed performance, accessibility, low-memory, notification, payment, production, or native screenshot coverage. Native iPhone validation remains pending.
+
+## Milestone 3 validation
+
+- Unit tests cover duplicate prevention, five-stock limits, remove/reorder behavior, one-time onboarding migration, persisted order/recent searches/chart ranges, and chart endpoint consistency.
+- Structural tests cover stock routes, explanation hierarchy, reusable components, Search/Watchlist integration, accessible labels, and the continued absence of network or forbidden service integrations.
+- Deterministic Android-size evidence is captured at 412 × 915 in `docs/screenshots/phase-2-milestone-3/` for normal, empty, limit, search, chart, explanation, research, offline, and insufficient-evidence states.
+- Native Android validation of Milestones 1–2 remains verified by the user. Milestone 3 native Android interaction testing and all native iPhone testing remain pending and are not claimed.

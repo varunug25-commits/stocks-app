@@ -37,3 +37,13 @@ System back navigation is allowed and the provider retains choices made on earli
 5. View onboarding choices in Watchlist and Profile. Add stock routes to search. Briefs clearly discloses its preview scope.
 
 Loading, empty, error, offline, and market-closed Today variants are reviewable without changing stored preferences.
+
+## Milestone 3 flows
+
+1. Open Watchlist, inspect saved companies, expand rows, reorder them, remove with confirmation, or search to add another.
+2. Search by symbol or company, use recent/trending suggestions, clear history, add directly, or open Stock Detail.
+3. Open Stock Detail from Today, Search, or Watchlist; inspect price context, scrub the chart, switch ranges, and persist that range locally.
+4. Read Why It Moved as distinct facts, interpretations, uncertainty, confidence, and cited local sources.
+5. Continue through catalysts, statistics, filings, stories, and disclosure without encountering an implied trade or live-data action.
+
+The five-stock preview limit explains how to recover by removing a company. Reordering and removal both have visible button alternatives; no action depends on a swipe gesture.

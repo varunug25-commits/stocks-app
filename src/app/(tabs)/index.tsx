@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams } from "expo-router";
+import type { Href } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
@@ -23,16 +24,19 @@ import { MarketClosedState } from "@/components/market/MarketClosedState";
 import { MarketStatusBadge } from "@/components/market/MarketStatusBadge";
 import { TimestampLabel } from "@/components/market/TimestampLabel";
 import { marketStatus } from "@/data/markets";
-import { searchableStocks } from "@/data/search";
-import { briefingPoints, events, leadStory, marketIndices, stories, watchlist } from "@/data/today";
+import { briefingPoints, events, leadStory, marketIndices, stories } from "@/data/today";
 import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
+import { selectTodayWatchlist } from "@/features/watchlist/todayStocks";
+import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 const enter = (delay: number) => FadeInDown.duration(420).delay(delay).springify().damping(18);
 
 export default function TodayScreen() {
+  const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
-  const { state } = useOnboarding();
+  const { state: onboardingState } = useOnboarding();
+  const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
   const reduceMotion = useReducedMotion();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -44,16 +48,11 @@ export default function TodayScreen() {
     return () => clearTimeout(timer);
   }, [preview]);
 
-  const personalizedStocks = useMemo(() => {
-    if (!state.stocks.length) return watchlist;
-    return state.stocks.map(symbol => {
-      const existing = watchlist.find(stock => stock.symbol === symbol);
-      if (existing) return existing;
-      const stock = searchableStocks.find(item => item.symbol === symbol);
-      return stock ? { ...stock, trend: stock.changePercent >= 0 ? [20, 22, 21, 25, 28, 27, 32, 36] : [39, 37, 38, 34, 32, 33, 29, 27] } : null;
-    }).filter((stock): stock is (typeof watchlist)[number] => Boolean(stock));
-  }, [state.stocks]);
-  const greeting = state.experience === "New investor" ? "Good morning, new investor" : state.experience === "Advanced" ? "Good morning, market pro" : state.experience === "Intermediate" ? "Good morning, market watcher" : "Good morning, investor";
+  const personalizedStocks = useMemo(
+    () => selectTodayWatchlist(watchlistState.symbols),
+    [watchlistState.symbols],
+  );
+  const greeting = onboardingState.experience === "New investor" ? "Good morning, new investor" : onboardingState.experience === "Advanced" ? "Good morning, market pro" : onboardingState.experience === "Intermediate" ? "Good morning, market watcher" : "Good morning, investor";
   const today = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date()).toUpperCase();
   const animation = (delay: number) => reduceMotion ? undefined : enter(delay);
 
@@ -70,7 +69,13 @@ export default function TodayScreen() {
     void Haptics.selectionAsync();
   };
 
-  if (isLoading || preview === "loading") {
+  const handleRetry = () => {
+    setIsLoading(true);
+    router.replace("/" as Href);
+    setTimeout(() => setIsLoading(false), 650);
+  };
+
+  if (isLoading || !watchlistHydrated || preview === "loading") {
     return (
       <Screen>
         <SkeletonState />
@@ -78,7 +83,7 @@ export default function TodayScreen() {
     );
   }
 
-  if (preview === "error") return <Screen><View style={styles.stateWrap}><ErrorState description="Your local demo feed could not be prepared. Nothing was lost." onRetry={() => undefined} title="Today needs a refresh" /></View></Screen>;
+  if (preview === "error") return <Screen><View style={styles.stateWrap}><ErrorState description="Your local demo feed could not be prepared. Nothing was lost." onRetry={handleRetry} title="Today needs a refresh" /></View></Screen>;
   if (preview === "empty") return <Screen><View style={styles.stateWrap}><EmptyState description="Choose companies in Watchlist to make this feed yours." title="Your feed is ready to personalize" /></View></Screen>;
 
   return (
@@ -104,7 +109,7 @@ export default function TodayScreen() {
               <Text style={styles.greeting}>{greeting}</Text>
               <Text style={styles.intro}>Here’s the market signal worth your attention.</Text>
             </View>
-            <IconButton accessibilityLabel="Notifications, one new" icon="notifications-outline" notification onPress={handleMockPress} />
+            <View style={styles.headerActions}><IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} /><IconButton accessibilityLabel="Notifications, one new" icon="notifications-outline" notification onPress={handleMockPress} /></View>
           </Animated.View>
 
           <Animated.View entering={animation(40)} style={styles.statusRow}><MarketStatusBadge status={preview === "closed" ? { ...marketStatus, state: "closed", label: "Market closed", detail: "Next session opens Monday at 9:30 AM ET" } : marketStatus} /><View style={styles.statusMeta}><DemoDataBadge /><TimestampLabel label="Updated 2 min ago" /></View></Animated.View>
@@ -133,10 +138,19 @@ export default function TodayScreen() {
           </Animated.View>
 
           <Animated.View entering={animation(250)} style={styles.section}>
-            <SectionHeader actionLabel="See all" onAction={handleMockPress} title="Moving in your watchlist" />
-            <View style={styles.stockList}>
-              {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={handleMockPress} stock={stock} />)}
-            </View>
+            <SectionHeader actionLabel="See all" onAction={() => router.push("/watchlist" as Href)} title="Moving in your watchlist" />
+            {personalizedStocks.length ? (
+              <View style={styles.stockList}>
+                {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} stock={stock} />)}
+              </View>
+            ) : (
+              <EmptyState
+                actionLabel="Search stocks"
+                description="Add companies to your shared watchlist to see their daily moves here."
+                onAction={() => router.push("/search" as Href)}
+                title="Your watchlist is clear"
+              />
+            )}
           </Animated.View>
 
           <Animated.View entering={animation(310)} style={styles.section}>
@@ -213,6 +227,7 @@ const styles = StyleSheet.create({
   headerCopy: {
     flex: 1,
   },
+  headerActions: { flexDirection: "row", gap: spacing.xs },
   date: {
     ...typography.caption,
     color: colors.teal,

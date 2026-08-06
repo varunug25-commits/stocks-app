@@ -62,3 +62,13 @@
 - Shared states reused: `DemoDataBadge`, `OfflineBanner`, `ErrorState`, `EmptyState`, `SkeletonState`, and `AppBottomSheet`.
 
 These components preserve 44-point minimum interaction targets, accessible labels, and text/icon direction cues rather than relying on colour alone.
+
+## Milestone 3 additions
+
+- Stock identity and action: `StockHeader`, `WatchlistButton`, `PriceMovement`, and `StockActionSheet`.
+- Chart: `PriceChart`, `ChartRangeSelector`, and `DataFreshnessBadge`.
+- Explanation: `WhyItMovedCard`, `DriverRow`, `InterpretationCard`, `ConfidenceIndicator`, and `SourceList`.
+- Research: `CatalystCard`, `MarketStatsGrid`, `FilingRow`, and `StoryRow`.
+- Watchlist management: `WatchlistRow` and `WatchlistLimitSheet`.
+
+All accept typed local data. The chart exposes a spoken summary, watchlist actions provide button-based remove/reorder alternatives, and sources distinguish evidence from interpretation.
