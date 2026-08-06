@@ -87,7 +87,7 @@ test("ships the Today feed as typed reusable mobile components", async () => {
   assert.match(todayScreen, /RefreshControl/);
   assert.match(todayScreen, /briefingOpen/);
   assert.match(todayScreen, /marketIndices\.map/);
-  assert.match(todayScreen, /watchlist\.map/);
+  assert.match(todayScreen, /personalizedStocks\.map/);
 });
 
 test("onboarding hydration and splash routing fail safely", async () => {
