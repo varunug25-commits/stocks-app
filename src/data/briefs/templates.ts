@@ -1,16 +1,24 @@
-import type { BriefType } from "./types.ts";
+import type { BriefSourceId, BriefType } from "./types.ts";
 
 export type BriefTemplate = {
-    label: string;
-    headline: string;
-    summary: string;
-    marketContext: string;
-    marketDirection: string;
-    developments: string[];
-    monitor: string[];
-    positiveScenario: string;
-    riskScenario: string;
-  };
+  label: string;
+  headline: string;
+  summary: string;
+  marketContext: string;
+  marketDirection: string;
+  marketSourceIds: BriefSourceId[];
+  developments: string[];
+  changeSinceMorning?: string;
+  factNarrative: string;
+  factSourceIds: BriefSourceId[];
+  interpretationNarrative: string;
+  interpretationSourceIds: BriefSourceId[];
+  uncertaintyNarrative: string;
+  uncertaintySourceIds: BriefSourceId[];
+  monitor: string[];
+  positiveScenario: string;
+  riskScenario: string;
+};
 
 export const briefTemplates: Record<BriefType, BriefTemplate> = {
   morning: {
@@ -21,11 +29,21 @@ export const briefTemplates: Record<BriefType, BriefTemplate> = {
     marketContext:
       "Global equity futures point higher after a calmer rates session. Semiconductor and cloud names are leading, while consumer momentum remains mixed.",
     marketDirection: "Futures modestly higher · growth sectors leading",
+    marketSourceIds: ["market"],
     developments: [
       "Rates eased enough to support growth valuations.",
       "Semiconductor demand commentary remained constructive.",
       "Today’s earnings calendar could reset expectations quickly.",
     ],
+    factNarrative:
+      "Futures were modestly higher, long-term yields had eased, and scheduled company updates were visible in the local calendar before the open.",
+    factSourceIds: ["market"],
+    interpretationNarrative:
+      "The combination of easier yields and resilient technology demand offered a plausible, non-exclusive explanation for the constructive growth setup.",
+    interpretationSourceIds: ["market", "editorial"],
+    uncertaintyNarrative:
+      "Opening breadth and new guidance could quickly challenge the pre-market interpretation, particularly if leadership stayed concentrated.",
+    uncertaintySourceIds: [],
     monitor: [
       "Treasury yields through the opening hour",
       "Breadth beyond the largest technology names",
@@ -44,11 +62,23 @@ export const briefTemplates: Record<BriefType, BriefTemplate> = {
     marketContext:
       "The Nasdaq led the major indices while the Dow was comparatively muted. Participation improved late in the session, although leadership remained concentrated.",
     marketDirection: "Nasdaq higher · S&P 500 positive · Dow near flat",
+    marketSourceIds: ["market"],
     developments: [
       "Growth shares held most of their intraday advance.",
       "Watchlist winners were concentrated in semiconductors.",
       "Tomorrow’s catalysts now matter more than today’s closing momentum.",
     ],
+    changeSinceMorning:
+      "The opening bid held into the close, market breadth improved late, and semiconductor leadership remained the clearest watchlist signal.",
+    factNarrative:
+      "The Nasdaq finished ahead of the other major indices, the S&P 500 closed positive, and late-session participation improved from the morning setup.",
+    factSourceIds: ["market"],
+    interpretationNarrative:
+      "Technology strength plausibly supported the close, but the concentration of leadership means the index gain should not be treated as broad confirmation.",
+    interpretationSourceIds: ["market", "editorial"],
+    uncertaintyNarrative:
+      "Post-close guidance and overnight rates could reverse the session’s growth leadership before the next opening bell.",
+    uncertaintySourceIds: [],
     monitor: [
       "Post-close earnings and guidance",
       "Overnight rates and currency moves",
@@ -75,6 +105,15 @@ export const briefEditionTemplates: Record<string, BriefTemplate> = {
       "Long-term yields recovered part of the prior session’s decline.",
       "Market breadth remained the key confirmation to watch after the open.",
     ],
+    factNarrative:
+      "Semiconductor shares showed relative pre-market strength while the 10-year Treasury yield recovered part of its prior decline.",
+    factSourceIds: ["market"],
+    interpretationNarrative:
+      "Constructive chip commentary could support technology leadership, although firmer yields created a competing valuation pressure rather than a single clear cause.",
+    interpretationSourceIds: ["market", "editorial"],
+    uncertaintyNarrative:
+      "The setup still needed confirmation from opening breadth and consumer participation; narrow chip strength alone could not establish a durable market direction.",
+    uncertaintySourceIds: [],
     monitor: ["Semiconductor breadth", "The 10-year Treasury yield", "Consumer-sector participation"],
     positiveScenario: "Broader chip participation could offset the valuation pressure from firmer yields.",
     riskScenario: "A sharper rates move could narrow leadership and pressure high-expectation names.",
@@ -90,6 +129,17 @@ export const briefEditionTemplates: Record<string, BriefTemplate> = {
       "Defensive sectors reduced their early losses.",
       "Post-close guidance became the next test for the improved tone.",
     ],
+    changeSinceMorning:
+      "A narrow technology-led morning became broader by the final two hours as healthcare and consumer staples recovered from early weakness.",
+    factNarrative:
+      "The S&P 500 closed higher, defensive-sector losses narrowed, and participation improved during the final part of the session.",
+    factSourceIds: ["market"],
+    interpretationNarrative:
+      "The late defensive recovery plausibly made the close healthier than the opening move, but it did not prove that broad participation would persist.",
+    interpretationSourceIds: ["market", "editorial"],
+    uncertaintyNarrative:
+      "After-hours guidance and overnight futures could show whether the late breadth improvement reflected durable demand or temporary positioning.",
+    uncertaintySourceIds: [],
     monitor: ["Post-close guidance", "Overnight index futures", "Continuation in defensive breadth"],
     positiveScenario: "Broader participation could make the next session less dependent on mega-cap leadership.",
     riskScenario: "Weak guidance could show that the late breadth improvement was temporary.",
@@ -105,6 +155,15 @@ export const briefEditionTemplates: Record<string, BriefTemplate> = {
       "Scheduled earnings carried more information than broad macro moves.",
       "Guidance quality, not headline beats, was the primary watch item.",
     ],
+    factNarrative:
+      "Index futures stayed close to flat, the dollar was steady, and the local calendar showed company earnings as the day’s clearest scheduled inputs.",
+    factSourceIds: ["market"],
+    interpretationNarrative:
+      "With broad macro moves muted, guidance quality was a more useful lens than the small pre-market index changes, though it remained an editorial interpretation.",
+    interpretationSourceIds: ["market", "editorial"],
+    uncertaintyNarrative:
+      "Unexpected yield or currency moves could still overwhelm the quiet setup before company guidance supplied clearer evidence.",
+    uncertaintySourceIds: [],
     monitor: ["Guidance versus consensus", "Opening market breadth", "Dollar and yield reaction"],
     positiveScenario: "Constructive guidance could turn the quiet setup into broader risk appetite.",
     riskScenario: "Cautious outlooks could expose how much optimism is already reflected in prices.",
@@ -120,6 +179,17 @@ export const briefEditionTemplates: Record<string, BriefTemplate> = {
       "Semiconductors retained relative leadership.",
       "Mixed breadth reduced confidence in the headline index move.",
     ],
+    changeSinceMorning:
+      "A quiet, earnings-led morning gave way to an early index advance, but consumer and industrial weakness pulled the broader market back by the close.",
+    factNarrative:
+      "The Nasdaq ended positive, the S&P 500 finished near flat, and cyclical sectors softened after early index gains faded.",
+    factSourceIds: ["market"],
+    interpretationNarrative:
+      "Semiconductor resilience plausibly supported the Nasdaq, while weaker cyclicals made the overall close inconclusive rather than decisively constructive.",
+    interpretationSourceIds: ["market", "editorial"],
+    uncertaintyNarrative:
+      "After-hours outlooks and the next overnight yield move could either validate semiconductor leadership or extend the late-session fade.",
+    uncertaintySourceIds: [],
     monitor: ["After-hours earnings", "Overnight Treasury yields", "Cyclical-sector follow-through"],
     positiveScenario: "Supportive guidance could restore breadth and validate semiconductor leadership.",
     riskScenario: "A weak outlook or renewed yield increase could extend the late-session fade.",

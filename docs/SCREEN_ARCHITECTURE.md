@@ -98,7 +98,7 @@ All Milestone 2 market and search content comes from local typed modules and the
 
 ## Milestone 4 route architecture
 
-- `/briefs` is the tab-owned Briefs home with Morning/Evening selection, the latest edition, history, saved/unread/type filters, refresh, and honest failure states.
+- `/briefs` is the tab-owned Briefs home with Morning/Evening selection, the latest edition, history, saved/unread/type filters, and honest failure states. It intentionally has no pull-to-refresh while editions remain deterministic local fixtures.
 - `/brief/[briefId]` is a root-stack long-form Brief Detail route with correct back navigation and progressive sections.
 - Today generates the same latest Morning Brief identity and opens `/brief/[briefId]`; no duplicate Today briefing sheet remains.
 - Stock-impact rows route to the existing `/stock/[symbol]` detail.

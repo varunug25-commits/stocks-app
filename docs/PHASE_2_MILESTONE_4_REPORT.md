@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Milestone 4 is implemented on `codex/phase-2-milestone-4-briefs` for draft review. MarketBrief now has a complete local Briefs home/history experience and a long-form Brief Detail route for deterministic Morning Briefs and Evening Recaps. Today opens the same latest Morning Brief route instead of maintaining a duplicate briefing sheet. Review hardening adds edition-specific history, claim-linked sources, a real local persistence reload, and accurate Share results. The pull request must not be merged until review approval.
+Milestone 4 is implemented on `codex/phase-2-milestone-4-briefs` for draft review. MarketBrief now has a complete local Briefs home/history experience and a long-form Brief Detail route for deterministic Morning Briefs and Evening Recaps. Today opens the same latest Morning Brief route instead of maintaining a duplicate briefing sheet. Final review hardening makes every historical narrative edition-specific, derives the displayed source list from actual claim references, removes unsupported mock refresh behavior, and reports Share results accurately. The pull request remains unmerged for review.
 
 ## UX decisions
 
@@ -15,7 +15,7 @@ Milestone 4 is implemented on `codex/phase-2-milestone-4-briefs` for draft revie
 
 ## Route architecture
 
-- `/briefs`: tab-owned Briefs home, selector, latest edition, history, filters, refresh, and deterministic preview states.
+- `/briefs`: tab-owned Briefs home, selector, latest edition, history, filters, and deterministic preview states.
 - `/brief/[briefId]`: root-stack Brief Detail with stack back navigation, read/save/share actions, ordered watchlist impact, and evidence disclosure.
 - `/stock/[symbol]`: existing Stock Detail destination used by every brief stock-impact row.
 - Today constructs the latest Morning Brief identity and navigates to `/brief/[briefId]`.
@@ -24,7 +24,7 @@ Milestone 4 is implemented on `codex/phase-2-milestone-4-briefs` for draft revie
 
 Typed modules under `src/data/briefs/` define dated history seeds, Morning/Evening templates, generated brief types, source metadata, deterministic generation, and pure share-text construction. The generator combines existing illustrative price, insight, catalyst, filing, and source modules. It makes no fetch, backend, or AI-provider call.
 
-Every dated history seed resolves to edition-specific headline, summary, developments, market context, monitor items, and scenarios rather than reusing the latest edition’s copy. Claim records carry typed source IDs, every referenced ID is present in that edition, and the UI shows both evidence-card citations and the claims each source supports.
+Every dated history seed resolves to edition-specific headline, summary, developments, market context, monitor items, scenarios, fact, interpretation, and uncertainty narratives rather than reusing the latest edition’s copy. Each Evening edition also defines its own change-since-morning narrative. Claim records carry typed source IDs, the final source list is the exact deduplicated union of referenced IDs, and the UI shows both evidence-card citations and the claims each source supports. Unresolvable source configuration fails safely instead of inventing a citation.
 
 Morning Briefs cover overnight context, market direction, three developments, the ordered watchlist impact, scheduled events, three monitor points, and positive/risk interpretations. Evening Recaps add closing context, what changed since morning, tomorrow’s setup, and the same evidence structure.
 
@@ -51,17 +51,17 @@ The milestone builds Briefs home, Brief Detail, Today-to-Brief integration, Morn
 
 ## Review fixes
 
-- Historical Morning and Evening editions now have date-specific editorial content and visible history headlines.
-- Facts, interpretations, watchlist impacts, catalysts, filings, and macro events carry typed source mappings; irrelevant or unsupported causal sources are not presented in insufficient-evidence output.
-- Pull-to-refresh now awaits a real AsyncStorage reload through `BriefsProvider.reload`; the timer-only refresh implementation was removed.
+- Historical Morning and Evening editions now have date-specific headlines, summaries, developments, market context, monitor points, fact/interpretation/uncertainty narratives, and Evening change-since-morning copy.
+- Facts, interpretations, watchlist impacts, catalysts, filings, and macro events carry explicit typed source mappings. Each edition exposes exactly the deduplicated union of sources referenced by its claims and events; SEC sources appear only for filing evidence, while insufficient-evidence output does not fabricate an interpretation source.
+- Briefs pull-to-refresh and the unused provider reload API were removed. Local deterministic editions do not pretend to fetch newer content.
 - Native Share feedback distinguishes shared, dismissed, unknown, and thrown/error outcomes. Dismissal is not reported as success.
 - The proposed advanced Brief expansion remains cancelled; no advanced expansion state, route, or component was added.
 
 ## Automated tests
 
-Final result: **48 tests passed, 0 failed**.
+Final result: **49 tests passed, 0 failed**.
 
-Behavior coverage includes Morning/Evening generation, unique historical editions, claim/source integrity, ordered watchlist personalization, empty watchlist, insufficient evidence, read/save/unsave, selected type, saved/unread filters, persistence round-trip, corrupted JSON, rejected storage operations, first-run watchlist migration, share construction, and Share result handling. Supplemental architecture checks cover real reload behavior, route registration, Today navigation, stock-detail navigation, failure/retry states, reusable boundaries, cancelled advanced expansion, and absence of external providers.
+Behavior coverage includes Morning/Evening generation, deterministic generation, uniqueness across every historical content field, exact claim/source unions, SEC-only filing evidence, ordered watchlist personalization, empty watchlist, insufficient evidence without fabricated interpretation citations, read/save/unsave, selected type, saved/unread filters, persistence round-trip, corrupted JSON, rejected storage operations, first-run watchlist migration, share construction, and Share result handling. Supplemental architecture checks cover the absence of Briefs refresh controls, route registration, Today navigation, stock-detail navigation, failure/retry states, reusable boundaries, cancelled advanced expansion, and absence of external providers.
 
 Node reported non-failing `MODULE_TYPELESS_PACKAGE_JSON` performance warnings for TypeScript test files. These do not affect correctness or the exit result.
 
@@ -74,7 +74,7 @@ All commands were run locally on August 7, 2026. These are local Codex checks, n
 | `npm install` | Exit 0; packages already up to date; 850 packages audited; npm reported 11 moderate-severity dependency audit findings and made no dependency changes. |
 | `npm run typecheck` | Exit 0; `tsc --noEmit` produced no errors. |
 | `npm run lint` | Exit 0; ESLint produced no errors or warnings. |
-| `npm test` | Exit 0; 48 passed, 0 failed, 0 skipped. |
+| `npm test` | Exit 0; 49 passed, 0 failed, 0 skipped. Node emitted non-failing module-type performance warnings for TypeScript test files. |
 | `npm run doctor` | Exit 0; Expo Doctor reported `20/20 checks passed. No issues detected!` |
 | `npx expo export --platform web` | Exit 0; web and server bundles completed; 39 static routes exported to ignored `dist/`, including `/briefs` and `/brief/[briefId]`. |
 | Expo development start | `http://127.0.0.1:8081` returned HTTP 200 during milestone checks. |

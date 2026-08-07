@@ -49,11 +49,30 @@ test("every historical edition has date-specific editorial content", () => {
   const editions = briefHistory.map((seed) => generateBrief(seed, ["AAPL", "NVDA"]));
   for (const type of ["morning", "evening"] as const) {
     const typed = editions.filter((brief) => brief.type === type);
-    assert.equal(new Set(typed.map((brief) => brief.headline)).size, typed.length);
-    assert.equal(new Set(typed.map((brief) => brief.summary)).size, typed.length);
+    const values = [
+      typed.map((brief) => brief.headline),
+      typed.map((brief) => brief.summary),
+      typed.map((brief) => JSON.stringify(brief.developments)),
+      typed.map((brief) => brief.marketContext),
+      typed.map((brief) => JSON.stringify(brief.monitor)),
+      typed.map((brief) => brief.evidence.find((item) => item.kind === "FACT")?.body),
+      typed.map((brief) => brief.evidence.find((item) => item.kind === "INTERPRETATION")?.body),
+      typed.map((brief) => brief.evidence.find((item) => item.kind === "UNCERTAINTY")?.body),
+    ];
+    for (const fieldValues of values)
+      assert.equal(new Set(fieldValues).size, typed.length);
+    if (type === "evening")
+      assert.equal(new Set(typed.map((brief) => brief.changeSinceMorning)).size, typed.length);
   }
   for (const edition of editions)
     assert.equal(findBriefSeed(edition.id)?.headline, edition.headline);
+});
+
+test("brief generation is deterministic for the same edition and watchlist", () => {
+  const seed = findBriefSeed("evening-2026-08-06")!;
+  const first = generateBrief(seed, ["NVDA", "AAPL", "AMD"]);
+  const second = generateBrief(seed, ["NVDA", "AAPL", "AMD"]);
+  assert.deepEqual(first, second);
 });
 
 test("brief personalization preserves active watchlist membership and order", () => {
@@ -79,19 +98,36 @@ test("insufficient evidence never invents a reason", () => {
 
 test("every claim references a relevant source included in the edition", () => {
   const brief = generateBrief(latestBriefSeed("morning"), ["AAPL", "NVDA"]);
-  const ids = new Set(brief.sources.map((source) => source.id));
   const claimSourceIds = [
+    ...brief.marketSourceIds,
     ...brief.evidence.flatMap((claim) => claim.sourceIds),
     ...brief.watchlistImpacts.flatMap((claim) => claim.sourceIds),
     ...brief.events.flatMap((claim) => claim.sourceIds),
   ];
-  assert.ok(claimSourceIds.every((id) => ids.has(id)));
+  const referenced = [...new Set(claimSourceIds)].sort();
+  const resolved = brief.sources.map((source) => source.id).sort();
+  assert.deepEqual(resolved, referenced);
   assert.ok(brief.sources.every((source) => source.supports.length > 0));
-  assert.match(brief.sources.find((source) => source.id === "sec")?.supports.join(" ") ?? "", /AAPL filing/);
+  assert.ok(brief.events.some((event) => event.kind === "filing" && event.sourceIds.includes("sec")));
+  assert.ok(brief.sources.some((source) => source.id === "sec"));
+
+  const noFiling = generateBrief(latestBriefSeed("morning"), []);
+  assert.equal(noFiling.events.some((event) => event.sourceIds.includes("sec")), false);
+  assert.equal(noFiling.sources.some((source) => source.id === "sec"), false);
 
   const insufficient = generateBrief(latestBriefSeed("morning"), ["NFLX"], { insufficientEvidence: true });
   assert.deepEqual(insufficient.evidence.find((claim) => claim.kind === "INTERPRETATION")?.sourceIds, []);
   assert.deepEqual(insufficient.watchlistImpacts[0]?.sourceIds, ["market"]);
+  const insufficientReferenced = new Set([
+    ...insufficient.marketSourceIds,
+    ...insufficient.evidence.flatMap((claim) => claim.sourceIds),
+    ...insufficient.watchlistImpacts.flatMap((claim) => claim.sourceIds),
+    ...insufficient.events.flatMap((claim) => claim.sourceIds),
+  ]);
+  assert.deepEqual(
+    insufficient.sources.map((source) => source.id).sort(),
+    [...insufficientReferenced].sort(),
+  );
 });
 
 test("read, save, unsave and Morning or Evening selection update immediately", () => {

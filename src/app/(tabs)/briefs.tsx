@@ -1,10 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -46,11 +44,10 @@ export default function BriefsScreen() {
     view?: string;
     preview?: string;
   }>();
-  const { state, dispatch, hydrated, reload } = useBriefs();
+  const { state, dispatch, hydrated } = useBriefs();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
   const reduceMotion = useReducedMotion();
   const [filterOpen, setFilterOpen] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const previewType: BriefType | null =
     params.view === "morning" || params.view === "evening"
@@ -75,16 +72,6 @@ export default function BriefsScreen() {
     router.setParams({ preview: undefined });
     setTimeout(() => setRetrying(false), 500);
   };
-  const refresh = async () => {
-    setRefreshing(true);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      await reload();
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   if (!hydrated || !watchlistHydrated || retrying || params.preview === "loading")
     return (
       <Screen>
@@ -109,14 +96,6 @@ export default function BriefsScreen() {
       {params.preview === "offline" ? <OfflineBanner /> : null}
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={
-          <RefreshControl
-            colors={[colors.teal]}
-            onRefresh={() => void refresh()}
-            refreshing={refreshing}
-            tintColor={colors.teal}
-          />
-        }
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>

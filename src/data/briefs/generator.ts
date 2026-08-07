@@ -6,6 +6,7 @@ import { sourceMetadata } from "../stocks/sources.ts";
 import { briefEditionTemplates, briefTemplates } from "./templates.ts";
 import type {
   BriefEvent,
+  BriefEvidence,
   BriefHistorySeed,
   BriefSource,
   BriefSourceId,
@@ -13,33 +14,33 @@ import type {
   GeneratedBrief,
 } from "./types.ts";
 
-const buildSources = (
-  symbols: StockSymbol[],
-  sufficientEvidence: boolean,
-): BriefSource[] => {
-  const sourceIds: BriefSourceId[] = [
-    "market",
-    ...((sufficientEvidence || symbols.length) ? ["editorial" as const] : []),
-    ...(symbols.length ? ["sec" as const] : []),
-  ];
-  return sourceIds.map((id) => {
-    const source = sourceMetadata[id];
-    const supports = id === "market"
-      ? ["Broader market direction", "Confirmed market and rates context"]
-      : id === "editorial"
-        ? ["Clearly labeled watchlist interpretation", "Scheduled company catalyst context"]
-        : [`${symbols[0]} filing event`, "Company-reported filing context"];
-    return {
+type SourceReference = { sourceIds: BriefSourceId[]; claim: string };
+
+const sourceRelevance: Record<BriefSourceId, string> = {
+  market: "Supports only the configured market and macro claims in this edition.",
+  editorial: "Supports configured interpretation or catalyst context; it does not independently prove causation.",
+  sec: "Supports only configured company filing claims.",
+};
+
+const buildSources = (references: SourceReference[]): BriefSource[] => {
+  const supportsById = new Map<BriefSourceId, Set<string>>();
+  for (const reference of references) {
+    for (const id of reference.sourceIds) {
+      const supports = supportsById.get(id) ?? new Set<string>();
+      supports.add(reference.claim);
+      supportsById.set(id, supports);
+    }
+  }
+  return [...supportsById.entries()].flatMap(([id, supports]) => {
+    const source = Object.values(sourceMetadata).find((item) => item.id === id);
+    if (!source) return [];
+    return [{
       ...source,
       id,
       type: source.kind,
-      relevance: id === "market"
-        ? "Supports this edition’s market direction and rates context."
-        : id === "editorial"
-          ? "Supports the clearly labeled interpretation, not a confirmed cause."
-          : `Supports the filing event and company-reported context for ${symbols[0]}.`,
-      supports,
-    };
+      relevance: sourceRelevance[id],
+      supports: [...supports],
+    }];
   });
 };
 
@@ -76,10 +77,11 @@ const eventsFor = (symbols: StockSymbol[]): BriefEvent[] => {
     symbol,
     sourceIds: ["editorial" as const],
   }));
-  const filingEvent = symbols[0]
+  const filing = symbols[0] ? filings[symbols[0]][0] : undefined;
+  const filingEvent = symbols[0] && filing
     ? {
         id: `${symbols[0]}-filing`,
-        timing: filings[symbols[0]][0]?.filed ?? "Recent",
+        timing: filing.filed,
         title: `${symbols[0]} filing context`,
         detail: "Review company-reported language before drawing conclusions.",
         kind: "filing" as const,
@@ -110,6 +112,51 @@ export function generateBrief(
   const sufficientEvidence = !options.insufficientEvidence;
   const watchlistImpacts = symbols.map((symbol) => impactFor(symbol, sufficientEvidence));
   const emptyContext = symbols.length === 0;
+  const events = eventsFor(symbols);
+  const evidence: BriefEvidence[] = [
+    {
+      kind: "FACT",
+      title: "What the local record confirms",
+      body: sufficientEvidence
+        ? template.factNarrative
+        : "The local record confirms the price move and available timestamps only.",
+      sourceIds: sufficientEvidence ? template.factSourceIds : ["market"],
+    },
+    {
+      kind: "INTERPRETATION",
+      title: "How to read the setup",
+      body: sufficientEvidence
+        ? template.interpretationNarrative
+        : "No interpretation is presented as a cause because corroborating company evidence is missing.",
+      sourceIds: sufficientEvidence ? template.interpretationSourceIds : [],
+    },
+    {
+      kind: "UNCERTAINTY",
+      title: sufficientEvidence ? "What could change the view" : "What evidence is missing",
+      body: sufficientEvidence
+        ? template.uncertaintyNarrative
+        : "A company filing, direct statement or corroborated sector source could clarify the move. Until then, causation remains unconfirmed.",
+      sourceIds: sufficientEvidence ? template.uncertaintySourceIds : [],
+    },
+  ];
+  const sources = buildSources([
+    {
+      sourceIds: template.marketSourceIds,
+      claim: `Market narrative: ${template.marketDirection}`,
+    },
+    ...evidence.map((item) => ({
+      sourceIds: item.sourceIds,
+      claim: `${item.kind}: ${item.title}`,
+    })),
+    ...watchlistImpacts.map((impact) => ({
+      sourceIds: impact.sourceIds,
+      claim: `${impact.symbol} watchlist impact`,
+    })),
+    ...events.map((event) => ({
+      sourceIds: event.sourceIds,
+      claim: `Event: ${event.title}`,
+    })),
+  ]);
   return {
     ...seed,
     readingMinutes: 4,
@@ -128,11 +175,10 @@ export function generateBrief(
       : template.developments,
     marketContext: template.marketContext,
     marketDirection: template.marketDirection,
-    changeSinceMorning: seed.type === "evening"
-      ? "The opening bid held into the close, market breadth improved late, and semiconductor leadership remained the clearest watchlist signal."
-      : undefined,
+    marketSourceIds: template.marketSourceIds,
+    changeSinceMorning: template.changeSinceMorning,
     watchlistImpacts,
-    events: eventsFor(symbols),
+    events,
     monitor: sufficientEvidence
       ? template.monitor
       : [
@@ -142,33 +188,8 @@ export function generateBrief(
         ],
     positiveScenario: template.positiveScenario,
     riskScenario: template.riskScenario,
-    evidence: [
-      {
-        kind: "FACT",
-        title: "What the local record confirms",
-        body: sufficientEvidence
-          ? "Illustrative prices, scheduled events and available company records support the developments shown above."
-          : "The local record confirms the price move and available timestamps only.",
-        sourceIds: symbols.length ? ["market", "sec"] : ["market"],
-      },
-      {
-        kind: "INTERPRETATION",
-        title: "How to read the setup",
-        body: sufficientEvidence
-          ? "A calmer rates backdrop and resilient growth demand provide a plausible, non-exclusive interpretation."
-          : "No interpretation is presented as a cause because corroborating company evidence is missing.",
-        sourceIds: sufficientEvidence ? ["market", "editorial"] : [],
-      },
-      {
-        kind: "UNCERTAINTY",
-        title: sufficientEvidence ? "What could change the view" : "What evidence is missing",
-        body: sufficientEvidence
-          ? "Positioning, broad market flows and new guidance could change this explanation quickly."
-          : "A company filing, direct statement or corroborated sector source could clarify the move. Until then, causation remains unconfirmed.",
-        sourceIds: [],
-      },
-    ],
-    sources: buildSources(symbols, sufficientEvidence),
+    evidence,
+    sources,
     sufficientEvidence,
     confidence: sufficientEvidence ? "Medium" : "Low",
   };

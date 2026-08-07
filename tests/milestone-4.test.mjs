@@ -48,9 +48,8 @@ test("Milestone 4 routes expose working states and actions", async () => {
     assert.match(home + detail, new RegExp(state));
   }
   assert.match(home, /router\.setParams\(\{ preview: undefined \}\)/);
-  assert.match(home, /RefreshControl/);
-  assert.match(home, /await reload\(\)/);
-  assert.doesNotMatch(home, /setTimeout\(\(\) => setRefreshing/);
+  assert.doesNotMatch(home, /RefreshControl|onRefresh|refreshing/);
+  assert.doesNotMatch(provider, /\breload\b/);
   assert.match(detail, /insufficient/);
   assert.match(detail, /toggleSaved/);
   assert.match(provider, /catch\(\(\) => undefined\)/);
