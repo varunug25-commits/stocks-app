@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import type { SearchStock } from "@/data/search";
+import type { DataResource, MarketQuote } from "@/data/real";
+import { formatPrice } from "@/data/stocks";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 export function SearchResultRow({
@@ -11,14 +13,19 @@ export function SearchResultRow({
   added = false,
   onAdd,
   watchlistFull = false,
+  quote,
 }: {
   stock: SearchStock;
   onPress: () => void;
   added?: boolean;
   onAdd?: () => void;
   watchlistFull?: boolean;
+  quote?: DataResource<MarketQuote>;
 }) {
-  const positive = stock.changePercent >= 0;
+  const resolved = quote?.status === "ready" || quote?.status === "stale" ? quote.data : null;
+  const changePercent = resolved?.changePercent ?? null;
+  const positive = (changePercent ?? 0) >= 0;
+  const price = resolved ? formatPrice(resolved.price) : quote?.status === "loading" || !quote ? "Loading…" : "Unavailable";
   return (
     <View style={styles.row}>
       <Pressable
@@ -39,15 +46,14 @@ export function SearchResultRow({
           </Text>
         </View>
         <View style={styles.value}>
-          <Text style={styles.price}>{stock.price}</Text>
+          <Text style={styles.price}>{price}</Text>
           <Text
             style={[
               styles.change,
               { color: positive ? colors.positive : colors.negative },
             ]}
           >
-            {positive ? "+" : ""}
-            {stock.changePercent.toFixed(2)}%
+            {changePercent === null ? "No quote" : `${positive ? "+" : ""}${changePercent.toFixed(2)}%`}
           </Text>
         </View>
       </Pressable>

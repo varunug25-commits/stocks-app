@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { DemoDataBadge, OfflineBanner } from "@/components/foundation/Feedback";
 import { Screen } from "@/components/foundation/Screen";
@@ -19,6 +19,8 @@ import { isStockSymbol } from "@/data/stocks";
 import type { StockSymbol } from "@/data/stocks";
 import { WATCHLIST_LIMIT } from "@/features/watchlist/model";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useMarketData } from "@/features/market-data/MarketDataProvider";
+import { DataModeBanner } from "@/components/market/DataModeBanner";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 export default function SearchScreen() {
   const router = useRouter();
@@ -26,7 +28,11 @@ export default function SearchScreen() {
   const [query, setQuery] = useState(params.q ?? "");
   const [limit, setLimit] = useState(false);
   const { state, dispatch } = useWatchlist();
+  const { mode, quotes, loadQuotes } = useMarketData();
   const results = useMemo(() => searchLocalStocks(query), [query]);
+  useEffect(() => {
+    void loadQuotes(searchableStocks.map((stock) => stock.symbol).filter(isStockSymbol));
+  }, [loadQuotes]);
   const offline = params.preview === "offline";
   const open = (symbol: string) => {
     if (!isStockSymbol(symbol)) return;
@@ -57,7 +63,7 @@ export default function SearchScreen() {
           <Ionicons color={colors.textPrimary} name="arrow-back" size={22} />
         </Pressable>
         <Text style={s.headerTitle}>Find a stock</Text>
-        <DemoDataBadge />
+        {mode === "DEMO" ? <DemoDataBadge /> : <View />}
       </View>
       <View style={s.search}>
         <SearchField
@@ -71,6 +77,7 @@ export default function SearchScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <DataModeBanner mode={mode} />
         {offline ? (
           <EmptyState
             description="Your recent searches and watchlist remain safely stored on this device."
@@ -94,6 +101,7 @@ export default function SearchScreen() {
                     onAdd={() => add(stock.symbol)}
                     onPress={() => open(stock.symbol)}
                     stock={stock}
+                    quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined}
                     watchlistFull={
                       state.symbols.length >= WATCHLIST_LIMIT &&
                       !state.symbols.includes(stock.symbol as StockSymbol)
@@ -152,6 +160,7 @@ export default function SearchScreen() {
                   onAdd={() => add(stock.symbol)}
                   onPress={() => open(stock.symbol)}
                   stock={stock}
+                  quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined}
                   watchlistFull={
                     state.symbols.length >= WATCHLIST_LIMIT &&
                     !state.symbols.includes(stock.symbol as StockSymbol)

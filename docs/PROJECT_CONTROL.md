@@ -2,36 +2,37 @@
 
 ## Product goal
 
-MarketBrief is a calm, mobile-first market companion that helps an everyday investor understand what matters today. The current release remains a polished native design shell built with realistic local mock data.
+MarketBrief is a calm, mobile-first market companion that helps an everyday investor understand what matters today. The current release adds a secure real-data foundation behind the approved native design shell.
 
 ## Current phase
 
-**Phase 2 Milestone 4: Personalized Morning and Evening Briefs**
+**Milestone 6: Real Data Foundation**
 
 This phase delivers:
 
-- complete Briefs home/history and Brief Detail routes;
-- deterministic local Morning Brief and Evening Recap generation;
-- personalization from the ordered persistent `WatchlistProvider` collection;
-- persisted read, saved, selected-type, filter, and dismissed-notice state;
-- fact, interpretation, uncertainty, sources, and insufficient-evidence treatment; and
-- automated checks and 412 × 915 Expo web-renderer design evidence.
+- Supabase migrations and a server-side Edge Function;
+- vendor-neutral market, news, filings, company, and event interfaces;
+- Twelve Data, Finnhub, SEC EDGAR, and company-registry adapters;
+- normalized MarketBrief domain contracts and typed database schema;
+- centralized cache TTLs, stale-cache recovery, structured provider errors, and freshness metadata;
+- explicit `REAL`/`DEMO` modes with no silent fallback; and
+- progressive provider-backed wiring for Today, Markets, Watchlist, Search, and Stock Detail.
 
 ## Explicitly out of scope
 
 Do not add these until a later approved phase:
 
 - real authentication or remote user accounts;
-- Supabase or any other database;
-- external market, news, logo, or media APIs;
 - AI model calls or generated analysis;
+- AI chatbot or Ask MarketBrief;
+- alerts, notification preferences, or alert delivery;
 - brokerage connections, trading, or payments;
 - push notifications; and
 - production subscriptions.
 
-Milestone 4 does not add alerts, a paywall route, or any Milestone 5 work. Native Android and native iPhone validation for this milestone remain deferred and unverified.
+The previous standalone local Milestone 5 Alerts/Preferences plan is cancelled. Real alerts and notification preferences move to Milestone 8. Milestone 6 does not add Milestone 7 AI or any Milestone 8 alert work.
 
-Mock AI copy is presentation data only and must be clearly identified in code as mock content.
+Deterministic brief and Why It Moved copy is presentation data only and must remain clearly identified as illustrative, non-AI content.
 
 ## Delivery sequence
 

@@ -24,20 +24,17 @@ test("uses Expo Router as the native application foundation", async () => {
   assert.match(bottomTabBar, /Haptics\.selectionAsync/);
 });
 
-test("keeps forbidden integrations out of the design shell", async () => {
-  const packageJson = await read("package.json");
+test("keeps AI, payments and provider secrets out of the mobile runtime", async () => {
   const sourceFiles = await readdir(new URL("src/", root), { recursive: true });
   const source = await Promise.all(
     sourceFiles
       .filter((path) => path.endsWith(".ts") || path.endsWith(".tsx"))
       .map((path) => read(`src/${path}`)),
-  ).then((files) => `${packageJson}\n${files.join("\n")}`);
+  ).then((files) => files.join("\n"));
 
-  assert.doesNotMatch(source, /supabase/i);
   assert.doesNotMatch(source, /openai/i);
-  assert.doesNotMatch(source, /\bfetch\s*\(/);
   assert.doesNotMatch(source, /@supabase|supabase-js|openai|stripe/i);
-  assert.doesNotMatch(source, /\bfetch\s*\(/);
+  assert.doesNotMatch(source, /TWELVE_DATA_API_KEY|FINNHUB_API_KEY|SEC_USER_AGENT/);
 });
 
 test("ships every Phase 2 Milestone 1 route and preserves the Today tabs", async () => {

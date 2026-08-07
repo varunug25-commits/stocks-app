@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import {
   ConfirmationModal,
-  DemoDataBadge,
   ErrorState,
   OfflineBanner,
 } from "@/components/foundation/Feedback";
@@ -21,24 +20,39 @@ import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
 import { WatchlistLimitSheet } from "@/components/stock/WatchlistLimitSheet";
 import { WatchlistRow } from "@/components/stock/WatchlistRow";
-import { companyBySymbol, prices } from "@/data/stocks";
+import { companyBySymbol } from "@/data/stocks";
 import type { StockSymbol } from "@/data/stocks";
 import { WATCHLIST_LIMIT } from "@/features/watchlist/model";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useMarketData } from "@/features/market-data/MarketDataProvider";
+import { DataModeBanner } from "@/components/market/DataModeBanner";
+import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 export default function WatchlistScreen() {
   const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const { state, dispatch, hydrated } = useWatchlist();
+  const { mode, quotes, loadQuotes } = useMarketData();
   const [expanded, setExpanded] = useState(true);
   const [remove, setRemove] = useState<StockSymbol | null>(null);
   const [limit, setLimit] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  useEffect(() => {
+    if (hydrated) void loadQuotes(state.symbols);
+  }, [hydrated, loadQuotes, state.symbols]);
   const handleRetry = () => {
     setRetrying(true);
     router.replace("/watchlist" as Href);
     setTimeout(() => setRetrying(false), 500);
+  };
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadQuotes(state.symbols);
+    } finally {
+      setRefreshing(false);
+    }
   };
   if (!hydrated || retrying || preview === "loading")
     return (
@@ -67,10 +81,7 @@ export default function WatchlistScreen() {
         refreshControl={
           <RefreshControl
             colors={[colors.teal]}
-            onRefresh={() => {
-              setRefreshing(true);
-              setTimeout(() => setRefreshing(false), 500);
-            }}
+            onRefresh={() => void handleRefresh()}
             refreshing={refreshing}
             tintColor={colors.teal}
           />
@@ -85,8 +96,9 @@ export default function WatchlistScreen() {
               {symbols.length} of {WATCHLIST_LIMIT} local free-plan spots
             </Text>
           </View>
-          <DemoDataBadge />
         </View>
+        <DataModeBanner mode={mode} />
+        {symbols[0] ? <ResourceStateNotice onRetry={() => void loadQuotes(symbols)} resource={quotes[symbols[0]]} /> : null}
         <View style={s.toolbar}>
           <View style={s.segment}>
             <Pressable
@@ -139,7 +151,7 @@ export default function WatchlistScreen() {
                 }
                 onOpen={() => router.push(`/stock/${symbol}` as Href)}
                 onRemove={() => setRemove(symbol)}
-                price={prices[symbol]}
+                quote={quotes[symbol]}
               />
             ))}
           </View>
@@ -152,8 +164,7 @@ export default function WatchlistScreen() {
           />
         )}
         <Text style={s.note}>
-          Ordering and membership are stored locally. Prices and reasons are
-          illustrative.
+          Ordering and membership are stored locally. {mode === "REAL" ? "Quotes load through the MarketBrief backend; unavailable providers never become demo prices." : "Prices and reasons are illustrative demo fixtures."}
         </Text>
       </ScrollView>
       <ConfirmationModal

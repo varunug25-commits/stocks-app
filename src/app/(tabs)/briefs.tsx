@@ -165,8 +165,9 @@ export default function BriefsScreen() {
           )}
         </View>
         <Text style={styles.disclosure}>
-          Briefs are assembled from typed local demo content. No live AI,
-          market-data feed or external news service is connected.
+          Brief narratives and every price move shown inside them remain typed
+          local demo content, separate from provider-backed screens. No live AI
+          or recommendation is presented.
         </Text>
       </ScrollView>
       <BriefFilterSheet

@@ -39,3 +39,12 @@ Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. This Mac has 
 - The screenshots are Expo web-renderer design evidence, not native Android or iPhone screenshots.
 - Milestone 4 native Android testing is deferred and unverified. Milestone 4 native iPhone testing is deferred and unverified.
 - Review regression coverage additionally verifies uniqueness across every dated edition narrative, deterministic generation, exact claim/source unions, SEC-only filing evidence, insufficient-evidence citation safety, the absence of Briefs refresh controls, accurate shared/dismissed/unknown Share feedback, and the continued absence of the cancelled advanced Brief expansion.
+
+## Milestone 6 validation
+
+- Behavioral tests cover Twelve Data quote/chart normalization, SEC filing normalization, Finnhub news metadata, malformed responses, missing secrets, provider rate limits, cache hits, expired-cache refresh, stale-cache recovery, stable company IDs, freshness labels, and request validation.
+- Real/demo tests prove missing real configuration remains unavailable and does not invoke or return demo fixtures.
+- Security checks prove third-party secret identifiers are absent from all Expo runtime modules, protected cache/registry tables have RLS enabled, and `anon`/`authenticated` grants are revoked.
+- Architecture checks confirm Today, Markets, Watchlist, Search, and Stock Detail use the shared `MarketDataProvider`; Briefs and Why It Moved remain explicitly local and non-AI.
+- Provider adapters are tested with deterministic fixtures. No live Twelve Data or Finnhub request is claimed without server secrets. No hosted Supabase migration or Edge Function deployment is claimed without a linked project.
+- Final Milestone 6 validation: 65/65 automated tests, TypeScript passed, lint passed, Expo Doctor 20/20, Deno Edge Function check passed, production web export passed with 39 routes, and the development web endpoint returned HTTP 200. Local Supabase database validation remained unavailable because Docker was not running.

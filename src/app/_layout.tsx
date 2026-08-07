@@ -7,6 +7,7 @@ import { colors } from "@/theme/tokens";
 import { OnboardingProvider } from "@/features/onboarding/OnboardingProvider";
 import { WatchlistProvider } from "@/features/watchlist/WatchlistProvider";
 import { BriefsProvider } from "@/features/briefs/BriefsProvider";
+import { MarketDataProvider } from "@/features/market-data/MarketDataProvider";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -30,6 +31,7 @@ export default function RootLayout() {
         <ThemeProvider value={marketBriefTheme}>
           <OnboardingProvider>
           <WatchlistProvider>
+          <MarketDataProvider>
           <BriefsProvider>
           <StatusBar style="light" />
           <Stack screenOptions={{ headerShown: false }}>
@@ -43,6 +45,7 @@ export default function RootLayout() {
             <Stack.Screen name="brief/[briefId]" />
           </Stack>
           </BriefsProvider>
+          </MarketDataProvider>
           </WatchlistProvider>
           </OnboardingProvider>
         </ThemeProvider>
