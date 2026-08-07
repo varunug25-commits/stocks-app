@@ -48,6 +48,9 @@ test("Milestone 2 screens provide required local and failure states", async () =
   assert.match(search, /searchLocalStocks/);
   assert.match(search, /No results/);
   assert.match(watchlist, /state\.symbols/);
-  assert.match(briefs, /Milestone 4/);
+  assert.match(briefs, /generateBrief/);
+  assert.match(briefs, /useBriefs/);
+  assert.match(briefs, /useWatchlist/);
+  assert.match(briefs, /BriefHeroCard/);
   assert.match(profile, /Local preferences/);
 });

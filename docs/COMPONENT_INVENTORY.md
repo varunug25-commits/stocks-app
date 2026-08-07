@@ -72,3 +72,12 @@ These components preserve 44-point minimum interaction targets, accessible label
 - Watchlist management: `WatchlistRow` and `WatchlistLimitSheet`.
 
 All accept typed local data. The chart exposes a spoken summary, watchlist actions provide button-based remove/reorder alternatives, and sources distinguish evidence from interpretation.
+
+## Milestone 4 additions
+
+- Brief identity/navigation: `BriefHeroCard`, `BriefTypeSelector`, `BriefStatusBadge`, and `BriefHistoryRow`.
+- Personalization/content: `BriefSummaryPoint`, `BriefMarketContext`, `BriefStockImpactRow`, and `BriefEventRow`.
+- Evidence/actions: `BriefEvidenceCard`, `SaveBriefButton`, `ShareBriefButton`, and `BriefEmptyState`.
+- Progressive controls: `BriefFilterSheet` using the existing native-feeling bottom-sheet foundation.
+
+The components accept typed generated local content, retain 44-point actions and accessible labels, and do not call storage, APIs, AI providers, or payment services directly.

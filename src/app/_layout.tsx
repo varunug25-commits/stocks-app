@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors } from "@/theme/tokens";
 import { OnboardingProvider } from "@/features/onboarding/OnboardingProvider";
 import { WatchlistProvider } from "@/features/watchlist/WatchlistProvider";
+import { BriefsProvider } from "@/features/briefs/BriefsProvider";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -29,6 +30,7 @@ export default function RootLayout() {
         <ThemeProvider value={marketBriefTheme}>
           <OnboardingProvider>
           <WatchlistProvider>
+          <BriefsProvider>
           <StatusBar style="light" />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="splash" />
@@ -38,7 +40,9 @@ export default function RootLayout() {
             <Stack.Screen name="search" />
             <Stack.Screen name="stock/[symbol]" />
             <Stack.Screen name="stock/[symbol]/why" />
+            <Stack.Screen name="brief/[briefId]" />
           </Stack>
+          </BriefsProvider>
           </WatchlistProvider>
           </OnboardingProvider>
         </ThemeProvider>

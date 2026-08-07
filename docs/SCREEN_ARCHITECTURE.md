@@ -95,3 +95,12 @@ All Milestone 2 market and search content comes from local typed modules and the
 - `/watchlist` owns add, remove, reorder, compact/expanded rows, and limit recovery.
 
 `WatchlistProvider` is the single source of truth for saved symbols, recent searches, per-symbol chart ranges, and dismissed notices. It validates persisted JSON and performs a one-time migration from onboarding stock choices. Typed modules under `src/data/stocks/` provide companies, prices, charts, statistics, insights, content, and sources without network calls.
+
+## Milestone 4 route architecture
+
+- `/briefs` is the tab-owned Briefs home with Morning/Evening selection, the latest edition, history, saved/unread/type filters, and honest failure states. It intentionally has no pull-to-refresh while editions remain deterministic local fixtures.
+- `/brief/[briefId]` is a root-stack long-form Brief Detail route with correct back navigation and progressive sections.
+- Today generates the same latest Morning Brief identity and opens `/brief/[briefId]`; no duplicate Today briefing sheet remains.
+- Stock-impact rows route to the existing `/stock/[symbol]` detail.
+
+`BriefsProvider` owns validated, persisted read IDs, saved IDs, selected type, history filters, and dismissed notices. The deterministic generator under `src/data/briefs/` combines typed local templates, stock content, events, filings, and sources with `WatchlistProvider.state.symbols` in its stored order. Onboarding remains an initial migration input only, never active brief membership.

@@ -27,3 +27,15 @@ Use one reducer-backed watchlist state for saved symbols, ordering, recent searc
 ## ADR-007 — Evidence-safe local explanations
 
 Model Why It Moved as local editorial presentation data with separate facts, interpretations, uncertainty, confidence, freshness, and source metadata. Show an insufficient-evidence state when the model is not supportable. Do not generate recommendations, price targets, or live claims.
+
+## ADR-008 — Deterministic local brief generation
+
+Build Morning and Evening editions from typed local templates plus existing illustrative stock, filing, catalyst, and source modules. A pure generator accepts a dated seed and the ordered shared-watchlist symbols, making personalization deterministic and behavior-testable without a network or AI provider.
+
+## ADR-009 — One Briefs persistence domain
+
+Use a reducer-backed `BriefsProvider` for read IDs, saved IDs, selected edition type, history filters, and dismissed notices. Validate persisted JSON, remove corrupted values, hydrate safely after storage rejection, and never let a persistence failure block the UI. Share payload construction stays pure; the screen alone invokes React Native `Share`.
+
+## ADR-010 — Honest evidence boundaries
+
+Every brief separates fact, interpretation, and uncertainty and includes a low-confidence insufficient-evidence variant that states what is missing. Brief copy is local illustrative editorial data, not model output, investment advice, or evidence of a live feed.

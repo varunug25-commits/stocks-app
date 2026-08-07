@@ -30,3 +30,12 @@ Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. This Mac has 
 - Structural tests cover stock routes, explanation hierarchy, reusable components, Search/Watchlist integration, accessible labels, and the continued absence of network or forbidden service integrations.
 - Deterministic Android-size evidence is captured at 412 × 915 in `docs/screenshots/phase-2-milestone-3/` for normal, empty, limit, search, chart, explanation, research, offline, and insufficient-evidence states.
 - Native Android validation of Milestones 1–2 remains verified by the user. Milestone 3 native Android interaction testing and all native iPhone testing remain pending and are not claimed.
+
+## Milestone 4 validation
+
+- Behavior tests cover Morning/Evening generation, ordered shared-watchlist personalization, empty and insufficient-evidence output, reducer transitions, saved/unread filtering, validated persistence, rejected storage reads, and share-text construction.
+- Supplemental route checks cover Briefs home/detail registration, Today integration, stock-detail navigation, accessibility-oriented actions, working retry implementation, and forbidden external-service boundaries.
+- Fifteen deterministic screenshots at 412 × 915 live in `docs/screenshots/phase-2-milestone-4/`: both home editions, history/filter, empty/loading/offline/error states, detail sections, evidence, sources, and insufficient evidence.
+- The screenshots are Expo web-renderer design evidence, not native Android or iPhone screenshots.
+- Milestone 4 native Android testing is deferred and unverified. Milestone 4 native iPhone testing is deferred and unverified.
+- Review regression coverage additionally verifies uniqueness across every dated edition narrative, deterministic generation, exact claim/source unions, SEC-only filing evidence, insufficient-evidence citation safety, the absence of Briefs refresh controls, accurate shared/dismissed/unknown Share feedback, and the continued absence of the cancelled advanced Brief expansion.

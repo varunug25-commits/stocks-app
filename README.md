@@ -1,6 +1,6 @@
 # MarketBrief Mobile
 
-MarketBrief is a native-first personal finance briefing experience built with Expo and React Native. Phase 2 Milestone 3 adds a polished, entirely local watchlist and stock-research experience to the approved mobile shell.
+MarketBrief is a native-first personal finance briefing experience built with Expo and React Native. Phase 2 Milestone 4 adds polished, entirely local Morning Brief and Evening Recap experiences to the approved mobile shell.
 
 ## Current scope
 
@@ -8,6 +8,8 @@ MarketBrief is a native-first personal finance briefing experience built with Ex
 - one persisted watchlist shared by onboarding, Today, Search, and Stock Detail;
 - interactive local stock charts, statistics, catalysts, filings, and stories;
 - evidence-separated “Why It Moved” explanations with sources and uncertainty;
+- deterministic Morning and Evening briefs personalized from the ordered shared watchlist;
+- persisted brief read, saved, selector, and history-filter preferences;
 - realistic typed mock content only.
 
 There is no real authentication, backend, Supabase, market API, OpenAI integration, payment flow, or push-notification request.
@@ -32,8 +34,8 @@ npm run doctor
 
 Product, architecture, decisions, testing, and milestone evidence live in [`docs/`](docs/).
 
-## Phase 2 Milestone 3
+## Phase 2 Milestone 4
 
-The mobile shell now includes persistent Watchlist management, enhanced Search, and premium-feeling Stock Detail and Why It Moved routes. Chart ranges and recent searches persist locally; the design includes honest loading, empty, offline, unavailable, full-list, and insufficient-evidence states. Briefs remains an explicit Milestone 4 preview.
+The Briefs tab now offers complete Morning Brief and Evening Recap home/history experiences plus `/brief/[briefId]` long-form detail. Today opens the latest Morning Brief rather than a duplicate temporary sheet. Briefs preserve the shared watchlist order and separate facts, interpretation, uncertainty, and missing evidence.
 
-No backend authentication, Supabase, live market/news API, AI model, payment service, push service, or brokerage connection is included. See [the Milestone 3 report](docs/PHASE_2_MILESTONE_3_REPORT.md) for checks and screenshots.
+No backend authentication, Supabase, live market/news API, AI model, payment service, alert service, push service, or brokerage connection is included. See [the Milestone 4 report](docs/PHASE_2_MILESTONE_4_REPORT.md) for checks, limitations, and Expo web-renderer screenshots.

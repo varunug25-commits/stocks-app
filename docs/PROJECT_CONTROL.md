@@ -6,15 +6,16 @@ MarketBrief is a calm, mobile-first market companion that helps an everyday inve
 
 ## Current phase
 
-**Phase 2 Milestone 3: Local stock experience**
+**Phase 2 Milestone 4: Personalized Morning and Evening Briefs**
 
 This phase delivers:
 
-- persistent local Watchlist management with a five-stock preview limit;
-- symbol/company Search with recent and trending discovery;
-- Stock Detail with interactive chart ranges and supporting evidence;
-- a dedicated Why It Moved route separating fact, interpretation, and uncertainty; and
-- automated tests, Android-size screenshots, and milestone documentation.
+- complete Briefs home/history and Brief Detail routes;
+- deterministic local Morning Brief and Evening Recap generation;
+- personalization from the ordered persistent `WatchlistProvider` collection;
+- persisted read, saved, selected-type, filter, and dismissed-notice state;
+- fact, interpretation, uncertainty, sources, and insufficient-evidence treatment; and
+- automated checks and 412 × 915 Expo web-renderer design evidence.
 
 ## Explicitly out of scope
 
@@ -27,6 +28,8 @@ Do not add these until a later approved phase:
 - brokerage connections, trading, or payments;
 - push notifications; and
 - production subscriptions.
+
+Milestone 4 does not add alerts, a paywall route, or any Milestone 5 work. Native Android and native iPhone validation for this milestone remain deferred and unverified.
 
 Mock AI copy is presentation data only and must be clearly identified in code as mock content.
 

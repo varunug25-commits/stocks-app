@@ -30,3 +30,11 @@ The approved local design shell now includes a personalized Today feed, complete
 Milestone 3 turns the preview watchlist into one persistent local collection shared across onboarding, Today, Search, Watchlist, and Stock Detail. It adds add/remove/reorder management, recent searches, five chart ranges, company statistics, catalysts, filings, stories, source metadata, freshness labeling, and an expanded Why It Moved explanation. All values and explanations are typed illustrative data; no investment recommendation or live-data implication is permitted.
 
 Success requires useful empty, loading, offline, unavailable, full-list, and insufficient-evidence states, plus non-swipe alternatives for every management action.
+
+## Phase 2 Milestone 4 delivery
+
+Milestone 4 replaces the Briefs preview with a complete local Morning Brief and Evening Recap experience. The home screen selects a brief type, opens the latest edition, filters history by saved/unread and type, and preserves those choices locally. Detail answers what happened, why it matters, how the ordered shared watchlist is affected, and what to monitor next. It also exposes sources, timestamps, confidence, fact/interpretation/uncertainty separation, and an explicit insufficient-evidence state.
+
+Today opens the latest Morning Brief detail and does not maintain a second briefing implementation. Read and saved state update immediately and persist through validated AsyncStorage JSON. Sharing uses the native share surface with deterministic demo-only text and no fabricated URL.
+
+All prices, charts, filings, stories, catalysts, sources, explanations, and briefs remain illustrative local mock data. Real AI, external APIs, backend accounts, alerts, payments, push notifications, brokerage, and trading are outside this milestone.
