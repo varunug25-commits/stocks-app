@@ -38,3 +38,4 @@ Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. This Mac has 
 - Fifteen deterministic screenshots at 412 × 915 live in `docs/screenshots/phase-2-milestone-4/`: both home editions, history/filter, empty/loading/offline/error states, detail sections, evidence, sources, and insufficient evidence.
 - The screenshots are Expo web-renderer design evidence, not native Android or iPhone screenshots.
 - Milestone 4 native Android testing is deferred and unverified. Milestone 4 native iPhone testing is deferred and unverified.
+- Review regression coverage additionally verifies unique dated editions, typed claim/source referential integrity, non-cosmetic persisted-state reload, accurate shared/dismissed/unknown Share feedback, and the continued absence of the cancelled advanced Brief expansion.

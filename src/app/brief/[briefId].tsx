@@ -24,6 +24,7 @@ import {
   buildBriefShareText,
   findBriefSeed,
   generateBrief,
+  getBriefShareResultMessage,
 } from "@/data/briefs";
 import { useBriefs } from "@/features/briefs/BriefsProvider";
 import { selectBriefStatus } from "@/features/briefs/selectors";
@@ -65,8 +66,14 @@ export default function BriefDetailScreen() {
   const share = async () => {
     const message = buildBriefShareText(brief);
     try {
-      await Share.share({ message, title: "MarketBrief" });
-      setShareMessage("Demo brief prepared for sharing.");
+      const result = await Share.share({ message, title: "MarketBrief" });
+      setShareMessage(
+        getBriefShareResultMessage(
+          result.action,
+          Share.sharedAction,
+          Share.dismissedAction,
+        ),
+      );
     } catch {
       setShareMessage("Sharing is unavailable in this renderer. Your brief is unchanged.");
     }
@@ -164,7 +171,13 @@ export default function BriefDetailScreen() {
             </View>
           ) : null}
           <View style={styles.stack}>
-            {brief.evidence.map((item) => <BriefEvidenceCard item={item} key={item.kind} />)}
+            {brief.evidence.map((item) => (
+              <BriefEvidenceCard
+                item={item}
+                key={item.kind}
+                sources={brief.sources.filter((source) => item.sourceIds.includes(source.id))}
+              />
+            ))}
           </View>
         </View>
         <View style={styles.section}>
@@ -175,6 +188,7 @@ export default function BriefDetailScreen() {
                 <Text style={styles.sourceName}>{source.name}</Text>
                 <Text style={styles.sourceMeta}>{source.type} · {source.timestamp}</Text>
                 <Text style={styles.sourceRelevance}>{source.relevance}</Text>
+                <Text style={styles.sourceSupports}>Supports: {source.supports.join(" · ")}</Text>
               </View>
             ))}
           </View>
@@ -228,6 +242,7 @@ const styles = StyleSheet.create({
   sourceName: { ...typography.label, color: colors.textPrimary },
   sourceMeta: { ...typography.caption, color: colors.textTertiary, marginTop: 3 },
   sourceRelevance: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
+  sourceSupports: { ...typography.caption, color: colors.teal, marginTop: spacing.xs },
   disclaimer: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginTop: spacing.xxxl, paddingTop: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   disclaimerText: { ...typography.caption, flex: 1, color: colors.textTertiary },
 });

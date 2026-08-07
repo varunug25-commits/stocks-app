@@ -3,13 +3,15 @@ import type { StockSymbol } from "../stocks/companies.ts";
 export type BriefType = "morning" | "evening";
 export type BriefStatus = "New" | "Read" | "Saved";
 export type EvidenceKind = "FACT" | "INTERPRETATION" | "UNCERTAINTY";
+export type BriefSourceId = "sec" | "editorial" | "market";
 
 export type BriefSource = {
-  id: string;
+  id: BriefSourceId;
   name: string;
   type: string;
   timestamp: string;
   relevance: string;
+  supports: string[];
 };
 
 export type BriefStockImpact = {
@@ -19,6 +21,7 @@ export type BriefStockImpact = {
   reason: string;
   impact: "High" | "Medium" | "Low";
   nextCatalyst: string;
+  sourceIds: BriefSourceId[];
 };
 
 export type BriefEvent = {
@@ -28,12 +31,14 @@ export type BriefEvent = {
   detail: string;
   kind: "earnings" | "filing" | "economic" | "catalyst";
   symbol?: StockSymbol;
+  sourceIds: BriefSourceId[];
 };
 
 export type BriefEvidence = {
   kind: EvidenceKind;
   title: string;
   body: string;
+  sourceIds: BriefSourceId[];
 };
 
 export type GeneratedBrief = {
@@ -66,4 +71,5 @@ export type BriefHistorySeed = {
   dateKey: string;
   dateLabel: string;
   timestamp: string;
+  headline: string;
 };

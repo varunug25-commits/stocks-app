@@ -49,6 +49,8 @@ test("Milestone 4 routes expose working states and actions", async () => {
   }
   assert.match(home, /router\.setParams\(\{ preview: undefined \}\)/);
   assert.match(home, /RefreshControl/);
+  assert.match(home, /await reload\(\)/);
+  assert.doesNotMatch(home, /setTimeout\(\(\) => setRefreshing/);
   assert.match(detail, /insufficient/);
   assert.match(detail, /toggleSaved/);
   assert.match(provider, /catch\(\(\) => undefined\)/);
@@ -90,4 +92,5 @@ test("Milestone 4 remains a local illustrative shell", async () => {
   assert.doesNotMatch(source, /fetch\(|axios|supabase|openai|stripe|pushToken|brokerage/i);
   assert.match(source, /local|illustrative|demo/i);
   assert.match(source, /Not investment advice/i);
+  assert.doesNotMatch(source, /advancedBrief|advancedExpansion|expandAdvanced/i);
 });

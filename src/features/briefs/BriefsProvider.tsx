@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
 import {
+  useCallback,
   createContext,
   useContext,
   useEffect,
@@ -19,6 +20,7 @@ type BriefsContextValue = {
   state: BriefsState;
   dispatch: React.Dispatch<BriefsAction>;
   hydrated: boolean;
+  reload: () => Promise<void>;
 };
 
 const BriefsContext = createContext<BriefsContextValue | null>(null);
@@ -46,9 +48,18 @@ export function BriefsProvider({ children }: PropsWithChildren) {
     if (hydrated) void saveBriefs(state).catch(() => undefined);
   }, [hydrated, state]);
 
+  const reload = useCallback(async () => {
+    try {
+      const saved = await loadBriefs();
+      if (saved) dispatch({ type: "hydrate", value: saved });
+    } catch {
+      // The current in-memory state remains the safe fallback.
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ state, dispatch, hydrated }),
-    [state, hydrated],
+    () => ({ state, dispatch, hydrated, reload }),
+    [state, hydrated, reload],
   );
   return (
     <BriefsContext.Provider value={value}>{children}</BriefsContext.Provider>

@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
-import type { BriefEvidence } from "@/data/briefs";
+import type { BriefEvidence, BriefSource } from "@/data/briefs";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
-export function BriefEvidenceCard({ item }: { item: BriefEvidence }) {
+export function BriefEvidenceCard({ item, sources }: { item: BriefEvidence; sources: BriefSource[] }) {
   const warning = item.kind === "UNCERTAINTY";
   return (
     <View style={[styles.card, warning && styles.warning]}>
@@ -13,6 +13,9 @@ export function BriefEvidenceCard({ item }: { item: BriefEvidence }) {
       </View>
       <Text style={styles.title}>{item.title}</Text>
       <Text style={styles.body}>{item.body}</Text>
+      {sources.length ? (
+        <Text style={styles.sources}>Sources: {sources.map((source) => source.name).join(" · ")}</Text>
+      ) : null}
     </View>
   );
 }
@@ -25,4 +28,5 @@ const styles = StyleSheet.create({
   warningText: { color: colors.warning },
   title: { ...typography.heading, color: colors.textPrimary, marginTop: spacing.md },
   body: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
+  sources: { ...typography.caption, color: colors.teal, marginTop: spacing.md },
 });

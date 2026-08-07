@@ -4,7 +4,9 @@ import test from "node:test";
 import {
   briefHistory,
   buildBriefShareText,
+  findBriefSeed,
   generateBrief,
+  getBriefShareResultMessage,
   latestBriefSeed,
 } from "../src/data/briefs/index.ts";
 import {
@@ -43,6 +45,17 @@ test("Evening Recap generation includes close context and tomorrow signals", () 
   assert.ok(brief.riskScenario);
 });
 
+test("every historical edition has date-specific editorial content", () => {
+  const editions = briefHistory.map((seed) => generateBrief(seed, ["AAPL", "NVDA"]));
+  for (const type of ["morning", "evening"] as const) {
+    const typed = editions.filter((brief) => brief.type === type);
+    assert.equal(new Set(typed.map((brief) => brief.headline)).size, typed.length);
+    assert.equal(new Set(typed.map((brief) => brief.summary)).size, typed.length);
+  }
+  for (const edition of editions)
+    assert.equal(findBriefSeed(edition.id)?.headline, edition.headline);
+});
+
 test("brief personalization preserves active watchlist membership and order", () => {
   const brief = generateBrief(latestBriefSeed("morning"), ["PLTR", "AAPL", "AMD"]);
   assert.deepEqual(brief.watchlistImpacts.map((item) => item.symbol), ["PLTR", "AAPL", "AMD"]);
@@ -62,6 +75,23 @@ test("insufficient evidence never invents a reason", () => {
   assert.equal(brief.confidence, "Low");
   assert.match(brief.summary, /will not invent/);
   assert.match(brief.evidence[2]?.body ?? "", /filing|statement|source/i);
+});
+
+test("every claim references a relevant source included in the edition", () => {
+  const brief = generateBrief(latestBriefSeed("morning"), ["AAPL", "NVDA"]);
+  const ids = new Set(brief.sources.map((source) => source.id));
+  const claimSourceIds = [
+    ...brief.evidence.flatMap((claim) => claim.sourceIds),
+    ...brief.watchlistImpacts.flatMap((claim) => claim.sourceIds),
+    ...brief.events.flatMap((claim) => claim.sourceIds),
+  ];
+  assert.ok(claimSourceIds.every((id) => ids.has(id)));
+  assert.ok(brief.sources.every((source) => source.supports.length > 0));
+  assert.match(brief.sources.find((source) => source.id === "sec")?.supports.join(" ") ?? "", /AAPL filing/);
+
+  const insufficient = generateBrief(latestBriefSeed("morning"), ["NFLX"], { insufficientEvidence: true });
+  assert.deepEqual(insufficient.evidence.find((claim) => claim.kind === "INTERPRETATION")?.sourceIds, []);
+  assert.deepEqual(insufficient.watchlistImpacts[0]?.sourceIds, ["market"]);
 });
 
 test("read, save, unsave and Morning or Evening selection update immediately", () => {
@@ -121,4 +151,10 @@ test("share payload identifies demo content and avoids a fake link", () => {
   assert.match(text, /Demo content/);
   assert.match(text, /informational purposes only/);
   assert.doesNotMatch(text, /https?:\/\//);
+});
+
+test("share feedback distinguishes success, dismissal and unknown results", () => {
+  assert.equal(getBriefShareResultMessage("shared", "shared", "dismissed"), "Demo brief shared.");
+  assert.match(getBriefShareResultMessage("dismissed", "shared", "dismissed"), /cancelled/);
+  assert.match(getBriefShareResultMessage("unknown", "shared", "dismissed"), /without a confirmed result/);
 });

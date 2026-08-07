@@ -3,38 +3,62 @@ import type { StockSymbol } from "../stocks/companies.ts";
 import { insights } from "../stocks/insights.ts";
 import { prices } from "../stocks/prices.ts";
 import { sourceMetadata } from "../stocks/sources.ts";
-import { briefTemplates } from "./templates.ts";
+import { briefEditionTemplates, briefTemplates } from "./templates.ts";
 import type {
   BriefEvent,
   BriefHistorySeed,
   BriefSource,
+  BriefSourceId,
   BriefStockImpact,
   GeneratedBrief,
 } from "./types.ts";
 
-const sourceRelevance: Record<string, string> = {
-  sec: "Confirms company-reported filings and disclosures.",
-  editorial: "Connects the available local facts into a concise explanation.",
-  market: "Provides broader illustrative index, sector and rates context.",
+const buildSources = (
+  symbols: StockSymbol[],
+  sufficientEvidence: boolean,
+): BriefSource[] => {
+  const sourceIds: BriefSourceId[] = [
+    "market",
+    ...((sufficientEvidence || symbols.length) ? ["editorial" as const] : []),
+    ...(symbols.length ? ["sec" as const] : []),
+  ];
+  return sourceIds.map((id) => {
+    const source = sourceMetadata[id];
+    const supports = id === "market"
+      ? ["Broader market direction", "Confirmed market and rates context"]
+      : id === "editorial"
+        ? ["Clearly labeled watchlist interpretation", "Scheduled company catalyst context"]
+        : [`${symbols[0]} filing event`, "Company-reported filing context"];
+    return {
+      ...source,
+      id,
+      type: source.kind,
+      relevance: id === "market"
+        ? "Supports this edition’s market direction and rates context."
+        : id === "editorial"
+          ? "Supports the clearly labeled interpretation, not a confirmed cause."
+          : `Supports the filing event and company-reported context for ${symbols[0]}.`,
+      supports,
+    };
+  });
 };
 
-const buildSources = (): BriefSource[] =>
-  Object.values(sourceMetadata).map((source) => ({
-    ...source,
-    type: source.kind,
-    relevance: sourceRelevance[source.id] ?? "Supports local demo context.",
-  }));
-
-const impactFor = (symbol: StockSymbol): BriefStockImpact => {
+const impactFor = (
+  symbol: StockSymbol,
+  sufficientEvidence: boolean,
+): BriefStockImpact => {
   const price = prices[symbol];
   const magnitude = Math.abs(price.changePercent);
   return {
     symbol,
     direction: price.change >= 0 ? "up" : "down",
     changePercent: price.changePercent,
-    reason: insights[symbol].summary,
+    reason: sufficientEvidence
+      ? insights[symbol].summary
+      : "The price move is confirmed, but a reliable cause is not.",
     impact: magnitude >= 3 ? "High" : magnitude >= 1 ? "Medium" : "Low",
     nextCatalyst: catalysts[symbol][0]?.title ?? "Next company update",
+    sourceIds: sufficientEvidence ? ["market", "editorial"] : ["market"],
   };
 };
 
@@ -50,6 +74,7 @@ const eventsFor = (symbols: StockSymbol[]): BriefEvent[] => {
       ? "earnings" as const
       : "catalyst" as const,
     symbol,
+    sourceIds: ["editorial" as const],
   }));
   const filingEvent = symbols[0]
     ? {
@@ -59,6 +84,7 @@ const eventsFor = (symbols: StockSymbol[]): BriefEvent[] => {
         detail: "Review company-reported language before drawing conclusions.",
         kind: "filing" as const,
         symbol: symbols[0],
+        sourceIds: ["sec" as const],
       }
     : null;
   return [
@@ -70,6 +96,7 @@ const eventsFor = (symbols: StockSymbol[]): BriefEvent[] => {
       title: "Rates and activity update",
       detail: "Illustrative macro context that may affect growth valuations.",
       kind: "economic",
+      sourceIds: ["market"],
     },
   ];
 };
@@ -79,9 +106,9 @@ export function generateBrief(
   symbols: StockSymbol[],
   options: { insufficientEvidence?: boolean } = {},
 ): GeneratedBrief {
-  const template = briefTemplates[seed.type];
+  const template = briefEditionTemplates[seed.id] ?? briefTemplates[seed.type];
   const sufficientEvidence = !options.insufficientEvidence;
-  const watchlistImpacts = symbols.map(impactFor);
+  const watchlistImpacts = symbols.map((symbol) => impactFor(symbol, sufficientEvidence));
   const emptyContext = symbols.length === 0;
   return {
     ...seed,
@@ -122,6 +149,7 @@ export function generateBrief(
         body: sufficientEvidence
           ? "Illustrative prices, scheduled events and available company records support the developments shown above."
           : "The local record confirms the price move and available timestamps only.",
+        sourceIds: symbols.length ? ["market", "sec"] : ["market"],
       },
       {
         kind: "INTERPRETATION",
@@ -129,6 +157,7 @@ export function generateBrief(
         body: sufficientEvidence
           ? "A calmer rates backdrop and resilient growth demand provide a plausible, non-exclusive interpretation."
           : "No interpretation is presented as a cause because corroborating company evidence is missing.",
+        sourceIds: sufficientEvidence ? ["market", "editorial"] : [],
       },
       {
         kind: "UNCERTAINTY",
@@ -136,12 +165,24 @@ export function generateBrief(
         body: sufficientEvidence
           ? "Positioning, broad market flows and new guidance could change this explanation quickly."
           : "A company filing, direct statement or corroborated sector source could clarify the move. Until then, causation remains unconfirmed.",
+        sourceIds: [],
       },
     ],
-    sources: buildSources(),
+    sources: buildSources(symbols, sufficientEvidence),
     sufficientEvidence,
     confidence: sufficientEvidence ? "Medium" : "Low",
   };
+}
+
+export function getBriefShareResultMessage(
+  action: string,
+  sharedAction: string,
+  dismissedAction: string,
+) {
+  if (action === dismissedAction)
+    return "Sharing was cancelled. Your brief is unchanged.";
+  if (action === sharedAction) return "Demo brief shared.";
+  return "Sharing finished without a confirmed result.";
 }
 
 export function buildBriefShareText(brief: GeneratedBrief) {

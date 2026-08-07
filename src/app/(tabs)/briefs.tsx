@@ -46,7 +46,7 @@ export default function BriefsScreen() {
     view?: string;
     preview?: string;
   }>();
-  const { state, dispatch, hydrated } = useBriefs();
+  const { state, dispatch, hydrated, reload } = useBriefs();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
   const reduceMotion = useReducedMotion();
   const [filterOpen, setFilterOpen] = useState(false);
@@ -75,10 +75,14 @@ export default function BriefsScreen() {
     router.setParams({ preview: undefined });
     setTimeout(() => setRetrying(false), 500);
   };
-  const refresh = () => {
+  const refresh = async () => {
     setRefreshing(true);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTimeout(() => setRefreshing(false), 600);
+    try {
+      await reload();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   if (!hydrated || !watchlistHydrated || retrying || params.preview === "loading")
@@ -108,7 +112,7 @@ export default function BriefsScreen() {
         refreshControl={
           <RefreshControl
             colors={[colors.teal]}
-            onRefresh={refresh}
+            onRefresh={() => void refresh()}
             refreshing={refreshing}
             tintColor={colors.teal}
           />
