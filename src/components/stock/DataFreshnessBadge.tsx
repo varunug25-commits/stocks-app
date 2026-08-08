@@ -17,7 +17,7 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     borderRadius: radii.pill,
-    backgroundColor: colors.tealMuted,
+    backgroundColor: colors.surfaceSoft,
   },
-  text: { ...typography.caption, color: colors.teal, letterSpacing: 0.7 },
+  text: { ...typography.caption, color: colors.textSecondary, letterSpacing: 0.7 },
 });

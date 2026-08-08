@@ -2,17 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import type { MarketEvent } from "@/data/today";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 type EventCardProps = {
   event: MarketEvent;
 };
 
 export function EventCard({ event }: EventCardProps) {
-  const accent = event.tone === "earnings" ? colors.teal : colors.warning;
+  const accent = event.tone === "earnings" ? colors.textSecondary : colors.warning;
 
   return (
-    <View accessibilityLabel={`${event.day} ${event.date}, ${event.title}, ${event.time}`} style={styles.card}>
+    <View accessibilityLabel={`${event.day} ${event.date}, ${event.title}, ${event.time}`} style={styles.row}>
       <View style={styles.dateBlock}>
         <Text style={styles.day}>{event.day}</Text>
         <Text style={styles.date}>{event.date}</Text>
@@ -32,15 +32,13 @@ export function EventCard({ event }: EventCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    minHeight: 100,
+  row: {
+    minHeight: 78,
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   dateBlock: {
     width: 44,
@@ -63,7 +61,7 @@ const styles = StyleSheet.create({
   divider: {
     width: 1,
     alignSelf: "stretch",
-    marginHorizontal: spacing.md,
+    marginHorizontal: spacing.sm,
     backgroundColor: colors.border,
   },
   copy: {
@@ -90,7 +88,7 @@ const styles = StyleSheet.create({
   symbol: {
     paddingHorizontal: 9,
     paddingVertical: 6,
-    borderRadius: radii.sm,
+    borderRadius: 6,
     backgroundColor: colors.surfaceSoft,
   },
   symbolText: {

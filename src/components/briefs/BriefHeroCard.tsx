@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { BriefStatus, GeneratedBrief } from "@/data/briefs";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { companyBySymbol } from "@/data/stocks";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 import { BriefStatusBadge } from "./BriefStatusBadge";
 import { BriefSummaryPoint } from "./BriefSummaryPoint";
 
@@ -18,13 +17,10 @@ export function BriefHeroCard({
   onPress: () => void;
 }) {
   return (
-    <LinearGradient
-      colors={brief.type === "morning" ? ["#15312C", "#0E1919", "#101517"] : ["#192236", "#10171D", "#0E1518"]}
-      style={styles.card}
-    >
+    <View style={styles.publication}>
       <View style={styles.topRow}>
         <View style={styles.identity}>
-          <Ionicons color={colors.teal} name={brief.type === "morning" ? "sunny-outline" : "moon-outline"} size={19} />
+          <Ionicons color={colors.textSecondary} name={brief.type === "morning" ? "sunny-outline" : "moon-outline"} size={18} />
           <Text style={styles.eyebrow}>
             {brief.type === "morning" ? "MORNING BRIEF" : "EVENING RECAP"}
           </Text>
@@ -62,32 +58,27 @@ export function BriefHeroCard({
         onPress={onPress}
         style={({ pressed }) => [styles.action, pressed && styles.pressed]}
       >
-        <Text style={styles.actionText}>Read brief</Text>
-        <Ionicons color={colors.background} name="arrow-forward" size={18} />
+        <Text style={styles.actionText}>Read full publication</Text>
+        <Ionicons color={colors.teal} name="arrow-forward" size={18} />
       </Pressable>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.lg,
-    borderRadius: radii.hero,
-    borderWidth: 1,
-    borderColor: "#285049",
-  },
+  publication: { paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  eyebrow: { ...typography.caption, color: colors.teal, letterSpacing: 1 },
-  title: { ...typography.title, color: colors.textPrimary, marginTop: spacing.lg },
+  eyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 1 },
+  title: { ...typography.heading, color: colors.textPrimary, marginTop: spacing.md },
   summary: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  points: { gap: spacing.sm, marginTop: spacing.lg },
+  points: { gap: spacing.sm, marginTop: spacing.md },
   metaRow: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginTop: spacing.md },
   logos: { flexDirection: "row", alignItems: "center" },
   logoWrap: { marginRight: -6, borderRadius: 18, borderWidth: 2, borderColor: "#10201E" },
   emptyMeta: { ...typography.caption, color: colors.warning },
   meta: { ...typography.caption, color: colors.textTertiary },
-  action: { minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, marginTop: spacing.md, borderRadius: radii.md, backgroundColor: colors.teal },
+  action: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderSoft },
   pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
-  actionText: { ...typography.label, color: colors.background },
+  actionText: { ...typography.label, color: colors.teal },
 });

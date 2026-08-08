@@ -17,11 +17,10 @@ export function SkeletonState() {
     <View accessibilityLabel="Loading market briefing" accessibilityRole="progressbar" style={styles.container}>
       <Animated.View style={[styles.lineSmall, animatedStyle]} />
       <Animated.View style={[styles.lineLarge, animatedStyle]} />
-      <Animated.View style={[styles.hero, animatedStyle]} />
-      <View style={styles.row}>
-        <Animated.View style={[styles.card, animatedStyle]} />
-        <Animated.View style={[styles.card, animatedStyle]} />
-      </View>
+      <Animated.View style={[styles.panel, animatedStyle]} />
+      <Animated.View style={[styles.listRow, animatedStyle]} />
+      <Animated.View style={[styles.listRow, animatedStyle]} />
+      <Animated.View style={[styles.listRow, animatedStyle]} />
     </View>
   );
 }
@@ -43,21 +42,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     backgroundColor: colors.surfaceSoft,
   },
-  hero: {
-    height: 310,
+  panel: {
+    height: 126,
     marginTop: spacing.sm,
-    borderRadius: radii.hero,
-    backgroundColor: colors.surface,
-  },
-  row: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  card: {
-    flex: 1,
-    height: 132,
     borderRadius: radii.lg,
     backgroundColor: colors.surface,
   },
+  listRow: { height: 64, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.surface },
 });
-

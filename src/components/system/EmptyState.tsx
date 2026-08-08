@@ -13,7 +13,7 @@ type EmptyStateProps = {
 export function EmptyState({ title, description, actionLabel, onAction }: EmptyStateProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.icon}><Ionicons color={colors.teal} name="leaf-outline" size={22} /></View>
+      <View style={styles.icon}><Ionicons color={colors.textSecondary} name="list-outline" size={21} /></View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
       {actionLabel ? (
@@ -28,8 +28,8 @@ export function EmptyState({ title, description, actionLabel, onAction }: EmptyS
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    padding: spacing.xl,
-    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderRadius: radii.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -39,8 +39,8 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
-    backgroundColor: colors.tealMuted,
+    borderRadius: radii.sm,
+    backgroundColor: colors.surfaceSoft,
   },
   title: {
     ...typography.heading,
@@ -63,4 +63,3 @@ const styles = StyleSheet.create({
     color: colors.teal,
   },
 });
-

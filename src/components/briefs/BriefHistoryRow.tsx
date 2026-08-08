@@ -12,7 +12,7 @@ export function BriefHistoryRow({ brief, status, onPress }: { brief: BriefHistor
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <View style={styles.icon}><Ionicons color={colors.teal} name={brief.type === "morning" ? "sunny-outline" : "moon-outline"} size={20} /></View>
+      <View style={styles.icon}><Ionicons color={colors.textSecondary} name={brief.type === "morning" ? "sunny-outline" : "moon-outline"} size={19} /></View>
       <View style={styles.copy}>
         <Text style={styles.label}>{brief.type === "morning" ? "Morning Brief" : "Evening Recap"}</Text>
         <Text numberOfLines={1} style={styles.title}>{brief.headline}</Text>
@@ -24,11 +24,11 @@ export function BriefHistoryRow({ brief, status, onPress }: { brief: BriefHistor
 }
 
 const styles = StyleSheet.create({
-  row: { minHeight: 94, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  row: { minHeight: 78, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   pressed: { opacity: .68 },
-  icon: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 15, backgroundColor: colors.tealMuted },
+  icon: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 8, backgroundColor: colors.surface },
   copy: { flex: 1 },
-  label: { ...typography.caption, color: colors.teal },
+  label: { ...typography.caption, color: colors.textSecondary },
   title: { ...typography.label, color: colors.textPrimary, marginTop: 2 },
   meta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
 });

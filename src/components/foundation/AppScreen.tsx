@@ -19,7 +19,7 @@ export function AppScreen({ children, scroll = false, keyboard = false, padded =
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  content: { flex: 1 },
-  scroll: { flexGrow: 1, paddingBottom: spacing.xxl },
+  content: { flex: 1, backgroundColor: colors.background },
+  scroll: { flexGrow: 1, paddingBottom: spacing.xxl, backgroundColor: colors.background },
   padded: { paddingHorizontal: spacing.lg },
 });

@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.md,
-    backgroundColor: colors.surface,
+    backgroundColor: "#13191CEB",
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -46,4 +46,3 @@ const styles = StyleSheet.create({
     right: 10,
   },
 });
-
