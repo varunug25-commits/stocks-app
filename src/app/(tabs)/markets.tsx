@@ -44,6 +44,16 @@ export default function MarketsScreen() {
   const status = mode === "REAL"
     ? { ...marketStatus, state: "closed" as const, label: "Index status unavailable", detail: "No licensed index-status feed connected", updated: "Unavailable" }
     : marketStatus;
+  const moversSection = (
+    <View style={styles.section}>
+      <SectionHeader eyebrow={mode === "REAL" ? "PROVIDER EQUITY QUOTES · 1D" : "DEMO DATA · 1D"} title="Top movers" />
+      <ResourceStateNotice onRetry={() => void loadQuotes(moverSymbols)} resource={moverSymbols[0] ? quotes[moverSymbols[0]] : undefined} />
+      <ScrollView contentContainerStyle={styles.chips} horizontal showsHorizontalScrollIndicator={false}>
+        {(["Overview", "Gainers", "Losers", "Active"] as Filter[]).map((item) => <FilterChip key={item} label={item} onPress={() => choose(item)} selected={filter === item} />)}
+      </ScrollView>
+      <View style={styles.list}>{movers.map((mover) => <MarketMoverRow key={mover.symbol} mover={mover} onPress={() => router.push(`/stock/${mover.symbol}` as Href)} quote={isStockSymbol(mover.symbol) ? quotes[mover.symbol] : undefined} />)}</View>
+    </View>
+  );
 
   return (
     <Screen>
@@ -51,18 +61,22 @@ export default function MarketsScreen() {
         <View style={styles.column}>
           <ProductHeader
             actions={<IconButton accessibilityLabel="Search markets" icon="search" onPress={() => router.push("/search" as Href)} />}
-            eyebrow="MARKET OVERVIEW"
-            subtitle="Indices and sectors are illustrative; supported equity quotes use the backend."
+            eyebrow={mode === "REAL" ? "SUPPORTED EQUITIES" : "MARKET OVERVIEW"}
+            subtitle={mode === "REAL" ? "Provider-backed equity prices lead; market-wide context remains secondary." : "Illustrative market layout with clearly labeled demo data."}
             title="Markets"
           />
 
-          <View style={styles.statusLine}>
+          {mode === "DEMO" ? <View style={styles.statusLine}>
             <MarketStatusBadge status={status} />
-            {mode === "DEMO" ? <DemoDataBadge /> : null}
-          </View>
+            <DemoDataBadge />
+          </View> : null}
+
+          {mode === "REAL" ? moversSection : null}
+
+          {mode === "REAL" ? <View style={styles.contextHeading}><SectionHeader eyebrow="SECONDARY · ILLUSTRATIVE" title="Market-wide context" /><Text style={styles.contextCopy}>Licensed index and sector feeds are unavailable. The previews below demonstrate layout only.</Text></View> : null}
 
           <View style={styles.section}>
-            <SectionHeader eyebrow="ILLUSTRATIVE · 1D" title="Major indices" />
+            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE PREVIEW · 1D" : "DEMO DATA · 1D"} title="Major indices" />
             <ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>
               {marketIndices.map((index) => (
                 <Pressable accessibilityRole="button" key={index.id} onPress={() => setDetail({ title: index.name, body: index.summary })}>
@@ -73,9 +87,9 @@ export default function MarketsScreen() {
           </View>
 
           <View style={styles.section}>
-            <SectionHeader eyebrow="ILLUSTRATIVE · 1D" title="Sector performance" />
+            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE PREVIEW · 1D" : "DEMO DATA · 1D"} title="Sector performance" />
             <ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>
-              {sectors.map((sector) => <SectorPerformanceCard key={sector.id} onPress={() => setDetail({ title: sector.name, body: `${sector.leaders} are the local illustrative leaders for this sector.` })} sector={sector} />)}
+              {sectors.map((sector) => <SectorPerformanceCard key={sector.id} onPress={() => setDetail({ title: sector.name, body: `${sector.leaders} are illustrative leaders for this sector preview.` })} sector={sector} />)}
             </ScrollView>
           </View>
 
@@ -83,18 +97,11 @@ export default function MarketsScreen() {
             <View style={styles.coverageIcon}><Ionicons color={colors.textSecondary} name="globe-outline" size={18} /></View>
             <View style={styles.coverageCopy}>
               <Text style={styles.coverageTitle}>Commodities & currencies</Text>
-              <Text style={styles.coverageMeta}>No licensed provider is connected, so MarketBrief does not display invented values.</Text>
+              <Text style={styles.coverageMeta}>Unavailable. MarketBrief does not display invented values.</Text>
             </View>
           </View>
 
-          <View style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "BACKEND EQUITY QUOTES · 1D" : "LOCAL DEMO · 1D"} title="Top movers" />
-            <ResourceStateNotice onRetry={() => void loadQuotes(moverSymbols)} resource={moverSymbols[0] ? quotes[moverSymbols[0]] : undefined} />
-            <ScrollView contentContainerStyle={styles.chips} horizontal showsHorizontalScrollIndicator={false}>
-              {(["Overview", "Gainers", "Losers", "Active"] as Filter[]).map((item) => <FilterChip key={item} label={item} onPress={() => choose(item)} selected={filter === item} />)}
-            </ScrollView>
-            <View style={styles.list}>{movers.map((mover) => <MarketMoverRow key={mover.symbol} mover={mover} onPress={() => router.push(`/stock/${mover.symbol}` as Href)} quote={isStockSymbol(mover.symbol) ? quotes[mover.symbol] : undefined} />)}</View>
-          </View>
+          {mode === "DEMO" ? moversSection : null}
 
           <View style={styles.section}>
             <SectionHeader eyebrow="ILLUSTRATIVE CALENDAR" title="Earnings" />
@@ -107,13 +114,13 @@ export default function MarketsScreen() {
 
           <View style={styles.disclosure}>
             <Ionicons color={colors.textTertiary} name="information-circle-outline" size={17} />
-            <Text style={styles.disclosureText}>{mode === "REAL" ? "Supported equity quotes load through MarketBrief’s backend. Indices, sectors and calendars remain illustrative until licensed sources are integrated." : "Illustrative local data only. Demo mode is explicit and never used as a fallback from real data."}</Text>
+            <Text style={styles.disclosureText}>{mode === "REAL" ? "Supported equity prices use configured providers. Indices, sectors and calendars remain illustrative until licensed sources are available." : "Illustrative demo data only. Demo mode is explicit and never replaces unavailable provider data."}</Text>
           </View>
         </View>
       </ScrollView>
       <AppBottomSheet onClose={() => setDetail(null)} title={detail?.title ?? "Market detail"} visible={Boolean(detail)}>
         <Text style={styles.sheetBody}>{detail?.body}</Text>
-        <Text style={styles.sheetNote}>Local illustrative context · educational, not investment advice.</Text>
+        <Text style={styles.sheetNote}>Illustrative context · educational, not investment advice.</Text>
       </AppBottomSheet>
     </Screen>
   );
@@ -123,6 +130,8 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 104, backgroundColor: colors.background },
   column: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg },
   statusLine: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  contextHeading: { gap: spacing.xs, marginTop: spacing.xl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  contextCopy: { ...typography.caption, color: colors.textTertiary },
   section: { gap: spacing.xs, marginTop: spacing.xl },
   horizontal: { gap: spacing.xs, paddingRight: spacing.lg },
   chips: { gap: spacing.xs, paddingRight: spacing.lg },

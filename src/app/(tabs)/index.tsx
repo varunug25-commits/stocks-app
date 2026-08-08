@@ -11,6 +11,7 @@ import { MarketIndexCard } from "@/components/finance/MarketIndexCard";
 import { StockRow } from "@/components/finance/StockRow";
 import { StoryCard } from "@/components/finance/StoryCard";
 import { DemoDataBadge, ErrorState, OfflineBanner } from "@/components/foundation/Feedback";
+import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
 import { IconButton } from "@/components/foundation/IconButton";
 import { ProductHeader } from "@/components/foundation/ProductHeader";
 import { Screen } from "@/components/foundation/Screen";
@@ -24,17 +25,15 @@ import { marketStatus } from "@/data/markets";
 import { isStockSymbol } from "@/data/stocks";
 import { events, leadStory, marketIndices, stories } from "@/data/today";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
-import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
 import { selectTodayWatchlist } from "@/features/watchlist/todayStocks";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, glass, radii, spacing, typography } from "@/theme/tokens";
 
 const enter = (delay: number) => FadeInDown.duration(300).delay(delay);
 
 export default function TodayScreen() {
   const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
-  const { state: onboardingState } = useOnboarding();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
   const { mode, quotes, loadQuotes } = useMarketData();
   const reduceMotion = useReducedMotion();
@@ -55,6 +54,21 @@ export default function TodayScreen() {
     () => selectTodayWatchlist(watchlistState.symbols),
     [watchlistState.symbols],
   );
+  const summaryStocks = useMemo(() => [...personalizedStocks]
+    .sort((left, right) => {
+      const leftResource = isStockSymbol(left.symbol) ? quotes[left.symbol] : undefined;
+      const rightResource = isStockSymbol(right.symbol) ? quotes[right.symbol] : undefined;
+      const leftChange = leftResource?.status === "ready" || leftResource?.status === "stale"
+        ? leftResource.data.changePercent
+        : null;
+      const rightChange = rightResource?.status === "ready" || rightResource?.status === "stale"
+        ? rightResource.data.changePercent
+        : null;
+      const leftMove = leftChange === null ? -1 : Math.abs(leftChange);
+      const rightMove = rightChange === null ? -1 : Math.abs(rightChange);
+      return rightMove - leftMove;
+    })
+    .slice(0, 3), [personalizedStocks, quotes]);
   const morningBrief = useMemo(
     () => generateBrief(latestBriefSeed("morning"), watchlistState.symbols),
     [watchlistState.symbols],
@@ -77,9 +91,6 @@ export default function TodayScreen() {
     month: "long",
     day: "numeric",
   }).format(new Date());
-  const experience = onboardingState.experience
-    ? `${onboardingState.experience} investor view`
-    : "Your personalized market day";
   const animation = (delay: number) => reduceMotion ? undefined : enter(delay);
 
   const handleRefresh = async () => {
@@ -111,7 +122,7 @@ export default function TodayScreen() {
   const status = mode === "REAL"
     ? { ...marketStatus, state: "closed" as const, label: "Index status unavailable", detail: "No licensed index-status feed connected", updated: "Unavailable" }
     : preview === "closed"
-      ? { ...marketStatus, state: "closed" as const, label: "Market closed", detail: "Next regular session shown in local demo data" }
+      ? { ...marketStatus, state: "closed" as const, label: "Market closed", detail: "Next regular session shown with demo data" }
       : marketStatus;
 
   return (
@@ -127,12 +138,13 @@ export default function TodayScreen() {
             <ProductHeader
               actions={<><IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} /><IconButton accessibilityLabel="Notifications preference" icon="notifications-outline" onPress={() => router.push("/profile" as Href)} /></>}
               eyebrow={today}
-              subtitle={experience}
+              subtitle="Personalized for your watchlist"
               title="MarketBrief"
             />
           </Animated.View>
 
           <Animated.View entering={animation(30)} style={[styles.section, styles.watchlistSection]}>
+            <GlassBackdrop intensity={22} />
             <View style={styles.watchlistHeading}>
               <View>
                 <Text style={styles.watchlistTitle}>Watchlist summary</Text>
@@ -141,9 +153,9 @@ export default function TodayScreen() {
               <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push("/watchlist" as Href)} style={styles.textAction}><Text style={styles.textActionLabel}>View all</Text></Pressable>
             </View>
             {watchlistState.symbols[0] ? <ResourceStateNotice onRetry={() => void loadQuotes(watchlistState.symbols)} resource={quotes[watchlistState.symbols[0]]} /> : null}
-            {personalizedStocks.length ? (
+            {summaryStocks.length ? (
               <View style={styles.stockList}>
-                {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}
+                {summaryStocks.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}
               </View>
             ) : (
               <EmptyState actionLabel="Search stocks" description="Add companies to see prices and daily moves here." onAction={() => router.push("/search" as Href)} title="Your watchlist is clear" />
@@ -181,7 +193,7 @@ export default function TodayScreen() {
           </Animated.View>
 
           <Animated.View entering={animation(150)} style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE INDEX CONTEXT" : "LOCAL DEMO · 1D"} title="Market context" />
+            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE INDEX CONTEXT" : "DEMO DATA · 1D"} title="Market context" />
             <View style={styles.statusLine}>
               <MarketStatusBadge status={status} />
               {mode === "DEMO" ? <DemoDataBadge /> : null}
@@ -193,7 +205,7 @@ export default function TodayScreen() {
 
           <View style={styles.disclaimer}>
             <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={16} />
-            <Text style={styles.disclaimerText}>{mode === "REAL" ? "Company quotes come from MarketBrief’s backend when available. Indices, calendar items and editorial explanations remain clearly illustrative." : "Local illustrative market and editorial content. Educational information, not investment advice."}</Text>
+            <Text style={styles.disclaimerText}>{mode === "REAL" ? "Company prices use configured providers when available. Indices, calendar items and editorial explanations remain clearly illustrative." : "Illustrative demo market and editorial content. Educational information, not investment advice."}</Text>
           </View>
         </View>
       </ScrollView>
@@ -208,7 +220,7 @@ const styles = StyleSheet.create({
   section: { gap: spacing.xs, marginTop: spacing.xl },
   statusLine: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   horizontalContent: { gap: spacing.xs, paddingRight: spacing.lg },
-  watchlistSection: { padding: spacing.md, borderRadius: radii.lg, backgroundColor: "#0D1315F2", borderWidth: 1, borderColor: colors.border },
+  watchlistSection: { padding: spacing.md, borderRadius: radii.lg, backgroundColor: glass.fallbackStrong, borderWidth: 1, borderColor: glass.border, overflow: "hidden" },
   watchlistHeading: { minHeight: 44, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
   watchlistTitle: { ...typography.heading, color: colors.textPrimary },
   watchlistMeta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },

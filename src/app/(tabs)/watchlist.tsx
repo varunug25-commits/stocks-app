@@ -89,8 +89,7 @@ export default function WatchlistScreen() {
           <EmptyState actionLabel="Search stocks" description="Add companies to build a focused daily signal list." onAction={() => router.push("/search" as Href)} title="Your watchlist is clear" />
         )}
 
-        {state.symbols.length >= WATCHLIST_LIMIT ? <Text style={styles.limitNote}>Watchlist limit reached. Open Add to review the limit.</Text> : null}
-        <Text style={styles.note}>Membership and ordering are stored locally. {mode === "REAL" ? "Quotes load through the MarketBrief backend; unavailable providers never become demo prices." : "Prices and trends are clearly illustrative local fixtures."}</Text>
+        <Text style={styles.note}>Membership and ordering are stored on this device. {mode === "REAL" ? "Provider-backed quotes remain unavailable when a source cannot respond." : "Prices and trends are illustrative demo data."}</Text>
       </ScrollView>
 
       <ConfirmationModal
@@ -112,6 +111,5 @@ const styles = StyleSheet.create({
   headerActionText: { ...typography.label, color: colors.teal },
   pressed: { opacity: 0.62 },
   list: { marginTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  limitNote: { ...typography.caption, color: colors.warning, marginTop: spacing.md },
   note: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
 });

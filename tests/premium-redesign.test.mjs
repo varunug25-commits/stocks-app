@@ -71,3 +71,29 @@ test("stock stories preserve non-ISO provider labels instead of showing Invalid 
   assert.match(storyRow, /Number\.isFinite\(parsedPublishedAt\)/);
   assert.match(storyRow, /: story\.publishedAt/);
 });
+
+test("final product polish keeps debug and implementation language out of customer screens", async () => {
+  const [today, watchlist, profile, demo, tabs] = await Promise.all([
+    read("src/app/(tabs)/index.tsx"),
+    read("src/app/(tabs)/watchlist.tsx"),
+    read("src/app/(tabs)/profile.tsx"),
+    read("src/data/real/demo.ts"),
+    read("src/components/navigation/BottomTabBar.tsx"),
+  ]);
+  assert.match(today, /Personalized for your watchlist/);
+  assert.match(today, /summaryStocks[\s\S]*slice\(0, 3\)/);
+  assert.doesNotMatch(today, /investor view|settings|bug-outline/);
+  assert.doesNotMatch(watchlist, /Watchlist limit reached/);
+  assert.doesNotMatch(profile, /Subscription|Not connected|M7 AI/);
+  assert.doesNotMatch(`${today}${watchlist}${profile}${demo}`, /demo fixtures|local fixtures|this milestone/i);
+  assert.match(tabs, /GlassBackdrop/);
+});
+
+test("REAL Markets leads with supported equity movers before illustrative context", async () => {
+  const markets = await read("src/app/(tabs)/markets.tsx");
+  const realMovers = markets.indexOf('mode === "REAL" ? moversSection');
+  const marketContext = markets.indexOf("Market-wide context");
+  assert.ok(realMovers >= 0 && realMovers < marketContext);
+  assert.match(markets, /Provider-backed equity prices lead/);
+  assert.match(markets, /ILLUSTRATIVE PREVIEW/);
+});

@@ -9,7 +9,7 @@ export function DataModeBanner({ mode }: { mode: DataMode }) {
       <Text style={styles.body}>
         {mode === "REAL"
           ? "Provider failures stay unavailable—MarketBrief never substitutes demo prices."
-          : "All prices and market content on this screen are illustrative fixtures."}
+          : "Prices and market content on this screen are illustrative demo data."}
       </Text>
     </View>
   );

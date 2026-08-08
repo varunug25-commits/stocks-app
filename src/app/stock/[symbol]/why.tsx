@@ -138,7 +138,7 @@ export default function WhyScreen() {
           </View>
         </View>
         <Text style={s.disclaimer}>
-          Facts and interpretation are local demo content, not personalised
+          Facts and interpretation are illustrative demo content, not personalised
           investment advice. No buy, sell, hold, target price, or guaranteed
           outcome.
         </Text>

@@ -156,9 +156,9 @@ export default function BriefsScreen() {
           )}
         </View>
         <Text style={styles.disclosure}>
-          Brief narratives and every price move shown inside them remain typed
-          local demo content, separate from provider-backed screens. No live AI
-          or recommendation is presented.
+          Brief narratives and price moves are illustrative demo content,
+          separate from provider-backed company data. No recommendation is
+          presented.
         </Text>
       </ScrollView>
       <BriefFilterSheet

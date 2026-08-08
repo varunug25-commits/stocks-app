@@ -56,7 +56,7 @@ export default function StockDetailScreen() {
       <Screen>
         <View style={styles.center}>
           <EmptyState
-            description="This company is not in the local demo catalog."
+            description="This company is not in the demo catalog."
             title="Stock unavailable"
           />
         </View>
@@ -190,7 +190,7 @@ export default function StockDetailScreen() {
             size={18}
           />
           <Text style={styles.disclaimerText}>
-            {mode === "REAL" ? "Provider data is delivered through MarketBrief’s backend and may be delayed, stale or unavailable. Editorial explanation remains illustrative and non-AI." : "Illustrative local demo data for informational purposes only. Not investment advice."}
+            {mode === "REAL" ? "Provider data may be delayed, stale or unavailable. Editorial explanation remains illustrative." : "Illustrative demo data for informational purposes only. Not investment advice."}
           </Text>
         </View>
       </ScrollView>

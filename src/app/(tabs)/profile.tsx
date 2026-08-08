@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { DemoDataBadge } from "@/components/foundation/Feedback";
 import { ProductHeader } from "@/components/foundation/ProductHeader";
 import { Screen } from "@/components/foundation/Screen";
 import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
@@ -21,11 +20,7 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <ProductHeader actions={<DemoDataBadge />} eyebrow="LOCAL PROFILE" subtitle="Preferences are stored on this device; no account or authentication is connected." title="Profile" />
-
-        <SettingsSection title="Access">
-          <SettingRow icon="card-outline" label="Subscription" value="Not connected in this milestone" />
-        </SettingsSection>
+        <ProductHeader eyebrow="PROFILE" subtitle="Your saved preferences and data disclosures." title="Profile" />
 
         <SettingsSection title="Personalization">
           <SettingRow icon="analytics-outline" label="Investor preferences" value={preferenceSummary} />
@@ -33,21 +28,15 @@ export default function ProfileScreen() {
         </SettingsSection>
 
         <SettingsSection title="Utility">
-          <SettingRow icon="notifications-outline" label="Alerts" value={onboardingState.notificationsEnabled ? "Local notification preference enabled" : "Local notification preference off"} />
-          <SettingRow icon="server-outline" label="Data & sources" value="Company data through MarketBrief backend when REAL mode is configured" />
+          <SettingRow icon="server-outline" label="Data & sources" value="Provider-backed company data when available · demo data clearly labeled" />
           <SettingRow icon="moon-outline" label="Appearance" value="Dark theme · system typography" />
         </SettingsSection>
 
         <SettingsSection title="Legal & product">
           <SettingRow icon="shield-checkmark-outline" label="Privacy" value="Local preferences; provider credentials remain server-side" />
           <SettingRow icon="information-circle-outline" label="Disclosures" value="Educational information only · not investment advice" />
-          <SettingRow icon="code-slash-outline" label="About" value="MarketBrief mobile foundation · no M7 AI" />
+          <SettingRow icon="information-outline" label="About" value="MarketBrief mobile app · version 0.1.0" />
         </SettingsSection>
-
-        <View style={styles.notice}>
-          <Ionicons color={colors.warning} name="alert-circle-outline" size={18} />
-          <Text style={styles.noticeText}>Subscription, authentication, payments, trading accounts and live alerts are not implemented. These rows report product status and do not trigger unavailable flows.</Text>
-        </View>
       </ScrollView>
     </Screen>
   );
@@ -84,6 +73,4 @@ const styles = StyleSheet.create({
   copy: { flex: 1 },
   label: { ...typography.label, color: colors.textPrimary },
   value: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
-  notice: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  noticeText: { ...typography.caption, flex: 1, color: colors.textTertiary },
 });

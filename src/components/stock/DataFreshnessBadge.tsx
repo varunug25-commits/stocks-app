@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 export function DataFreshnessBadge({
-  label = "LOCAL DEMO · ILLUSTRATIVE",
+  label = "DEMO · ILLUSTRATIVE",
 }: {
   label?: string;
 }) {

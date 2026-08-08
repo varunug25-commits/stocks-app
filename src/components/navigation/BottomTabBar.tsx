@@ -5,7 +5,8 @@ import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, spacing, typography } from "@/theme/tokens";
+import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
+import { colors, glass, spacing, typography } from "@/theme/tokens";
 
 const icons = {
   index: ["today-outline", "today"],
@@ -22,6 +23,7 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
   return (
     <View accessibilityRole="tablist" style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
+      <GlassBackdrop intensity={24} />
       {state.routes.map((route, index) => {
         const focused = state.index === index;
         const options = descriptors[route.key]?.options;
@@ -63,9 +65,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingTop: spacing.xs,
     paddingHorizontal: spacing.xs,
-    backgroundColor: "#090D0FF5",
+    backgroundColor: glass.fallbackStrong,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: glass.border,
+    overflow: "hidden",
   },
   tab: { flex: 1, minWidth: 56, minHeight: 54, alignItems: "center", justifyContent: "center", gap: 3 },
   pressed: { opacity: 0.68 },

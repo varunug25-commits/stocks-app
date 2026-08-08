@@ -22,23 +22,14 @@ export function WatchlistLimitSheet({
           size={24}
         />
         <Text style={s.body}>
-          The local free-plan preview supports five stocks. Remove one company
-          before adding another.
+          Your watchlist supports up to five companies. Remove one before
+          adding another.
         </Text>
       </View>
-      <Text style={s.note}>
-        No payment or upgrade flow is connected in this milestone.
-      </Text>
     </AppBottomSheet>
   );
 }
 const s = StyleSheet.create({
   row: { flexDirection: "row", gap: spacing.sm },
   body: { ...typography.body, flex: 1, color: colors.textSecondary },
-  note: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
-  },
 });

@@ -54,6 +54,12 @@ export const numerals = {
   fontVariant: ["tabular-nums"] as "tabular-nums"[],
 } as const;
 
+export const glass = {
+  fallback: "#101719E8",
+  fallbackStrong: "#11191CF2",
+  border: "#FFFFFF1A",
+} as const;
+
 export const shadows = {
   floating: {
     shadowColor: colors.black,
