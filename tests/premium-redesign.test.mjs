@@ -23,7 +23,7 @@ test("premium foundation stays dark, restrained, and semantically colored", asyn
 
 test("Today uses the approved finance-first information order", async () => {
   const today = await read("src/app/(tabs)/index.tsx");
-  const sections = ["Market overview", "Watchlist summary", "What changed", "Next up", "MORNING BRIEF"];
+  const sections = ["Watchlist summary", "What changed", "Next up", "MORNING BRIEF", "Market context"];
   let previous = -1;
   for (const section of sections) {
     const next = today.indexOf(section);
@@ -32,6 +32,7 @@ test("Today uses the approved finance-first information order", async () => {
   }
   assert.match(today, /ResourceStateNotice/);
   assert.match(today, /1D moves/);
+  assert.match(today, /ILLUSTRATIVE PREVIEW/);
   assert.doesNotMatch(today, /DataModeBanner|EditorialHero|AIBriefingCard/);
 });
 

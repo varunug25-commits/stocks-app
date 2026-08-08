@@ -132,18 +132,7 @@ export default function TodayScreen() {
             />
           </Animated.View>
 
-          <Animated.View entering={animation(30)} style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE INDICES" : "LOCAL DEMO · 1D"} title="Market overview" />
-            <View style={styles.statusLine}>
-              <MarketStatusBadge status={status} />
-              {mode === "DEMO" ? <DemoDataBadge /> : null}
-            </View>
-            <ScrollView contentContainerStyle={styles.horizontalContent} horizontal showsHorizontalScrollIndicator={false}>
-              {marketIndices.map((index) => <MarketIndexCard index={index} key={index.id} />)}
-            </ScrollView>
-          </Animated.View>
-
-          <Animated.View entering={animation(60)} style={[styles.section, styles.watchlistSection]}>
+          <Animated.View entering={animation(30)} style={[styles.section, styles.watchlistSection]}>
             <View style={styles.watchlistHeading}>
               <View>
                 <Text style={styles.watchlistTitle}>Watchlist summary</Text>
@@ -161,18 +150,18 @@ export default function TodayScreen() {
             )}
           </Animated.View>
 
-          <Animated.View entering={animation(90)} style={styles.section}>
-            <SectionHeader eyebrow="LOCAL EDITORIAL DEMO" title="What changed" />
+          <Animated.View entering={animation(60)} style={styles.section}>
+            <SectionHeader eyebrow="ILLUSTRATIVE PREVIEW" title="What changed" />
             <StoryCard story={leadStory} />
             {stories.map((story) => <StoryCard key={story.id} story={story} />)}
           </Animated.View>
 
-          <Animated.View entering={animation(120)} style={styles.section}>
+          <Animated.View entering={animation(90)} style={styles.section}>
             <SectionHeader eyebrow="EARNINGS & MACRO" title="Next up" />
             <View>{events.map((event) => <EventCard event={event} key={event.id} />)}</View>
           </Animated.View>
 
-          <Animated.View entering={animation(150)} style={[styles.section, styles.briefSection]}>
+          <Animated.View entering={animation(120)} style={[styles.section, styles.briefSection]}>
             <View style={styles.briefHeading}>
               <View>
                 <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief.timestamp}</Text>
@@ -189,6 +178,17 @@ export default function TodayScreen() {
               <Text style={styles.briefLinkText}>Read full publication</Text>
               <Ionicons color={colors.teal} name="arrow-forward" size={17} />
             </Pressable>
+          </Animated.View>
+
+          <Animated.View entering={animation(150)} style={styles.section}>
+            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE INDEX CONTEXT" : "LOCAL DEMO · 1D"} title="Market context" />
+            <View style={styles.statusLine}>
+              <MarketStatusBadge status={status} />
+              {mode === "DEMO" ? <DemoDataBadge /> : null}
+            </View>
+            <ScrollView contentContainerStyle={styles.horizontalContent} horizontal showsHorizontalScrollIndicator={false}>
+              {marketIndices.map((index) => <MarketIndexCard index={index} key={index.id} />)}
+            </ScrollView>
           </Animated.View>
 
           <View style={styles.disclaimer}>
