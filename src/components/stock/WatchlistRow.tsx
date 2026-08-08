@@ -2,12 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
-import type { Company, PriceSnapshot } from "@/data/stocks";
+import type { Company } from "@/data/stocks";
 import { formatPrice } from "@/data/stocks";
+import type { DataResource, MarketQuote } from "@/data/real";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 export function WatchlistRow({
   company,
-  price,
+  quote,
   expanded,
   onOpen,
   onRemove,
@@ -15,18 +16,21 @@ export function WatchlistRow({
   onMoveDown,
 }: {
   company: Company;
-  price: PriceSnapshot;
+  quote?: DataResource<MarketQuote>;
   expanded: boolean;
   onOpen: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
 }) {
-  const up = price.change >= 0;
+  const resolved = quote?.status === "ready" || quote?.status === "stale" ? quote.data : null;
+  const changePercent = resolved?.changePercent ?? null;
+  const up = (changePercent ?? 0) >= 0;
+  const displayPrice = resolved ? formatPrice(resolved.price) : quote?.status === "loading" || !quote ? "Loading…" : "Unavailable";
   return (
     <View style={s.card}>
       <Pressable
-        accessibilityLabel={`Open ${company.name} stock detail, ${formatPrice(price.price)}, ${up ? "up" : "down"} ${Math.abs(price.changePercent).toFixed(2)} percent`}
+        accessibilityLabel={`Open ${company.name} stock detail, ${displayPrice}${changePercent === null ? "" : `, ${up ? "up" : "down"} ${Math.abs(changePercent).toFixed(2)} percent`}`}
         accessibilityRole="button"
         onPress={onOpen}
         style={s.main}
@@ -49,15 +53,14 @@ export function WatchlistRow({
           ) : null}
         </View>
         <View style={s.value}>
-          <Text style={s.price}>{formatPrice(price.price)}</Text>
+          <Text style={s.price}>{displayPrice}</Text>
           <Text
             style={[
               s.change,
               { color: up ? colors.positive : colors.negative },
             ]}
           >
-            {up ? "▲ +" : "▼ −"}
-            {Math.abs(price.changePercent).toFixed(2)}%
+            {changePercent === null ? "No quote" : `${up ? "▲ +" : "▼ −"}${Math.abs(changePercent).toFixed(2)}%`}
           </Text>
         </View>
         <Ionicons

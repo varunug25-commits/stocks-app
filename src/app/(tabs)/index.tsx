@@ -19,14 +19,18 @@ import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
 import { MarketClosedState } from "@/components/market/MarketClosedState";
+import { DataModeBanner } from "@/components/market/DataModeBanner";
+import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
 import { MarketStatusBadge } from "@/components/market/MarketStatusBadge";
 import { TimestampLabel } from "@/components/market/TimestampLabel";
 import { marketStatus } from "@/data/markets";
 import { events, leadStory, marketIndices, stories } from "@/data/today";
 import { generateBrief, latestBriefSeed } from "@/data/briefs";
+import { isStockSymbol } from "@/data/stocks";
 import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
 import { selectTodayWatchlist } from "@/features/watchlist/todayStocks";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useMarketData } from "@/features/market-data/MarketDataProvider";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 const enter = (delay: number) => FadeInDown.duration(420).delay(delay).springify().damping(18);
@@ -36,6 +40,7 @@ export default function TodayScreen() {
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const { state: onboardingState } = useOnboarding();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
+  const { mode, quotes, loadQuotes } = useMarketData();
   const reduceMotion = useReducedMotion();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -45,6 +50,10 @@ export default function TodayScreen() {
     const timer = setTimeout(() => setIsLoading(false), 650);
     return () => clearTimeout(timer);
   }, [preview]);
+
+  useEffect(() => {
+    if (watchlistHydrated) void loadQuotes(watchlistState.symbols);
+  }, [loadQuotes, watchlistHydrated, watchlistState.symbols]);
 
   const personalizedStocks = useMemo(
     () => selectTodayWatchlist(watchlistState.symbols),
@@ -58,13 +67,15 @@ export default function TodayScreen() {
   const today = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date()).toUpperCase();
   const animation = (delay: number) => reduceMotion ? undefined : enter(delay);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTimeout(() => {
+    try {
+      await loadQuotes(watchlistState.symbols);
+    } finally {
       setIsRefreshing(false);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 800);
+    }
   };
 
   const handleMockPress = () => {
@@ -96,7 +107,7 @@ export default function TodayScreen() {
         refreshControl={
           <RefreshControl
             colors={[colors.teal]}
-            onRefresh={handleRefresh}
+            onRefresh={() => void handleRefresh()}
             progressBackgroundColor={colors.surfaceElevated}
             refreshing={isRefreshing}
             tintColor={colors.teal}
@@ -114,12 +125,13 @@ export default function TodayScreen() {
             <View style={styles.headerActions}><IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} /><IconButton accessibilityLabel="Notifications, one new" icon="notifications-outline" notification onPress={handleMockPress} /></View>
           </Animated.View>
 
-          <Animated.View entering={animation(40)} style={styles.statusRow}><MarketStatusBadge status={preview === "closed" ? { ...marketStatus, state: "closed", label: "Market closed", detail: "Next session opens Monday at 9:30 AM ET" } : marketStatus} /><View style={styles.statusMeta}><DemoDataBadge /><TimestampLabel label="Updated 2 min ago" /></View></Animated.View>
+          <View style={styles.modeBanner}><DataModeBanner mode={mode} /></View>
+          <Animated.View entering={animation(40)} style={styles.statusRow}><MarketStatusBadge status={mode === "REAL" ? { ...marketStatus, state: "closed", label: "Index status unavailable", detail: "No licensed index-status feed is connected", updated: "Unavailable" } : preview === "closed" ? { ...marketStatus, state: "closed", label: "Market closed", detail: "Next session opens Monday at 9:30 AM ET" } : marketStatus} /><View style={styles.statusMeta}>{mode === "DEMO" ? <DemoDataBadge /> : null}<TimestampLabel label={mode === "DEMO" ? "Illustrative context" : "Company quotes via MarketBrief backend"} /></View></Animated.View>
 
           {preview === "closed" ? <View style={styles.closedWrap}><MarketClosedState /></View> : null}
 
           <Animated.View entering={animation(70)} style={styles.section}>
-            <SectionHeader eyebrow="LIVE SNAPSHOT" title="Market pulse" />
+            <SectionHeader eyebrow={mode === "DEMO" ? "DEMO SNAPSHOT" : "ILLUSTRATIVE INDEX CONTEXT"} title="Market pulse" />
             <ScrollView
               contentContainerStyle={styles.horizontalContent}
               decelerationRate="fast"
@@ -144,9 +156,10 @@ export default function TodayScreen() {
 
           <Animated.View entering={animation(250)} style={styles.section}>
             <SectionHeader actionLabel="See all" onAction={() => router.push("/watchlist" as Href)} title="Moving in your watchlist" />
+            {watchlistState.symbols[0] ? <ResourceStateNotice onRetry={() => void loadQuotes(watchlistState.symbols)} resource={quotes[watchlistState.symbols[0]]} /> : null}
             {personalizedStocks.length ? (
               <View style={styles.stockList}>
-                {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} stock={stock} />)}
+                {personalizedStocks.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}
               </View>
             ) : (
               <EmptyState
@@ -180,7 +193,7 @@ export default function TodayScreen() {
 
           <Animated.View entering={animation(430)} style={styles.disclaimer}>
             <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={17} />
-            <Text style={styles.disclaimerText}>Demo market data and editorial content. MarketBrief provides education, not investment advice.</Text>
+            <Text style={styles.disclaimerText}>{mode === "REAL" ? "Company quotes come from the MarketBrief backend when available. Index cards, stories and deterministic brief narrative remain clearly illustrative until later milestones." : "Demo market data and editorial content. MarketBrief provides education, not investment advice."}</Text>
           </Animated.View>
         </View>
       </ScrollView>
@@ -233,6 +246,7 @@ const styles = StyleSheet.create({
   },
   statusRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, paddingHorizontal: spacing.lg },
   statusMeta: { alignItems: "flex-end", gap: spacing.xxs },
+  modeBanner: { paddingHorizontal: spacing.lg },
   closedWrap: { paddingHorizontal: spacing.lg, marginTop: spacing.lg },
   stateWrap: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.lg },
   horizontalContent: {

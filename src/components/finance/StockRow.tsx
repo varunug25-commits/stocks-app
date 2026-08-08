@@ -4,20 +4,26 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { Sparkline } from "@/components/finance/Sparkline";
 import type { Stock } from "@/data/today";
+import type { DataResource, MarketQuote } from "@/data/real";
+import { formatPrice } from "@/data/stocks";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 type StockRowProps = {
   stock: Stock;
+  quote?: DataResource<MarketQuote>;
   onPress?: () => void;
 };
 
-export function StockRow({ stock, onPress }: StockRowProps) {
-  const positive = stock.changePercent >= 0;
-  const signedChange = `${positive ? "+" : ""}${stock.changePercent.toFixed(2)}%`;
+export function StockRow({ stock, quote, onPress }: StockRowProps) {
+  const resolved = quote?.status === "ready" || quote?.status === "stale" ? quote.data : null;
+  const changePercent = resolved?.changePercent ?? null;
+  const positive = (changePercent ?? 0) >= 0;
+  const signedChange = changePercent === null ? "Unavailable" : `${positive ? "+" : ""}${changePercent.toFixed(2)}%`;
+  const price = resolved ? formatPrice(resolved.price) : quote?.status === "loading" || !quote ? "Loading…" : "Unavailable";
 
   return (
     <Pressable
-      accessibilityLabel={`${stock.name}, ${stock.price}, ${signedChange} today`}
+      accessibilityLabel={`${stock.name}, ${price}, ${signedChange} today`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -27,12 +33,12 @@ export function StockRow({ stock, onPress }: StockRowProps) {
         <Text style={styles.symbol}>{stock.symbol}</Text>
         <Text numberOfLines={1} style={styles.name}>{stock.name}</Text>
       </View>
-      <Sparkline points={stock.trend} positive={positive} />
+      {resolved ? <Sparkline points={stock.trend} positive={positive} /> : <View style={styles.sparkPlaceholder} />}
       <View style={styles.valueWrap}>
-        <Text style={styles.price}>{stock.price}</Text>
+        <Text style={styles.price}>{price}</Text>
         <View style={styles.changeRow}>
-          <Ionicons color={positive ? colors.positive : colors.negative} name={positive ? "caret-up" : "caret-down"} size={10} />
-          <Text style={[styles.change, { color: positive ? colors.positive : colors.negative }]}>{signedChange.replace(/[+-]/, "")}</Text>
+          {changePercent !== null ? <Ionicons color={positive ? colors.positive : colors.negative} name={positive ? "caret-up" : "caret-down"} size={10} /> : null}
+          <Text style={[styles.change, { color: changePercent === null ? colors.textTertiary : positive ? colors.positive : colors.negative }]}>{signedChange.replace(/[+-]/, "")}</Text>
         </View>
       </View>
     </Pressable>
@@ -81,5 +87,5 @@ const styles = StyleSheet.create({
   change: {
     ...typography.caption,
   },
+  sparkPlaceholder: { width: 68 },
 });
-

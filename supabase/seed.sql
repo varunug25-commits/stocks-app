@@ -1,0 +1,1 @@
+-- Company registry fixtures are inserted by the versioned migration.

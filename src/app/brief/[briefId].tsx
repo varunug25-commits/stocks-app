@@ -196,7 +196,9 @@ export default function BriefDetailScreen() {
         <View style={styles.disclaimer}>
           <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={19} />
           <Text style={styles.disclaimerText}>
-            Informational local demo content only. Not investment advice. No buy, sell or hold recommendation. No guaranteed outcome. No live AI or live market-data connection.
+            Brief prices and narratives remain informational local demo content,
+            separate from provider-backed screens. Not investment advice. No buy,
+            sell or hold recommendation. No guaranteed outcome. No live AI.
           </Text>
         </View>
       </ScrollView>

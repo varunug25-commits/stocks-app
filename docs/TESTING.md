@@ -39,3 +39,12 @@ Screenshots are stored in `docs/screenshots/phase-2-milestone-1/`. This Mac has 
 - The screenshots are Expo web-renderer design evidence, not native Android or iPhone screenshots.
 - Milestone 4 native Android testing is deferred and unverified. Milestone 4 native iPhone testing is deferred and unverified.
 - Review regression coverage additionally verifies uniqueness across every dated edition narrative, deterministic generation, exact claim/source unions, SEC-only filing evidence, insufficient-evidence citation safety, the absence of Briefs refresh controls, accurate shared/dismissed/unknown Share feedback, and the continued absence of the cancelled advanced Brief expansion.
+
+## Milestone 6 validation
+
+- Behavioral tests cover Twelve Data quote/chart normalization, SEC filing normalization, Finnhub news metadata, malformed responses, missing secrets, provider rate limits, cache hits, expired-cache refresh, stale-cache recovery, stable company IDs, freshness labels, and request validation.
+- Real/demo tests prove missing real configuration remains unavailable and does not invoke or return demo fixtures.
+- Security checks prove third-party secret identifiers are absent from all Expo runtime modules, protected cache/registry tables have RLS enabled, and `anon`/`authenticated` grants are revoked.
+- Architecture checks confirm Today, Markets, Watchlist, Search, and Stock Detail use the shared `MarketDataProvider`; Briefs and Why It Moved remain explicitly local and non-AI.
+- Provider adapters are tested with deterministic fixtures. The connected development project has both migrations and Edge Function version 2 deployed. The company-registry request/cache path is live; successful Twelve Data, Finnhub, and SEC provider retrieval is not claimed because their server configuration is absent.
+- Final Milestone 6 review validation passed 71/71 automated tests. Review coverage verifies provider publisher/timestamp/source-URL preservation, SEC canonical-URL preservation, public request validation, shared concurrent budgets, blocked cooldowns, cache hits that spend no upstream quota, stale-cache recovery when quota is exhausted, and missing configuration that spends no provider budget. Exact command outcomes are recorded in `MILESTONE_6_REAL_DATA_REPORT.md`.

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { CatalystCard } from "@/components/stock/CatalystCard";
 import { ChartRangeSelector } from "@/components/stock/ChartRangeSelector";
@@ -20,30 +20,33 @@ import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
+import { DataModeBanner } from "@/components/market/DataModeBanner";
+import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
 import {
-  catalysts,
   companyBySymbol,
-  filings,
   formatPrice,
-  getChartSeries,
   insights,
   isStockSymbol,
-  prices,
-  sourceMetadata,
-  statistics,
-  stockStories,
 } from "@/data/stocks";
 import type { ChartRange } from "@/data/stocks";
+import { formatFreshness } from "@/data/real";
 import { WATCHLIST_LIMIT } from "@/features/watchlist/model";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { barKey, useMarketData } from "@/features/market-data/MarketDataProvider";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export default function StockDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; preview?: string }>();
   const { state, dispatch } = useWatchlist();
+  const { mode, quotes, bars, filings: filingResources, news, events, loadStock } = useMarketData();
   const [limitVisible, setLimitVisible] = useState(false);
-  if (!isStockSymbol(params.symbol))
+  const validSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
+  const range = validSymbol ? state.selectedRanges[validSymbol] ?? "1D" : "1D";
+  useEffect(() => {
+    if (validSymbol) void loadStock(validSymbol, range);
+  }, [loadStock, range, validSymbol]);
+  if (!validSymbol)
     return (
       <Screen>
         <View style={styles.center}>
@@ -54,11 +57,28 @@ export default function StockDetailScreen() {
         </View>
       </Screen>
     );
-  const symbol = params.symbol;
+  const symbol = validSymbol;
   const company = companyBySymbol[symbol];
-  const price = prices[symbol];
   const insight = insights[symbol];
-  const range = state.selectedRanges[symbol] ?? "1D";
+  const quoteResource = quotes[symbol];
+  const quote = quoteResource?.status === "ready" || quoteResource?.status === "stale" ? quoteResource.data : null;
+  const barResource = bars[barKey(symbol, range)];
+  const barData = barResource?.status === "ready" || barResource?.status === "stale" ? barResource.data : [];
+  const chartPoints = barData.map((bar) => ({ label: new Date(bar.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }), value: bar.close }));
+  const filingResource = filingResources[symbol];
+  const filingData = filingResource?.status === "ready" || filingResource?.status === "stale" ? filingResource.data : null;
+  const newsResource = news[symbol];
+  const newsData = newsResource?.status === "ready" || newsResource?.status === "stale" ? newsResource.data : null;
+  const eventResource = events[symbol];
+  const eventData = eventResource?.status === "ready" || eventResource?.status === "stale" ? eventResource.data : null;
+  const statistics = quote ? [
+    { label: "Previous close", value: quote.previousClose === null ? "Unknown" : formatPrice(quote.previousClose) },
+    { label: "Open", value: quote.open === null ? "Unknown" : formatPrice(quote.open) },
+    { label: "High", value: quote.high === null ? "Unknown" : formatPrice(quote.high) },
+    { label: "Low", value: quote.low === null ? "Unknown" : formatPrice(quote.low) },
+    { label: "Volume", value: quote.volume === null ? "Unknown" : quote.volume.toLocaleString("en-US") },
+    { label: "Currency", value: quote.currency ?? "Unknown" },
+  ] : [];
   const added = state.symbols.includes(symbol);
   const toggle = () => {
     if (added) return dispatch({ type: "remove", symbol });
@@ -72,7 +92,14 @@ export default function StockDetailScreen() {
         <SkeletonState />
       </Screen>
     );
-  const summary = `${company.name} ${range} chart. ${price.change >= 0 ? "Gain" : "Loss"} of ${Math.abs(price.changePercent).toFixed(2)} percent. Selected range ends at ${formatPrice(price.price)}.`;
+  const summary = quote && quote.changePercent !== null
+    ? `${company.name} ${range} chart. ${quote.changePercent >= 0 ? "Gain" : "Loss"} of ${Math.abs(quote.changePercent).toFixed(2)} percent. Selected range ends at ${formatPrice(quote.price)}.`
+    : `${company.name} ${range} chart data is unavailable.`;
+  const sources = [quoteResource, barResource, filingResource, newsResource, eventResource].flatMap((resource, index) =>
+    resource?.status === "ready" || resource?.status === "stale"
+      ? [{ id: `${resource.meta.provider}-${index}`, name: resource.meta.source, kind: resource.meta.provider, timestamp: formatFreshness(resource.meta) }]
+      : [],
+  );
   return (
     <Screen>
       {params.preview === "offline" ? <OfflineBanner /> : null}
@@ -80,6 +107,7 @@ export default function StockDetailScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+        <DataModeBanner mode={mode} />
         <StockHeader
           added={added}
           company={company}
@@ -87,27 +115,17 @@ export default function StockDetailScreen() {
           onToggle={toggle}
         />
         <View style={styles.priceBlock}>
-          <PriceMovement
-            change={price.change}
-            percent={price.changePercent}
-            price={formatPrice(price.price)}
-          />
-          <View style={styles.metaRow}>
-            <View style={styles.status}>
-              <View style={styles.dot} />
-              <Text style={styles.statusText}>{price.status}</Text>
-            </View>
-            <DataFreshnessBadge />
-          </View>
-          <Text style={styles.updated}>{price.updated}</Text>
+          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={quoteResource} />
+          {quote ? <>{quote.change !== null && quote.changePercent !== null ? <PriceMovement change={quote.change} percent={quote.changePercent} price={formatPrice(quote.price)} /> : <View><Text style={styles.standalonePrice}>{formatPrice(quote.price)}</Text><Text style={styles.updated}>Daily change unavailable from provider</Text></View>}<View style={styles.metaRow}><View style={styles.status}><View style={[styles.dot, quote.marketStatus !== "open" && styles.dotMuted]} /><Text style={styles.statusText}>Market {quote.marketStatus}</Text></View><DataFreshnessBadge label={quoteResource?.status === "stale" ? "STALE" : mode === "REAL" ? "PROVIDER DATA" : "DEMO · ILLUSTRATIVE"} /></View></> : null}
         </View>
         <View style={styles.chartCard}>
+          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={barResource} />
           <PriceChart
             key={`${symbol}-${range}`}
-            points={getChartSeries(symbol, range, price.price)}
-            positive={price.change >= 0}
+            points={chartPoints}
+            positive={(quote?.change ?? 0) >= 0}
             summary={summary}
-            unavailable={params.preview === "chart-unavailable"}
+            unavailable={params.preview === "chart-unavailable" || !chartPoints.length}
           />
           <ChartRangeSelector
             onChange={(next: ChartRange) =>
@@ -117,6 +135,7 @@ export default function StockDetailScreen() {
           />
         </View>
         <View style={styles.section}>
+          <Text style={styles.localNarrative}>Illustrative non-AI explanation · not derived from the provider quote</Text>
           <WhyItMovedCard
             insight={insight}
             onPress={() => router.push(`/stock/${symbol}/why` as Href)}
@@ -125,44 +144,37 @@ export default function StockDetailScreen() {
         <View style={styles.section}>
           <SectionHeader
             eyebrow="WHAT MATTERS NEXT"
-            title="Catalysts and scenarios"
+            title="Company events"
           />
+          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={eventResource} />
           <View style={styles.stack}>
-            {catalysts[symbol].map((item) => (
-              <CatalystCard item={item} key={item.id} />
-            ))}
+            {eventData?.map((item) => <CatalystCard item={{ id: item.id, date: item.scheduledAt ? new Date(item.scheduledAt).toLocaleDateString() : "Timing unknown", title: item.title, detail: `${item.source} · ${item.timing}`, tone: "event" }} key={item.id} />)}
           </View>
         </View>
         <View style={styles.section}>
-          <SectionHeader eyebrow="SUPPORTING EVIDENCE" title="Key statistics" />
-          <MarketStatsGrid items={statistics[symbol]} />
+          <SectionHeader eyebrow="PROVIDER FIELDS" title="Session statistics" />
+          {statistics.length ? <MarketStatsGrid items={statistics} /> : <EmptyState description="The quote provider did not return session statistics." title="Statistics unavailable" />}
         </View>
         <View style={styles.section}>
           <SectionHeader title="Latest filings" />
+          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={filingResource} />
           <View style={styles.list}>
-            {filings[symbol].map((item) => (
-              <FilingRow item={item} key={item.id} />
-            ))}
+            {filingData?.map((item) => <FilingRow item={item} key={item.accessionNumber} />)}
           </View>
+          {filingData?.length === 0 ? <EmptyState description="SEC returned no supported 10-K, 10-Q or 8-K filings." title="No filing results" /> : null}
         </View>
         <View style={styles.section}>
           <SectionHeader title="Latest stories" />
+          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={newsResource} />
           <View style={styles.list}>
-            {stockStories[symbol].map((item) => (
-              <StoryRow item={item} key={item.id} />
-            ))}
+            {newsData?.map((item) => <StoryRow item={item} key={item.id} />)}
           </View>
+          {newsData?.length === 0 ? <EmptyState description="The news provider returned no permitted article metadata." title="No news results" /> : null}
         </View>
         <View style={styles.section}>
           <SectionHeader title="Sources" />
           <View style={styles.list}>
-            <SourceList
-              items={[
-                sourceMetadata.sec,
-                sourceMetadata.editorial,
-                sourceMetadata.market,
-              ]}
-            />
+            <SourceList items={sources} />
           </View>
         </View>
         <View style={styles.disclaimer}>
@@ -172,8 +184,7 @@ export default function StockDetailScreen() {
             size={18}
           />
           <Text style={styles.disclaimerText}>
-            Illustrative local data for informational purposes only. Not
-            investment advice. No live market connection.
+            {mode === "REAL" ? "Provider data is delivered through MarketBrief’s backend and may be delayed, stale or unavailable. Editorial explanation remains illustrative and non-AI." : "Illustrative local demo data for informational purposes only. Not investment advice."}
           </Text>
         </View>
       </ScrollView>
@@ -212,8 +223,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.positive,
   },
+  dotMuted: { backgroundColor: colors.textTertiary },
   statusText: { ...typography.label, color: colors.textSecondary },
   updated: { ...typography.caption, color: colors.textTertiary },
+  standalonePrice: { ...typography.display, color: colors.textPrimary },
+  localNarrative: { ...typography.caption, color: colors.warning },
   chartCard: {
     padding: spacing.md,
     marginTop: spacing.lg,

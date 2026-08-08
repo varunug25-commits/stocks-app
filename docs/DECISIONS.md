@@ -39,3 +39,33 @@ Use a reducer-backed `BriefsProvider` for read IDs, saved IDs, selected edition 
 ## ADR-010 — Honest evidence boundaries
 
 Every brief separates fact, interpretation, and uncertainty and includes a low-confidence insufficient-evidence variant that states what is missing. Brief copy is local illustrative editorial data, not model output, investment advice, or evidence of a live feed.
+
+## ADR-011 — Server-side provider boundary
+
+Expo calls one MarketBrief Supabase Edge Function using public project identifiers. Twelve Data, Finnhub, SEC contact configuration, cache writes, and provider error details remain server-side. Mobile modules consume normalized MarketBrief contracts rather than vendor JSON and never reference third-party secret identifiers.
+
+## ADR-012 — Explicit real/demo modes
+
+`REAL` and `DEMO` are explicit runtime modes. Demo fixtures support automated tests and design review. A failed real request becomes unavailable, rate-limited, stale, or error state; it never becomes a demo quote or chart. Deterministic brief and Why It Moved content remains separately labeled local narrative.
+
+## ADR-013 — Stable company identity
+
+Use UUID company IDs with symbol, exchange, currency, and CIK as attributes. Ticker symbols remain lookup aliases rather than permanent company identifiers. Logo URLs stay null until a permitted source and license are recorded.
+
+## ADR-014 — Centralized caching and stale recovery
+
+The Edge Function uses the protected `market_data_cache` table and one TTL map: quotes 60 seconds, bars 5 minutes, news 15 minutes, events 1 hour, filings 6 hours, and company profiles 7 days. Fresh cache avoids provider calls. Expired real data may be returned only as explicitly stale with the provider error code when refresh fails.
+
+## ADR-015 — Provider and licensing scope
+
+Twelve Data and Finnhub adapters are for development/internal prototype use only. No production commercial external-display right is assumed. SEC retrieval uses structured `data.sec.gov` submissions, a configurable descriptive User-Agent with monitored contact, and a conservative interval below the SEC maximum.
+
+## ADR-016 — Shared provider request budgets
+
+Provider quotas are enforced through one atomic Postgres function backed by `provider_request_windows`. The function takes a transaction-scoped advisory lock per provider, so separate Edge Function instances share the same Twelve Data, Finnhub, and SEC EDGAR budget. Central limits are eight Twelve Data requests per minute, twenty Finnhub requests per minute, and six SEC requests per second, each with a provider-specific cooldown. The limiter runs only inside a cache loader: fresh cache hits consume no upstream budget, while expired real cache entries can still return as explicitly stale when the shared budget is exhausted.
+
+The publishable Supabase key is intentionally public. Until real user authentication exists, provider quotas, the ten-symbol allowlist, strict request validation, a 4 KiB request-body ceiling, centralized caching, and structured cooldown errors form the abuse boundary. This caps provider usage but is not per-user authorization or a guarantee of compliance with every commercial provider plan; stronger per-user controls remain deferred with real authentication.
+
+## ADR-017 — External provider attribution
+
+Normalized company news keeps the provider-supplied publisher, timestamp, and source URL through the UI boundary. Available source URLs open as external links and are never relabeled as MarketBrief Editorial. SEC rows preserve and open the canonical official filing URL and identify SEC as the source. Explicit demo fixtures keep their own demo attribution and do not masquerade as external reporting.
