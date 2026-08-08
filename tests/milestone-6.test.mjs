@@ -67,6 +67,34 @@ test("provider news and SEC filings retain external-source UI treatment", async 
   assert.match(filingRow, /Linking\.openURL\(filing\.canonicalUrl/);
 });
 
+test("provider credentials stay out of request URLs and logs", async () => {
+  const [twelveData, finnhub] = await Promise.all([
+    read("supabase/functions/_shared/providers/twelveData.ts"),
+    read("supabase/functions/_shared/providers/finnhub.ts"),
+  ]);
+  assert.doesNotMatch(twelveData, /params\.set\("apikey"/);
+  assert.match(twelveData, /Authorization: `apikey \$\{apiKey\}`/);
+  assert.doesNotMatch(finnhub, /params\.set\("token"/);
+  assert.match(finnhub, /"X-Finnhub-Token": apiKey/);
+  assert.doesNotMatch(`${twelveData}\n${finnhub}`, /console\.(?:log|warn|error)/);
+});
+
+test("Stock Detail range changes and retries load only relevant resources", async () => {
+  const [stock, provider] = await Promise.all([
+    read("src/app/stock/[symbol].tsx"),
+    read("src/features/market-data/MarketDataProvider.tsx"),
+  ]);
+  assert.match(stock, /loadStock\(validSymbol\)/);
+  assert.match(stock, /loadBars\(validSymbol, range\)/);
+  assert.doesNotMatch(stock, /loadStock\(validSymbol, range\)/);
+  for (const retry of ["loadQuote(symbol)", "loadBars(symbol, range)", "loadEvents(symbol)", "loadFilings(symbol)", "loadNews(symbol)"])
+    assert.match(stock, new RegExp(retry.replace(/[()]/g, "\\$&")));
+  const stockLoader = provider.match(/const loadStock[\s\S]*?\n  }, \[/)?.[0] ?? "";
+  assert.doesNotMatch(stockLoader, /loadBars/);
+  assert.match(stock, /latestFilingsForPresentation\(filingData\)/);
+  assert.match(stock, /latestNewsForPresentation\(newsData\)/);
+});
+
 test("real chart hydration clamps an initially empty selection", async () => {
   const chart = await read("src/components/stock/PriceChart.tsx");
   assert.match(chart, /Math\.max\(0, Math\.min\(selected, points\.length - 1\)\)/);

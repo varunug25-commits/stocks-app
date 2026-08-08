@@ -27,7 +27,11 @@ type MarketDataContextValue = {
   loadQuote(symbol: StockSymbol): Promise<void>;
   loadQuotes(symbols: StockSymbol[]): Promise<void>;
   loadBars(symbol: StockSymbol, range: ChartRange): Promise<void>;
-  loadStock(symbol: StockSymbol, range: ChartRange): Promise<void>;
+  loadCompany(symbol: StockSymbol): Promise<void>;
+  loadNews(symbol: StockSymbol): Promise<void>;
+  loadFilings(symbol: StockSymbol): Promise<void>;
+  loadEvents(symbol: StockSymbol): Promise<void>;
+  loadStock(symbol: StockSymbol): Promise<void>;
 };
 
 const Context = createContext<MarketDataContextValue | null>(null);
@@ -78,18 +82,41 @@ export function MarketDataProvider({ children }: PropsWithChildren) {
     setBars,
     () => mode === "DEMO" ? demoBars(symbol, range) : requestMarketData<PriceBar[]>({ resource: "bars", symbol, range }),
   ), [mode, run]);
-  const loadStock = useCallback(async (symbol: StockSymbol, range: ChartRange) => {
+  const loadCompany = useCallback(async (symbol: StockSymbol) => run(
+    "company",
+    symbol,
+    setCompanies as React.Dispatch<React.SetStateAction<Record<string, DataResource<CompanyIdentity> | undefined>>>,
+    () => mode === "DEMO" ? demoCompany(symbol) : requestMarketData<CompanyIdentity>({ resource: "company", symbol }),
+  ), [mode, run]);
+  const loadNews = useCallback(async (symbol: StockSymbol) => run(
+    "news",
+    symbol,
+    setNews as React.Dispatch<React.SetStateAction<Record<string, DataResource<CompanyNewsArticle[]> | undefined>>>,
+    () => mode === "DEMO" ? demoNews(symbol) : requestMarketData<CompanyNewsArticle[]>({ resource: "news", symbol }),
+  ), [mode, run]);
+  const loadFilings = useCallback(async (symbol: StockSymbol) => run(
+    "filings",
+    symbol,
+    setFilings as React.Dispatch<React.SetStateAction<Record<string, DataResource<FilingData[]> | undefined>>>,
+    () => mode === "DEMO" ? demoFilings(symbol) : requestMarketData<FilingData[]>({ resource: "filings", symbol }),
+  ), [mode, run]);
+  const loadEvents = useCallback(async (symbol: StockSymbol) => run(
+    "events",
+    symbol,
+    setEvents as React.Dispatch<React.SetStateAction<Record<string, DataResource<MarketEventData[]> | undefined>>>,
+    () => mode === "DEMO" ? demoEvents(symbol) : requestMarketData<MarketEventData[]>({ resource: "events", symbol }),
+  ), [mode, run]);
+  const loadStock = useCallback(async (symbol: StockSymbol) => {
     await Promise.all([
       loadQuote(symbol),
-      loadBars(symbol, range),
-      run("company", symbol, setCompanies as React.Dispatch<React.SetStateAction<Record<string, DataResource<CompanyIdentity> | undefined>>>, () => mode === "DEMO" ? demoCompany(symbol) : requestMarketData<CompanyIdentity>({ resource: "company", symbol })),
-      run("news", symbol, setNews as React.Dispatch<React.SetStateAction<Record<string, DataResource<CompanyNewsArticle[]> | undefined>>>, () => mode === "DEMO" ? demoNews(symbol) : requestMarketData<CompanyNewsArticle[]>({ resource: "news", symbol })),
-      run("filings", symbol, setFilings as React.Dispatch<React.SetStateAction<Record<string, DataResource<FilingData[]> | undefined>>>, () => mode === "DEMO" ? demoFilings(symbol) : requestMarketData<FilingData[]>({ resource: "filings", symbol })),
-      run("events", symbol, setEvents as React.Dispatch<React.SetStateAction<Record<string, DataResource<MarketEventData[]> | undefined>>>, () => mode === "DEMO" ? demoEvents(symbol) : requestMarketData<MarketEventData[]>({ resource: "events", symbol })),
+      loadCompany(symbol),
+      loadNews(symbol),
+      loadFilings(symbol),
+      loadEvents(symbol),
     ]);
-  }, [loadBars, loadQuote, mode, run]);
+  }, [loadCompany, loadEvents, loadFilings, loadNews, loadQuote]);
 
-  const value = useMemo(() => ({ mode, quotes, companies, news, filings, events, bars, loadQuote, loadQuotes, loadBars, loadStock }), [mode, quotes, companies, news, filings, events, bars, loadQuote, loadQuotes, loadBars, loadStock]);
+  const value = useMemo(() => ({ mode, quotes, companies, news, filings, events, bars, loadQuote, loadQuotes, loadBars, loadCompany, loadNews, loadFilings, loadEvents, loadStock }), [mode, quotes, companies, news, filings, events, bars, loadQuote, loadQuotes, loadBars, loadCompany, loadNews, loadFilings, loadEvents, loadStock]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

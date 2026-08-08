@@ -33,7 +33,13 @@ export function isoTimestamp(value: unknown) {
   if (typeof value === "number" && Number.isFinite(value))
     return new Date(value > 10_000_000_000 ? value : value * 1000).toISOString();
   if (typeof value === "string" && value.trim()) {
-    const parsed = Date.parse(value.includes("T") ? value : value.replace(" ", "T") + "Z");
+    const trimmed = value.trim();
+    if (/^\d+(?:\.\d+)?$/.test(trimmed)) {
+      const numeric = Number(trimmed);
+      if (Number.isFinite(numeric))
+        return new Date(numeric > 10_000_000_000 ? numeric : numeric * 1000).toISOString();
+    }
+    const parsed = Date.parse(trimmed.includes("T") ? trimmed : trimmed.replace(" ", "T") + "Z");
     if (Number.isFinite(parsed)) return new Date(parsed).toISOString();
   }
   return null;

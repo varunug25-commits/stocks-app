@@ -31,6 +31,12 @@ export function normalizeTwelveDataQuote(payload: unknown, symbol: string): Mark
     : value.is_market_open === false
       ? "closed"
       : "unknown";
+  const providerTimestamp = [
+    value.last_update_at,
+    value.last_quote_at,
+    value.timestamp,
+    value.datetime,
+  ].map(isoTimestamp).find((timestamp) => timestamp !== null) ?? null;
   return {
     companyId: company.id,
     symbol: requiredString(value.symbol, "symbol").toUpperCase(),
@@ -45,7 +51,7 @@ export function normalizeTwelveDataQuote(payload: unknown, symbol: string): Mark
     exchange: nullableString(value.exchange),
     currency: nullableString(value.currency),
     marketStatus: status,
-    providerTimestamp: isoTimestamp(value.timestamp ?? value.datetime),
+    providerTimestamp,
   };
 }
 
@@ -86,10 +92,12 @@ export class TwelveDataProvider implements MarketDataProvider {
   }
 
   private async request(path: string, params: URLSearchParams) {
-    params.set("apikey", this.key());
+    const apiKey = this.key();
     let response: Response;
     try {
-      response = await this.fetcher(`https://api.twelvedata.com/${path}?${params}`);
+      response = await this.fetcher(`https://api.twelvedata.com/${path}?${params}`, {
+        headers: { Authorization: `apikey ${apiKey}` },
+      });
     } catch (error) {
       throw toProviderError(error, "Twelve Data");
     }
