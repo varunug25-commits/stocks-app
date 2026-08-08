@@ -61,10 +61,12 @@ export class FinnhubProvider implements NewsProvider, EventsProvider {
     return this.apiKey;
   }
   private async request(path: string, params: URLSearchParams) {
-    params.set("token", this.key());
+    const apiKey = this.key();
     let response: Response;
     try {
-      response = await this.fetcher(`https://finnhub.io/api/v1/${path}?${params}`);
+      response = await this.fetcher(`https://finnhub.io/api/v1/${path}?${params}`, {
+        headers: { "X-Finnhub-Token": apiKey },
+      });
     } catch (error) {
       throw toProviderError(error, "Finnhub");
     }

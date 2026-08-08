@@ -29,7 +29,7 @@ import {
   isStockSymbol,
 } from "@/data/stocks";
 import type { ChartRange } from "@/data/stocks";
-import { formatFreshness } from "@/data/real";
+import { formatFreshness, latestFilingsForPresentation, latestNewsForPresentation } from "@/data/real";
 import { WATCHLIST_LIMIT } from "@/features/watchlist/model";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { barKey, useMarketData } from "@/features/market-data/MarketDataProvider";
@@ -39,13 +39,19 @@ export default function StockDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; preview?: string }>();
   const { state, dispatch } = useWatchlist();
-  const { mode, quotes, bars, filings: filingResources, news, events, loadStock } = useMarketData();
+  const {
+    mode, quotes, bars, filings: filingResources, news, events,
+    loadStock, loadQuote, loadBars, loadNews, loadFilings, loadEvents,
+  } = useMarketData();
   const [limitVisible, setLimitVisible] = useState(false);
   const validSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
   const range = validSymbol ? state.selectedRanges[validSymbol] ?? "1D" : "1D";
   useEffect(() => {
-    if (validSymbol) void loadStock(validSymbol, range);
-  }, [loadStock, range, validSymbol]);
+    if (validSymbol) void loadStock(validSymbol);
+  }, [loadStock, validSymbol]);
+  useEffect(() => {
+    if (validSymbol) void loadBars(validSymbol, range);
+  }, [loadBars, range, validSymbol]);
   if (!validSymbol)
     return (
       <Screen>
@@ -67,8 +73,10 @@ export default function StockDetailScreen() {
   const chartPoints = barData.map((bar) => ({ label: new Date(bar.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }), value: bar.close }));
   const filingResource = filingResources[symbol];
   const filingData = filingResource?.status === "ready" || filingResource?.status === "stale" ? filingResource.data : null;
+  const latestFilings = filingData ? latestFilingsForPresentation(filingData) : null;
   const newsResource = news[symbol];
   const newsData = newsResource?.status === "ready" || newsResource?.status === "stale" ? newsResource.data : null;
+  const latestNews = newsData ? latestNewsForPresentation(newsData) : null;
   const eventResource = events[symbol];
   const eventData = eventResource?.status === "ready" || eventResource?.status === "stale" ? eventResource.data : null;
   const statistics = quote ? [
@@ -115,11 +123,11 @@ export default function StockDetailScreen() {
           onToggle={toggle}
         />
         <View style={styles.priceBlock}>
-          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={quoteResource} />
+          <ResourceStateNotice onRetry={() => void loadQuote(symbol)} resource={quoteResource} />
           {quote ? <>{quote.change !== null && quote.changePercent !== null ? <PriceMovement change={quote.change} percent={quote.changePercent} price={formatPrice(quote.price)} /> : <View><Text style={styles.standalonePrice}>{formatPrice(quote.price)}</Text><Text style={styles.updated}>Daily change unavailable from provider</Text></View>}<View style={styles.metaRow}><View style={styles.status}><View style={[styles.dot, quote.marketStatus !== "open" && styles.dotMuted]} /><Text style={styles.statusText}>Market {quote.marketStatus}</Text></View><DataFreshnessBadge label={quoteResource?.status === "stale" ? "STALE" : mode === "REAL" ? "PROVIDER DATA" : "DEMO · ILLUSTRATIVE"} /></View></> : null}
         </View>
         <View style={styles.chartCard}>
-          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={barResource} />
+          <ResourceStateNotice onRetry={() => void loadBars(symbol, range)} resource={barResource} />
           <PriceChart
             key={`${symbol}-${range}`}
             points={chartPoints}
@@ -146,7 +154,7 @@ export default function StockDetailScreen() {
             eyebrow="WHAT MATTERS NEXT"
             title="Company events"
           />
-          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={eventResource} />
+          <ResourceStateNotice onRetry={() => void loadEvents(symbol)} resource={eventResource} />
           <View style={styles.stack}>
             {eventData?.map((item) => <CatalystCard item={{ id: item.id, date: item.scheduledAt ? new Date(item.scheduledAt).toLocaleDateString() : "Timing unknown", title: item.title, detail: `${item.source} · ${item.timing}`, tone: "event" }} key={item.id} />)}
           </View>
@@ -157,17 +165,17 @@ export default function StockDetailScreen() {
         </View>
         <View style={styles.section}>
           <SectionHeader title="Latest filings" />
-          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={filingResource} />
+          <ResourceStateNotice onRetry={() => void loadFilings(symbol)} resource={filingResource} />
           <View style={styles.list}>
-            {filingData?.map((item) => <FilingRow item={item} key={item.accessionNumber} />)}
+            {latestFilings?.map((item) => <FilingRow item={item} key={item.accessionNumber} />)}
           </View>
           {filingData?.length === 0 ? <EmptyState description="SEC returned no supported 10-K, 10-Q or 8-K filings." title="No filing results" /> : null}
         </View>
         <View style={styles.section}>
           <SectionHeader title="Latest stories" />
-          <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={newsResource} />
+          <ResourceStateNotice onRetry={() => void loadNews(symbol)} resource={newsResource} />
           <View style={styles.list}>
-            {newsData?.map((item) => <StoryRow item={item} key={item.id} />)}
+            {latestNews?.map((item) => <StoryRow item={item} key={item.id} />)}
           </View>
           {newsData?.length === 0 ? <EmptyState description="The news provider returned no permitted article metadata." title="No news results" /> : null}
         </View>

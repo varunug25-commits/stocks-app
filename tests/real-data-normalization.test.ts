@@ -5,7 +5,7 @@ import { loadWithCache, type CacheRecord, type CacheStore } from "../supabase/fu
 import { ProviderError } from "../supabase/functions/_shared/errors.ts";
 import { ProviderRequestLimiter, type ProviderBudgetStore } from "../supabase/functions/_shared/rateLimit.ts";
 import { companyForSymbol } from "../supabase/functions/_shared/registry.ts";
-import { normalizeFinnhubNews } from "../supabase/functions/_shared/providers/finnhub.ts";
+import { FinnhubProvider, normalizeFinnhubNews } from "../supabase/functions/_shared/providers/finnhub.ts";
 import { normalizeSecSubmissions, SecEdgarProvider } from "../supabase/functions/_shared/providers/sec.ts";
 import { normalizeTwelveDataBars, normalizeTwelveDataQuote, TwelveDataProvider } from "../supabase/functions/_shared/providers/twelveData.ts";
 import { createMarketDataService, parseMarketDataRequest, readPublicRequestJson, validatePublicRequest } from "../supabase/functions/_shared/service.ts";
@@ -13,7 +13,7 @@ import { edgeFunctionUrl, resolveDataMode } from "../src/data/real/config.ts";
 import { MarketDataClientError, requestMarketData } from "../src/data/real/client.ts";
 import { formatFreshness } from "../src/data/real/freshness.ts";
 import { errorToResource } from "../src/data/real/resource.ts";
-import { presentFiling, presentNewsArticle } from "../src/data/real/presentation.ts";
+import { latestFilingsForPresentation, latestNewsForPresentation, presentFiling, presentNewsArticle } from "../src/data/real/presentation.ts";
 
 test("Twelve Data quote normalization preserves available values and unknowns", () => {
   const quote = normalizeTwelveDataQuote({
@@ -32,6 +32,55 @@ test("Twelve Data quote normalization preserves available values and unknowns", 
   assert.equal(withoutOptional.open, null);
   assert.equal(withoutOptional.volume, null);
   assert.equal(withoutOptional.marketStatus, "unknown");
+});
+
+test("Twelve Data quote freshness prefers latest-update metadata over legacy timestamps", () => {
+  const withLastUpdate = normalizeTwelveDataQuote({
+    symbol: "AAPL", close: "231.42",
+    last_update_at: "2026-08-08 15:45:00",
+    last_quote_at: "2026-08-08 15:44:00",
+    timestamp: 1_786_200_000,
+    datetime: "2026-08-08 13:30:00",
+  }, "AAPL");
+  assert.equal(withLastUpdate.providerTimestamp, "2026-08-08T15:45:00.000Z");
+
+  const withLastQuote = normalizeTwelveDataQuote({
+    symbol: "AAPL", close: "231.42",
+    last_quote_at: "2026-08-08 15:44:00",
+    timestamp: 1_786_200_000,
+    datetime: "2026-08-08 13:30:00",
+  }, "AAPL");
+  assert.equal(withLastQuote.providerTimestamp, "2026-08-08T15:44:00.000Z");
+});
+
+test("provider credentials are sent only in supported authentication headers", async () => {
+  const twelveSecret = "twelve-server-secret";
+  let twelveUrl = "";
+  let twelveAuthorization: string | null = null;
+  const twelve = new TwelveDataProvider(twelveSecret, async (input, init) => {
+    twelveUrl = String(input);
+    twelveAuthorization = new Headers(init?.headers).get("Authorization");
+    return Response.json({ symbol: "AAPL", close: "231.42", last_update_at: "2026-08-08 15:45:00" });
+  });
+  const quote = await twelve.getQuote("AAPL");
+  assert.equal(new URL(twelveUrl).searchParams.has("apikey"), false);
+  assert.doesNotMatch(twelveUrl, new RegExp(twelveSecret));
+  assert.equal(twelveAuthorization, `apikey ${twelveSecret}`);
+  assert.doesNotMatch(JSON.stringify(quote), new RegExp(twelveSecret));
+
+  const finnhubSecret = "finnhub-server-secret";
+  let finnhubUrl = "";
+  let finnhubToken: string | null = null;
+  const finnhub = new FinnhubProvider(finnhubSecret, async (input, init) => {
+    finnhubUrl = String(input);
+    finnhubToken = new Headers(init?.headers).get("X-Finnhub-Token");
+    return Response.json([]);
+  });
+  const news = await finnhub.getCompanyNews("AAPL");
+  assert.equal(new URL(finnhubUrl).searchParams.has("token"), false);
+  assert.doesNotMatch(finnhubUrl, new RegExp(finnhubSecret));
+  assert.equal(finnhubToken, finnhubSecret);
+  assert.doesNotMatch(JSON.stringify(news), new RegExp(finnhubSecret));
 });
 
 test("Twelve Data chart normalization returns chronological OHLCV bars", () => {
@@ -106,6 +155,33 @@ test("provider publisher, source URL and SEC canonical URL survive UI presentati
   });
   assert.equal(filing.source, "SEC");
   assert.equal(filing.canonicalUrl, "https://www.sec.gov/Archives/example");
+});
+
+test("Stock Detail presentation keeps only the ten newest provider records", () => {
+  const articles = Array.from({ length: 12 }, (_, index) => ({
+    id: `news-${index}`, headline: `Story ${index}`, summary: null,
+    publisher: "Example Wire", publishedAt: `2026-08-${String(index + 1).padStart(2, "0")}T10:00:00.000Z`,
+    sourceUrl: `https://example.com/${index}`, relatedSymbols: ["AAPL"], provider: "finnhub",
+  }));
+  const latestNews = latestNewsForPresentation(articles);
+  assert.equal(latestNews.length, 10);
+  assert.equal(latestNews[0]!.id, "news-11");
+  assert.equal(latestNews.at(-1)!.id, "news-2");
+  assert.equal(latestNews[0]!.provider, "finnhub");
+  assert.equal(articles[0]!.id, "news-0");
+
+  const filings = Array.from({ length: 12 }, (_, index) => ({
+    accessionNumber: `accession-${index}`, formType: "8-K" as const,
+    filingDate: `2026-07-${String(index + 1).padStart(2, "0")}`, reportDate: null,
+    companyId: "company-id", company: "Apple Inc.", cik: "0000320193",
+    primaryDocument: `aapl-${index}.htm`, canonicalUrl: `https://www.sec.gov/Archives/${index}`, source: "SEC",
+  }));
+  const latestFilings = latestFilingsForPresentation(filings);
+  assert.equal(latestFilings.length, 10);
+  assert.equal(latestFilings[0]!.accessionNumber, "accession-11");
+  assert.equal(latestFilings.at(-1)!.accessionNumber, "accession-2");
+  assert.equal(latestFilings[0]!.source, "SEC");
+  assert.equal(filings[0]!.accessionNumber, "accession-0");
 });
 
 test("malformed provider responses and unsupported requests fail explicitly", () => {

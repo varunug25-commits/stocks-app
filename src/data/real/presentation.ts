@@ -40,3 +40,20 @@ export function presentFiling(filing: FilingData): FilingPresentation {
     canonicalUrl: filing.canonicalUrl,
   };
 }
+
+function sortableTimestamp(value: string) {
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
+export function latestNewsForPresentation(articles: CompanyNewsArticle[], limit = 10) {
+  return [...articles]
+    .sort((left, right) => sortableTimestamp(right.publishedAt) - sortableTimestamp(left.publishedAt))
+    .slice(0, limit);
+}
+
+export function latestFilingsForPresentation(filings: FilingData[], limit = 10) {
+  return [...filings]
+    .sort((left, right) => sortableTimestamp(right.filingDate) - sortableTimestamp(left.filingDate))
+    .slice(0, limit);
+}
