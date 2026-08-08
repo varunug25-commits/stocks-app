@@ -1,9 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { EditorialArtwork } from "@/components/finance/EditorialArtwork";
 import { SourceCitation } from "@/components/finance/SourceCitation";
 import type { Story } from "@/data/today";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 type StoryCardProps = {
   story: Story;
@@ -14,49 +13,49 @@ export function StoryCard({ story, onPress }: StoryCardProps) {
   return (
     <Pressable
       accessibilityLabel={`${story.title}. ${story.readTime}`}
-      accessibilityRole="button"
+      accessibilityRole={onPress ? "button" : undefined}
+      disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <EditorialArtwork height={118} story={story} />
       <View style={styles.content}>
-        <Text style={styles.category}>{story.category}</Text>
-        <Text numberOfLines={3} style={styles.title}>{story.title}</Text>
-        <SourceCitation published={story.published} source={story.source} />
+        <View style={styles.metaRow}>
+          <Text style={[styles.category, story.category === "MACRO" && styles.macro]}>{story.category}</Text>
+          <SourceCitation published={story.published} source={story.source} />
+        </View>
+        <Text style={styles.title}>{story.title}</Text>
+        <Text numberOfLines={2} style={styles.summary}>{story.summary}</Text>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    width: 268,
-    overflow: "hidden",
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+  row: {
+    minHeight: 116,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   pressed: {
     opacity: 0.82,
     transform: [{ scale: 0.985 }],
   },
   content: {
-    padding: spacing.md,
-    minHeight: 150,
+    paddingVertical: spacing.md,
   },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   category: {
     ...typography.caption,
-    color: colors.teal,
+    color: colors.textSecondary,
     letterSpacing: 0.85,
   },
+  macro: { color: colors.warning },
   title: {
     fontSize: 17,
     lineHeight: 22,
     fontWeight: "700",
     color: colors.textPrimary,
-    marginTop: spacing.xs,
-    marginBottom: spacing.md,
+    marginTop: 6,
   },
+  summary: { ...typography.caption, color: colors.textSecondary, marginTop: 5 },
 });
-

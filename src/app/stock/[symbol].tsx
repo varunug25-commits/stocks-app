@@ -20,7 +20,6 @@ import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
-import { DataModeBanner } from "@/components/market/DataModeBanner";
 import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
 import {
   companyBySymbol,
@@ -57,7 +56,7 @@ export default function StockDetailScreen() {
       <Screen>
         <View style={styles.center}>
           <EmptyState
-            description="This company is not in the local demo catalog."
+            description="This company is not in the demo catalog."
             title="Stock unavailable"
           />
         </View>
@@ -115,7 +114,6 @@ export default function StockDetailScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <DataModeBanner mode={mode} />
         <StockHeader
           added={added}
           company={company}
@@ -192,7 +190,7 @@ export default function StockDetailScreen() {
             size={18}
           />
           <Text style={styles.disclaimerText}>
-            {mode === "REAL" ? "Provider data is delivered through MarketBrief’s backend and may be delayed, stale or unavailable. Editorial explanation remains illustrative and non-AI." : "Illustrative local demo data for informational purposes only. Not investment advice."}
+            {mode === "REAL" ? "Provider data may be delayed, stale or unavailable. Editorial explanation remains illustrative." : "Illustrative demo data for informational purposes only. Not investment advice."}
           </Text>
         </View>
       </ScrollView>
@@ -209,15 +207,16 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     alignSelf: "center",
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.xxl,
+    backgroundColor: colors.background,
   },
   center: { flex: 1, justifyContent: "center", padding: spacing.lg },
-  priceBlock: { marginTop: spacing.xl },
+  priceBlock: { marginTop: spacing.md },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   status: {
     minHeight: 36,
@@ -229,7 +228,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.positive,
+    backgroundColor: colors.textSecondary,
   },
   dotMuted: { backgroundColor: colors.textTertiary },
   statusText: { ...typography.label, color: colors.textSecondary },
@@ -238,27 +237,24 @@ const styles = StyleSheet.create({
   localNarrative: { ...typography.caption, color: colors.warning },
   chartCard: {
     padding: spacing.md,
-    marginTop: spacing.lg,
-    borderRadius: radii.hero,
+    marginTop: spacing.md,
+    borderRadius: radii.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  section: { gap: spacing.sm, marginTop: spacing.xxxl },
-  stack: { gap: spacing.sm },
+  section: { gap: spacing.xs, marginTop: spacing.xl },
+  stack: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   list: {
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
     overflow: "hidden",
   },
   disclaimer: {
     flexDirection: "row",
     gap: spacing.xs,
-    marginTop: spacing.xxxl,
-    paddingTop: spacing.lg,
+    marginTop: spacing.xxl,
+    paddingTop: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "@/theme/tokens";
+import { colors, numerals, spacing, typography } from "@/theme/tokens";
 export function PriceMovement({
   price,
   change,
@@ -26,11 +26,12 @@ export function PriceMovement({
 }
 const s = StyleSheet.create({
   price: {
+    ...numerals,
     ...typography.display,
-    fontSize: 40,
-    lineHeight: 46,
+    fontSize: 36,
+    lineHeight: 42,
     color: colors.textPrimary,
     letterSpacing: -1,
   },
-  change: { ...typography.label, marginTop: spacing.xxs },
+  change: { ...numerals, ...typography.label, marginTop: spacing.xxs },
 });

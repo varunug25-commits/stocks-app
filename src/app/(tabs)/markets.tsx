@@ -7,23 +7,22 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { MarketIndexCard } from "@/components/finance/MarketIndexCard";
 import { DemoDataBadge } from "@/components/foundation/Feedback";
+import { IconButton } from "@/components/foundation/IconButton";
+import { ProductHeader } from "@/components/foundation/ProductHeader";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EarningsEventCard } from "@/components/market/EarningsEventCard";
 import { EconomicEventCard } from "@/components/market/EconomicEventCard";
 import { FilterChip } from "@/components/market/FilterChip";
-import { MarketMoodCard } from "@/components/market/MarketMoodCard";
 import { MarketMoverRow } from "@/components/market/MarketMoverRow";
 import { MarketStatusBadge } from "@/components/market/MarketStatusBadge";
+import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
 import { SectorPerformanceCard } from "@/components/market/SectorPerformanceCard";
-import { TimestampLabel } from "@/components/market/TimestampLabel";
 import { AppBottomSheet } from "@/components/system/AppBottomSheet";
-import { earningsEvents, economicEvents, marketIndices, marketMood, marketStatus, mostActive, sectors, topGainers, topLosers } from "@/data/markets";
+import { earningsEvents, economicEvents, marketIndices, marketStatus, mostActive, sectors, topGainers, topLosers } from "@/data/markets";
 import { isStockSymbol } from "@/data/stocks";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
-import { DataModeBanner } from "@/components/market/DataModeBanner";
-import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 type Filter = "Overview" | "Gainers" | "Losers" | "Active";
 
@@ -32,23 +31,119 @@ export default function MarketsScreen() {
   const [filter, setFilter] = useState<Filter>("Overview");
   const [detail, setDetail] = useState<{ title: string; body: string } | null>(null);
   const { mode, quotes, loadQuotes } = useMarketData();
-  const movers = useMemo(() => filter === "Losers" ? topLosers : filter === "Active" ? mostActive : topGainers, [filter]);
-  const moverSymbols = useMemo(() => [...new Set([...topGainers, ...topLosers, ...mostActive].map((item) => item.symbol))].filter(isStockSymbol), []);
+  const movers = useMemo(
+    () => filter === "Gainers" ? topGainers : filter === "Losers" ? topLosers : mostActive,
+    [filter],
+  );
+  const moverSymbols = useMemo(
+    () => [...new Set([...topGainers, ...topLosers, ...mostActive].map((item) => item.symbol))].filter(isStockSymbol),
+    [],
+  );
   useEffect(() => { void loadQuotes(moverSymbols); }, [loadQuotes, moverSymbols]);
   const choose = (next: Filter) => { void Haptics.selectionAsync(); setFilter(next); };
+  const status = mode === "REAL"
+    ? { ...marketStatus, state: "closed" as const, label: "Index status unavailable", detail: "No licensed index-status feed connected", updated: "Unavailable" }
+    : marketStatus;
+  const moversSection = (
+    <View style={styles.section}>
+      <SectionHeader eyebrow={mode === "REAL" ? "PROVIDER EQUITY QUOTES · 1D" : "DEMO DATA · 1D"} title="Top movers" />
+      <ResourceStateNotice onRetry={() => void loadQuotes(moverSymbols)} resource={moverSymbols[0] ? quotes[moverSymbols[0]] : undefined} />
+      <ScrollView contentContainerStyle={styles.chips} horizontal showsHorizontalScrollIndicator={false}>
+        {(["Overview", "Gainers", "Losers", "Active"] as Filter[]).map((item) => <FilterChip key={item} label={item} onPress={() => choose(item)} selected={filter === item} />)}
+      </ScrollView>
+      <View style={styles.list}>{movers.map((mover) => <MarketMoverRow key={mover.symbol} mover={mover} onPress={() => router.push(`/stock/${mover.symbol}` as Href)} quote={isStockSymbol(mover.symbol) ? quotes[mover.symbol] : undefined} />)}</View>
+    </View>
+  );
 
-  return <Screen><ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}><View style={styles.column}><View style={styles.header}><View><Text style={styles.eyebrow}>DISCOVER</Text><Text style={styles.title}>Markets</Text><Text style={styles.subtitle}>A clear view of what’s moving.</Text></View><Pressable accessibilityLabel="Search markets" accessibilityRole="button" onPress={() => router.push("/search" as Href)} style={styles.search}><Ionicons color={colors.textPrimary} name="search" size={22} /></Pressable></View><DataModeBanner mode={mode} /><View style={styles.meta}>{mode === "DEMO" ? <DemoDataBadge /> : <View />}<TimestampLabel label={mode === "REAL" ? "Equity quotes via backend" : marketStatus.updated} /></View><MarketStatusBadge status={mode === "REAL" ? { ...marketStatus, state: "closed", label: "Index status unavailable", detail: "No licensed index-status feed is connected", updated: "Unavailable" } : marketStatus} />
+  return (
+    <Screen>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.column}>
+          <ProductHeader
+            actions={<IconButton accessibilityLabel="Search markets" icon="search" onPress={() => router.push("/search" as Href)} />}
+            eyebrow={mode === "REAL" ? "SUPPORTED EQUITIES" : "MARKET OVERVIEW"}
+            subtitle={mode === "REAL" ? "Provider-backed equity prices lead; market-wide context remains secondary." : "Illustrative market layout with clearly labeled demo data."}
+            title="Markets"
+          />
 
-  <View style={styles.section}><SectionHeader eyebrow="US MARKETS" title="Major indices" /><ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>{marketIndices.map(index => <Pressable key={index.id} onPress={() => setDetail({ title: index.name, body: index.summary })}><MarketIndexCard index={index} /></Pressable>)}</ScrollView></View>
-  <View style={styles.section}><MarketMoodCard {...marketMood} /></View>
-  <View style={styles.section}><SectionHeader title="Sector performance" /><ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>{sectors.map(sector => <SectorPerformanceCard key={sector.id} onPress={() => setDetail({ title: sector.name, body: `${sector.leaders} are the local demo leaders for this sector.` })} sector={sector} />)}</ScrollView></View>
-  <View style={styles.section}><SectionHeader eyebrow="EQUITY QUOTES" title="Market movers" /><ResourceStateNotice onRetry={() => void loadQuotes(moverSymbols)} resource={moverSymbols[0] ? quotes[moverSymbols[0]] : undefined} /><ScrollView contentContainerStyle={styles.chips} horizontal showsHorizontalScrollIndicator={false}>{(["Overview", "Gainers", "Losers", "Active"] as Filter[]).map(item => <FilterChip key={item} label={item} onPress={() => choose(item)} selected={filter === item} />)}</ScrollView><View style={styles.list}>{movers.map(mover => <MarketMoverRow key={mover.symbol} mover={mover} quote={isStockSymbol(mover.symbol) ? quotes[mover.symbol] : undefined} onPress={() => router.push(`/stock/${mover.symbol}` as Href)} />)}</View></View>
-  <View style={styles.section}><SectionHeader eyebrow="COMING UP" title="Earnings preview" /><View style={styles.stack}>{earningsEvents.map(event => <EarningsEventCard event={event} key={event.id} />)}</View></View>
-  <View style={styles.section}><SectionHeader title="Economic calendar" /><View style={styles.stack}>{economicEvents.map(event => <EconomicEventCard event={event} key={event.id} />)}</View></View>
-  <View style={styles.disclosure}><Ionicons color={colors.textTertiary} name="information-circle-outline" size={18} /><Text style={styles.disclosureText}>{mode === "REAL" ? "Supported equity quotes load through MarketBrief’s backend. Indices, sectors, mood and calendars remain illustrative until a licensed source is integrated." : "Illustrative local data only. Demo mode is explicit and never used as a fallback from real data."}</Text></View></View></ScrollView>
-  <AppBottomSheet onClose={() => setDetail(null)} title={detail?.title ?? "Market detail"} visible={Boolean(detail)}><Text style={styles.sheetBody}>{detail?.body}</Text><Text style={styles.sheetNote}>Local preview · educational, not investment advice.</Text></AppBottomSheet></Screen>;
+          {mode === "DEMO" ? <View style={styles.statusLine}>
+            <MarketStatusBadge status={status} />
+            <DemoDataBadge />
+          </View> : null}
+
+          {mode === "REAL" ? moversSection : null}
+
+          {mode === "REAL" ? <View style={styles.contextHeading}><SectionHeader eyebrow="SECONDARY · ILLUSTRATIVE" title="Market-wide context" /><Text style={styles.contextCopy}>Licensed index and sector feeds are unavailable. The previews below demonstrate layout only.</Text></View> : null}
+
+          <View style={styles.section}>
+            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE PREVIEW · 1D" : "DEMO DATA · 1D"} title="Major indices" />
+            <ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>
+              {marketIndices.map((index) => (
+                <Pressable accessibilityRole="button" key={index.id} onPress={() => setDetail({ title: index.name, body: index.summary })}>
+                  <MarketIndexCard index={index} />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE PREVIEW · 1D" : "DEMO DATA · 1D"} title="Sector performance" />
+            <ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>
+              {sectors.map((sector) => <SectorPerformanceCard key={sector.id} onPress={() => setDetail({ title: sector.name, body: `${sector.leaders} are illustrative leaders for this sector preview.` })} sector={sector} />)}
+            </ScrollView>
+          </View>
+
+          <View style={styles.coverage}>
+            <View style={styles.coverageIcon}><Ionicons color={colors.textSecondary} name="globe-outline" size={18} /></View>
+            <View style={styles.coverageCopy}>
+              <Text style={styles.coverageTitle}>Commodities & currencies</Text>
+              <Text style={styles.coverageMeta}>Unavailable. MarketBrief does not display invented values.</Text>
+            </View>
+          </View>
+
+          {mode === "DEMO" ? moversSection : null}
+
+          <View style={styles.section}>
+            <SectionHeader eyebrow="ILLUSTRATIVE CALENDAR" title="Earnings" />
+            <View style={styles.stack}>{earningsEvents.map((event) => <EarningsEventCard event={event} key={event.id} />)}</View>
+          </View>
+          <View style={styles.section}>
+            <SectionHeader eyebrow="ILLUSTRATIVE CALENDAR" title="Economic events" />
+            <View style={styles.stack}>{economicEvents.map((event) => <EconomicEventCard event={event} key={event.id} />)}</View>
+          </View>
+
+          <View style={styles.disclosure}>
+            <Ionicons color={colors.textTertiary} name="information-circle-outline" size={17} />
+            <Text style={styles.disclosureText}>{mode === "REAL" ? "Supported equity prices use configured providers. Indices, sectors and calendars remain illustrative until licensed sources are available." : "Illustrative demo data only. Demo mode is explicit and never replaces unavailable provider data."}</Text>
+          </View>
+        </View>
+      </ScrollView>
+      <AppBottomSheet onClose={() => setDetail(null)} title={detail?.title ?? "Market detail"} visible={Boolean(detail)}>
+        <Text style={styles.sheetBody}>{detail?.body}</Text>
+        <Text style={styles.sheetNote}>Illustrative context · educational, not investment advice.</Text>
+      </AppBottomSheet>
+    </Screen>
+  );
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: 118 }, column: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg }, header: { minHeight: 116, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", paddingTop: spacing.md }, eyebrow: { ...typography.caption, color: colors.teal, letterSpacing: 1 }, title: { ...typography.display, color: colors.textPrimary, marginTop: spacing.xxs }, subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xxs }, search: { width: 48, height: 48, alignItems: "center", justifyContent: "center", borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, meta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm }, section: { gap: spacing.sm, marginTop: spacing.xxl }, horizontal: { gap: spacing.sm, paddingRight: spacing.lg }, chips: { gap: spacing.xs, paddingRight: spacing.lg }, list: { paddingHorizontal: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: "hidden" }, stack: { gap: spacing.sm }, disclosure: { flexDirection: "row", gap: spacing.xs, marginTop: spacing.xxxl, paddingTop: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }, disclosureText: { ...typography.caption, flex: 1, color: colors.textTertiary }, sheetBody: { ...typography.body, color: colors.textSecondary }, sheetNote: { ...typography.caption, color: colors.teal, marginTop: spacing.lg, marginBottom: spacing.lg },
+  scroll: { paddingBottom: 104, backgroundColor: colors.background },
+  column: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg },
+  statusLine: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  contextHeading: { gap: spacing.xs, marginTop: spacing.xl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  contextCopy: { ...typography.caption, color: colors.textTertiary },
+  section: { gap: spacing.xs, marginTop: spacing.xl },
+  horizontal: { gap: spacing.xs, paddingRight: spacing.lg },
+  chips: { gap: spacing.xs, paddingRight: spacing.lg },
+  list: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  stack: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  coverage: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xl, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  coverageIcon: { width: 36, height: 36, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderRadius: 8 },
+  coverageCopy: { flex: 1 },
+  coverageTitle: { ...typography.label, color: colors.textPrimary },
+  coverageMeta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
+  disclosure: { flexDirection: "row", gap: spacing.xs, marginTop: spacing.xxl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  disclosureText: { ...typography.caption, flex: 1, color: colors.textTertiary },
+  sheetBody: { ...typography.body, color: colors.textSecondary },
+  sheetNote: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.lg, marginBottom: spacing.lg },
 });

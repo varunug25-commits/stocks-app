@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 export function DataFreshnessBadge({
-  label = "LOCAL DEMO · ILLUSTRATIVE",
+  label = "DEMO · ILLUSTRATIVE",
 }: {
   label?: string;
 }) {
@@ -17,7 +17,7 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     borderRadius: radii.pill,
-    backgroundColor: colors.tealMuted,
+    backgroundColor: colors.surfaceSoft,
   },
-  text: { ...typography.caption, color: colors.teal, letterSpacing: 0.7 },
+  text: { ...typography.caption, color: colors.textSecondary, letterSpacing: 0.7 },
 });

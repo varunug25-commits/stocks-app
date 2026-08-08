@@ -5,11 +5,12 @@ import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
+import { colors, glass, spacing, typography } from "@/theme/tokens";
 
 const icons = {
-  index: ["sparkles-outline", "sparkles"],
-  markets: ["pulse-outline", "pulse"],
+  index: ["today-outline", "today"],
+  markets: ["stats-chart-outline", "stats-chart"],
   watchlist: ["bookmark-outline", "bookmark"],
   briefs: ["newspaper-outline", "newspaper"],
   profile: ["person-outline", "person"],
@@ -22,6 +23,7 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
   return (
     <View accessibilityRole="tablist" style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
+      <GlassBackdrop intensity={24} />
       {state.routes.map((route, index) => {
         const focused = state.index === index;
         const options = descriptors[route.key]?.options;
@@ -45,8 +47,9 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             onPress={onPress}
             style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
           >
-            <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-              <Ionicons color={focused ? colors.background : colors.textTertiary} name={routeIcons[focused ? 1 : 0]} size={20} />
+            {focused ? <View style={styles.activeIndicator} /> : null}
+            <View style={styles.iconWrap}>
+              <Ionicons color={focused ? colors.teal : colors.textTertiary} name={routeIcons[focused ? 1 : 0]} size={20} />
             </View>
             <Text numberOfLines={1} style={[styles.label, focused && styles.labelActive]}>{title}</Text>
           </Pressable>
@@ -58,18 +61,19 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 68,
+    minHeight: 64,
     flexDirection: "row",
     paddingTop: spacing.xs,
     paddingHorizontal: spacing.xs,
-    backgroundColor: "#0A1012FA",
+    backgroundColor: glass.fallbackStrong,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: glass.border,
+    overflow: "hidden",
   },
   tab: { flex: 1, minWidth: 56, minHeight: 54, alignItems: "center", justifyContent: "center", gap: 3 },
   pressed: { opacity: 0.68 },
-  iconWrap: { width: 36, height: 28, alignItems: "center", justifyContent: "center", borderRadius: radii.pill },
-  iconWrapActive: { backgroundColor: colors.teal },
+  activeIndicator: { position: "absolute", top: -spacing.xs, width: 24, height: 2, borderRadius: 1, backgroundColor: colors.teal },
+  iconWrap: { width: 36, height: 28, alignItems: "center", justifyContent: "center" },
   label: { ...typography.caption, color: colors.textTertiary, fontSize: 10, lineHeight: 13 },
   labelActive: { color: colors.teal, fontWeight: "700" },
 });

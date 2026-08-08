@@ -21,6 +21,7 @@ import {
   ErrorState,
   OfflineBanner,
 } from "@/components/foundation/Feedback";
+import { ProductHeader } from "@/components/foundation/ProductHeader";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { SkeletonState } from "@/components/system/SkeletonState";
@@ -36,7 +37,7 @@ import {
   selectFilteredBriefs,
 } from "@/features/briefs/selectors";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 export default function BriefsScreen() {
   const router = useRouter();
@@ -98,17 +99,7 @@ export default function BriefsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.kickerRow}>
-            <Text style={styles.kicker}>YOUR MARKET DAY</Text>
-            <DemoDataBadge />
-          </View>
-          <Text style={styles.title}>Briefs</Text>
-          <Text style={styles.subtitle}>
-            What happened, why it matters, and what to monitor next—distilled
-            into two calm moments.
-          </Text>
-        </View>
+        <ProductHeader actions={<DemoDataBadge />} eyebrow="PUBLICATION ARCHIVE" subtitle="Morning context and evening recap, clearly marked as local illustrative content." title="Briefs" />
         <BriefTypeSelector
           onChange={(value) => dispatch({ type: "selectType", value })}
           value={selectedType}
@@ -144,7 +135,7 @@ export default function BriefsScreen() {
             </Text>
           </View>
           {visibleHistory.length ? (
-            <View style={styles.historyCard}>
+            <View style={styles.historyList}>
               {visibleHistory.map((brief) => (
                 <BriefHistoryRow
                   brief={brief}
@@ -165,9 +156,9 @@ export default function BriefsScreen() {
           )}
         </View>
         <Text style={styles.disclosure}>
-          Brief narratives and every price move shown inside them remain typed
-          local demo content, separate from provider-backed screens. No live AI
-          or recommendation is presented.
+          Brief narratives and price moves are illustrative demo content,
+          separate from provider-backed company data. No recommendation is
+          presented.
         </Text>
       </ScrollView>
       <BriefFilterSheet
@@ -183,18 +174,13 @@ export default function BriefsScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", padding: spacing.lg, paddingBottom: 118 },
+  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 104, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: "center", padding: spacing.lg },
-  header: { minHeight: 172, paddingTop: spacing.sm },
-  kickerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  kicker: { ...typography.caption, color: colors.teal, letterSpacing: 1.05 },
-  title: { ...typography.display, color: colors.textPrimary, marginTop: spacing.md },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  heroWrap: { marginTop: spacing.lg },
-  emptyWrap: { marginTop: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface },
-  historySection: { gap: spacing.sm, marginTop: spacing.xxxl },
+  heroWrap: { marginTop: spacing.md },
+  emptyWrap: { marginTop: spacing.md },
+  historySection: { gap: spacing.xs, marginTop: spacing.xl },
   filterSummary: { minHeight: 32, flexDirection: "row", alignItems: "center", gap: spacing.xs },
   filterText: { ...typography.caption, color: colors.textTertiary, textTransform: "capitalize" },
-  historyCard: { paddingHorizontal: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: "hidden" },
-  disclosure: { ...typography.caption, color: colors.textTertiary, textAlign: "center", marginTop: spacing.xxl },
+  historyList: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  disclosure: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xxl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
 });

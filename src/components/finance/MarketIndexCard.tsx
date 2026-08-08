@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { Sparkline } from "@/components/finance/Sparkline";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, numerals, radii, spacing, typography } from "@/theme/tokens";
 
 type MarketIndexCardProps = {
   index: { name: string; symbol: string; value: string; changePercent: number; session: string; trend: number[] };
@@ -21,10 +21,7 @@ export function MarketIndexCard({ index }: MarketIndexCardProps) {
           <Text style={styles.symbol}>{index.symbol}</Text>
           <Text style={styles.name}>{index.name}</Text>
         </View>
-        <View style={styles.session}>
-          <View style={styles.liveDot} />
-          <Text style={styles.sessionText}>{index.session}</Text>
-        </View>
+        <Text style={styles.sessionText}>{index.session}</Text>
       </View>
       <View style={styles.bottomRow}>
         <View>
@@ -39,10 +36,10 @@ export function MarketIndexCard({ index }: MarketIndexCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 204,
-    minHeight: 142,
-    padding: spacing.md,
-    borderRadius: radii.lg,
+    width: 156,
+    minHeight: 112,
+    padding: spacing.sm,
+    borderRadius: radii.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -62,27 +59,12 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginTop: 1,
   },
-  session: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: radii.pill,
-    backgroundColor: colors.tealMuted,
-  },
-  liveDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.teal,
-  },
   sessionText: {
     fontSize: 9,
     lineHeight: 11,
     fontWeight: "700",
     letterSpacing: 0.6,
-    color: colors.teal,
+    color: colors.textTertiary,
   },
   bottomRow: {
     flexDirection: "row",
@@ -90,6 +72,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   value: {
+    ...numerals,
     fontSize: 18,
     lineHeight: 22,
     fontWeight: "700",
@@ -97,6 +80,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   change: {
+    ...numerals,
     ...typography.caption,
     marginTop: 3,
   },

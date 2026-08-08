@@ -1,15 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
+import { Sparkline } from "@/components/finance/Sparkline";
+import type { DataResource, MarketQuote } from "@/data/real";
+import { formatFreshness } from "@/data/real";
 import type { Company } from "@/data/stocks";
 import { formatPrice } from "@/data/stocks";
-import type { DataResource, MarketQuote } from "@/data/real";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, numerals, spacing, typography } from "@/theme/tokens";
+
 export function WatchlistRow({
   company,
   quote,
-  expanded,
+  editing,
+  trend,
   onOpen,
   onRemove,
   onMoveUp,
@@ -17,7 +22,8 @@ export function WatchlistRow({
 }: {
   company: Company;
   quote?: DataResource<MarketQuote>;
-  expanded: boolean;
+  editing: boolean;
+  trend?: number[];
   onOpen: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
@@ -27,129 +33,76 @@ export function WatchlistRow({
   const changePercent = resolved?.changePercent ?? null;
   const up = (changePercent ?? 0) >= 0;
   const displayPrice = resolved ? formatPrice(resolved.price) : quote?.status === "loading" || !quote ? "Loading…" : "Unavailable";
+  const freshness = quote?.status === "ready" || quote?.status === "stale"
+    ? `${quote.meta.source} · ${formatFreshness(quote.meta)}`
+    : quote?.status === "loading" || !quote
+      ? "Loading quote"
+      : "Quote unavailable";
+
   return (
-    <View style={s.card}>
+    <View style={styles.row}>
       <Pressable
-        accessibilityLabel={`Open ${company.name} stock detail, ${displayPrice}${changePercent === null ? "" : `, ${up ? "up" : "down"} ${Math.abs(changePercent).toFixed(2)} percent`}`}
+        accessibilityLabel={`Open ${company.name} stock detail, ${displayPrice}${changePercent === null ? "" : `, ${up ? "up" : "down"} ${Math.abs(changePercent).toFixed(2)} percent today`}`}
         accessibilityRole="button"
+        disabled={editing}
         onPress={onOpen}
-        style={s.main}
+        style={({ pressed }) => [styles.main, pressed && !editing && styles.pressed]}
       >
-        <CompanyLogo
-          color={company.logoColor}
-          name={company.name}
-          size={44}
-          symbol={company.symbol}
-        />
-        <View style={s.identity}>
-          <Text style={s.symbol}>{company.symbol}</Text>
-          <Text numberOfLines={1} style={s.reason}>
-            {expanded
-              ? `${company.name} · Demand and rates in focus`
-              : company.name}
-          </Text>
-          {expanded ? (
-            <Text style={s.event}>Next: earnings · Aug 27</Text>
-          ) : null}
+        <CompanyLogo color={company.logoColor} name={company.name} size={36} symbol={company.symbol} />
+        <View style={styles.identity}>
+          <Text style={styles.symbol}>{company.symbol}</Text>
+          <Text numberOfLines={1} style={styles.company}>{company.name}</Text>
+          <Text numberOfLines={1} style={styles.freshness}>{freshness}</Text>
         </View>
-        <View style={s.value}>
-          <Text style={s.price}>{displayPrice}</Text>
-          <Text
-            style={[
-              s.change,
-              { color: up ? colors.positive : colors.negative },
-            ]}
-          >
-            {changePercent === null ? "No quote" : `${up ? "▲ +" : "▼ −"}${Math.abs(changePercent).toFixed(2)}%`}
-          </Text>
-        </View>
-        <Ionicons
-          color={colors.textTertiary}
-          name="chevron-forward"
-          size={18}
-        />
+        {!editing && resolved && trend?.length ? <Sparkline height={28} points={trend} positive={up} width={54} /> : null}
+        {!editing ? (
+          <View style={styles.value}>
+            <Text style={styles.price}>{displayPrice}</Text>
+            <View style={styles.changeRow}>
+              {changePercent !== null ? <Ionicons color={up ? colors.positive : colors.negative} name={up ? "caret-up" : "caret-down"} size={10} /> : null}
+              <Text style={[styles.change, { color: changePercent === null ? colors.textTertiary : up ? colors.positive : colors.negative }]}>
+                {changePercent === null ? "No quote" : `${up ? "+" : "−"}${Math.abs(changePercent).toFixed(2)}%`}
+              </Text>
+            </View>
+          </View>
+        ) : null}
       </Pressable>
-      <View style={s.actions}>
-        <Action label="Move up" icon="arrow-up" onPress={onMoveUp} />
-        <Action label="Move down" icon="arrow-down" onPress={onMoveDown} />
-        <Action
-          label="Remove"
-          icon="trash-outline"
-          negative
-          onPress={onRemove}
-        />
-      </View>
+      {editing ? (
+        <View accessibilityLabel={`Edit ${company.symbol}`} style={styles.actions}>
+          <Action label={`Move ${company.symbol} up`} icon="arrow-up" onPress={onMoveUp} />
+          <Action label={`Move ${company.symbol} down`} icon="arrow-down" onPress={onMoveDown} />
+          <Action label={`Remove ${company.symbol}`} icon="trash-outline" negative onPress={onRemove} />
+        </View>
+      ) : <Ionicons color={colors.textTertiary} name="chevron-forward" size={17} />}
     </View>
   );
 }
-function Action({
-  label,
-  icon,
-  onPress,
-  negative = false,
-}: {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  onPress: () => void;
-  negative?: boolean;
-}) {
+
+function Action({ label, icon, onPress, negative = false }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void; negative?: boolean }) {
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
-      onPress={() => {
-        void Haptics.selectionAsync();
-        onPress();
-      }}
-      style={s.action}
+      onPress={() => { void Haptics.selectionAsync(); onPress(); }}
+      style={({ pressed }) => [styles.action, pressed && styles.pressed]}
     >
-      <Ionicons
-        color={negative ? colors.negative : colors.textSecondary}
-        name={icon}
-        size={17}
-      />
-      <Text style={[s.actionText, negative && { color: colors.negative }]}>
-        {label}
-      </Text>
+      <Ionicons color={negative ? colors.negative : colors.textSecondary} name={icon} size={17} />
     </Pressable>
   );
 }
-const s = StyleSheet.create({
-  card: {
-    marginBottom: spacing.sm,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-  },
-  main: {
-    minHeight: 78,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  identity: { flex: 1 },
+
+const styles = StyleSheet.create({
+  row: { minHeight: 76, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  main: { minHeight: 76, flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  pressed: { opacity: 0.62 },
+  identity: { flex: 1, minWidth: 78 },
   symbol: { ...typography.label, color: colors.textPrimary },
-  reason: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  event: { ...typography.caption, color: colors.warning, marginTop: 3 },
-  value: { alignItems: "flex-end" },
-  price: { ...typography.label, color: colors.textPrimary },
-  change: { ...typography.caption, marginTop: 2 },
-  actions: {
-    minHeight: 46,
-    flexDirection: "row",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  action: {
-    flex: 1,
-    minHeight: 44,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  actionText: { ...typography.caption, color: colors.textSecondary },
+  company: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
+  freshness: { ...typography.caption, color: colors.textTertiary, fontSize: 10, lineHeight: 13, marginTop: 1 },
+  value: { minWidth: 78, alignItems: "flex-end" },
+  price: { ...numerals, ...typography.label, color: colors.textPrimary },
+  changeRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
+  change: { ...numerals, ...typography.caption },
+  actions: { flexDirection: "row", alignItems: "center" },
+  action: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
 });

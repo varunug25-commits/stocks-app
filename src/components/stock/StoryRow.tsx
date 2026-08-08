@@ -5,9 +5,12 @@ import { presentNewsArticle } from "@/data/real";
 import { colors, spacing, typography } from "@/theme/tokens";
 export function StoryRow({ item }: { item: CompanyNewsArticle }) {
   const story = presentNewsArticle(item);
-  const published = new Date(story.publishedAt).toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-  });
+  const parsedPublishedAt = Date.parse(story.publishedAt);
+  const published = Number.isFinite(parsedPublishedAt)
+    ? new Date(parsedPublishedAt).toLocaleString("en-US", {
+        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      })
+    : story.publishedAt;
   const content = (
     <>
       <View style={s.copy}>

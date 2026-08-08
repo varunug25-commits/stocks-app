@@ -32,7 +32,7 @@ export function SectionHeader({ eyebrow, title, actionLabel, onAction }: Section
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 44,
+    minHeight: 38,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
@@ -43,9 +43,9 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     ...typography.caption,
-    color: colors.teal,
+    color: colors.textTertiary,
     letterSpacing: 1.05,
-    marginBottom: spacing.xxs,
+    marginBottom: 2,
   },
   title: {
     ...typography.heading,
@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
   action: {
     minHeight: 44,
     justifyContent: "center",
+    paddingHorizontal: spacing.xs,
   },
   actionPressed: {
     opacity: 0.6,
@@ -63,4 +64,3 @@ const styles = StyleSheet.create({
     color: colors.teal,
   },
 });
-

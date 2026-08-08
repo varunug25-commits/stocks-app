@@ -9,7 +9,8 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, radii, shadows, spacing, typography } from "@/theme/tokens";
+import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
+import { colors, glass, radii, spacing, typography } from "@/theme/tokens";
 
 const DISMISS_DISTANCE = 110;
 
@@ -59,6 +60,7 @@ export function AppBottomSheet({ visible, title, onClose, children }: AppBottomS
         <Pressable accessibilityLabel="Close briefing" onPress={close} style={styles.backdrop} />
         <GestureDetector gesture={gesture}>
           <Animated.View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }, animatedStyle]}>
+            <GlassBackdrop intensity={28} />
             <View style={styles.handle} />
             <View style={styles.header}>
               <Text style={styles.title}>{title}</Text>
@@ -92,11 +94,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: glass.fallbackStrong,
     borderWidth: 1,
     borderBottomWidth: 0,
-    borderColor: colors.border,
-    ...shadows.floating,
+    borderColor: glass.border,
+    overflow: "hidden",
   },
   handle: {
     width: 42,

@@ -1,7 +1,8 @@
 import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
 import type { BriefType } from "@/data/briefs";
-import { colors, radii, typography } from "@/theme/tokens";
+import { colors, glass, radii, typography } from "@/theme/tokens";
 
 export function BriefTypeSelector({
   value,
@@ -12,6 +13,7 @@ export function BriefTypeSelector({
 }) {
   return (
     <View accessibilityLabel="Brief type" accessibilityRole="radiogroup" style={styles.wrap}>
+      <GlassBackdrop intensity={18} />
       {(["morning", "evening"] as const).map((type) => {
         const selected = value === type;
         return (
@@ -40,17 +42,18 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: "row",
     padding: 4,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    backgroundColor: glass.fallback,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: glass.border,
+    overflow: "hidden",
   },
   option: {
     flex: 1,
     minHeight: 46,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radii.pill,
+    borderRadius: radii.sm,
   },
   selected: { backgroundColor: colors.tealMuted },
   text: { ...typography.label, color: colors.textTertiary },

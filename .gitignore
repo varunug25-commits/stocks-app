@@ -29,6 +29,7 @@ expo-env.d.ts
 # Test and tooling output
 coverage/
 *.tsbuildinfo
+.superdesign/tmp/
 
 # Logs and local system files
 npm-debug.log*

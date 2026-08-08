@@ -86,7 +86,7 @@ test("ships the Today feed as typed reusable mobile components", async () => {
   assert.match(todayScreen, /router\.push\(`\/brief\/\$\{morningBrief\.id\}`/);
   assert.doesNotMatch(todayScreen, /briefingOpen/);
   assert.match(todayScreen, /marketIndices\.map/);
-  assert.match(todayScreen, /personalizedStocks\.map/);
+  assert.match(todayScreen, /summaryStocks\.map/);
 });
 
 test("onboarding hydration and splash routing fail safely", async () => {
