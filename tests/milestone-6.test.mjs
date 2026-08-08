@@ -25,6 +25,11 @@ test("Supabase schema protects cache and registry tables from mobile roles", asy
     assert.match(migration, new RegExp(`revoke all on public\\.${table} from anon, authenticated`));
   }
   assert.match(migration, /grant select, insert, update, delete on public\.market_data_cache to service_role/);
+  const budgeting = await read("supabase/migrations/20260807114746_provider_request_budgeting.sql");
+  assert.match(budgeting, /pg_advisory_xact_lock/);
+  assert.match(budgeting, /security invoker/);
+  assert.match(budgeting, /revoke all on function public\.consume_provider_request_budget[\s\S]*from public, anon, authenticated/);
+  assert.match(budgeting, /grant execute on function public\.consume_provider_request_budget[\s\S]*to service_role/);
 });
 
 test("approved screens consume the shared market-data provider", async () => {
@@ -45,6 +50,21 @@ test("market resources use the same symbol and range keys read by screens", asyn
   assert.match(provider, /run\(\s*"bars",\s*barKey\(symbol, range\),/);
   assert.match(provider, /\[stateKey\]: envelopeToResource\(loaded\)/);
   assert.doesNotMatch(provider, /\[requestKey\]: envelopeToResource\(loaded\)/);
+});
+
+test("provider news and SEC filings retain external-source UI treatment", async () => {
+  const [stock, storyRow, filingRow] = await Promise.all([
+    read("src/app/stock/[symbol].tsx"),
+    read("src/components/stock/StoryRow.tsx"),
+    read("src/components/stock/FilingRow.tsx"),
+  ]);
+  assert.match(stock, /<StoryRow item=\{item\}/);
+  assert.match(stock, /<FilingRow item=\{item\}/);
+  assert.match(storyRow, /story\.publisher/);
+  assert.match(storyRow, /Linking\.openURL\(story\.sourceUrl/);
+  assert.doesNotMatch(storyRow, /MarketBrief Editorial/);
+  assert.match(filingRow, /filing\.source/);
+  assert.match(filingRow, /Linking\.openURL\(filing\.canonicalUrl/);
 });
 
 test("cancelled and deferred product capabilities remain absent", async () => {

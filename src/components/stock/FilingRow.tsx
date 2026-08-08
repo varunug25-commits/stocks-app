@@ -1,25 +1,40 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
-import type { Filing } from "@/data/stocks";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import type { FilingData } from "@/data/real";
+import { presentFiling } from "@/data/real";
 import { colors, spacing, typography } from "@/theme/tokens";
-export function FilingRow({ item }: { item: Filing }) {
-  return (
-    <View
-      accessibilityLabel={`${item.form} ${item.title}, ${item.filed}`}
-      style={s.row}
-    >
+export function FilingRow({ item }: { item: FilingData }) {
+  const filing = presentFiling(item);
+  const content = (
+    <>
       <View style={s.form}>
-        <Text style={s.formText}>{item.form}</Text>
+        <Text style={s.formText}>{filing.form}</Text>
       </View>
       <View style={s.copy}>
-        <Text style={s.title}>{item.title}</Text>
-        <Text style={s.meta}>{item.filed} · SEC</Text>
+        <Text style={s.title}>{filing.title}</Text>
+        <Text style={s.meta}>{filing.filedAt} · {filing.source}{filing.canonicalUrl ? " · Official filing" : ""}</Text>
       </View>
-      <Ionicons
-        color={colors.textTertiary}
-        name="document-text-outline"
-        size={20}
-      />
+      <Ionicons color={colors.textTertiary} name={filing.canonicalUrl ? "open-outline" : "document-text-outline"} size={20} />
+    </>
+  );
+  if (filing.canonicalUrl) {
+    return (
+      <Pressable
+        accessibilityLabel={`Open official ${filing.form} filing from ${filing.source}`}
+        accessibilityRole="link"
+        onPress={() => void Linking.openURL(filing.canonicalUrl!)}
+        style={({ pressed }) => [s.row, pressed && s.pressed]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+  return (
+    <View
+      accessibilityLabel={`${filing.form} ${filing.title}, ${filing.filedAt}, ${filing.source}`}
+      style={s.row}
+    >
+      {content}
     </View>
   );
 }
@@ -32,6 +47,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  pressed: { opacity: 0.68 },
   form: {
     width: 46,
     height: 36,

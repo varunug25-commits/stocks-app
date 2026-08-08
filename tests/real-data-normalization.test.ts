@@ -3,15 +3,17 @@ import test from "node:test";
 
 import { loadWithCache, type CacheRecord, type CacheStore } from "../supabase/functions/_shared/cache.ts";
 import { ProviderError } from "../supabase/functions/_shared/errors.ts";
+import { ProviderRequestLimiter, type ProviderBudgetStore } from "../supabase/functions/_shared/rateLimit.ts";
 import { companyForSymbol } from "../supabase/functions/_shared/registry.ts";
 import { normalizeFinnhubNews } from "../supabase/functions/_shared/providers/finnhub.ts";
 import { normalizeSecSubmissions, SecEdgarProvider } from "../supabase/functions/_shared/providers/sec.ts";
 import { normalizeTwelveDataBars, normalizeTwelveDataQuote, TwelveDataProvider } from "../supabase/functions/_shared/providers/twelveData.ts";
-import { parseMarketDataRequest } from "../supabase/functions/_shared/service.ts";
+import { createMarketDataService, parseMarketDataRequest, readPublicRequestJson, validatePublicRequest } from "../supabase/functions/_shared/service.ts";
 import { edgeFunctionUrl, resolveDataMode } from "../src/data/real/config.ts";
 import { MarketDataClientError, requestMarketData } from "../src/data/real/client.ts";
 import { formatFreshness } from "../src/data/real/freshness.ts";
 import { errorToResource } from "../src/data/real/resource.ts";
+import { presentFiling, presentNewsArticle } from "../src/data/real/presentation.ts";
 
 test("Twelve Data quote normalization preserves available values and unknowns", () => {
   const quote = normalizeTwelveDataQuote({
@@ -86,11 +88,116 @@ test("Finnhub normalization stores metadata only and never invents article conte
   assert.equal(news[0]!.sourceUrl, "https://example.com/story");
 });
 
+test("provider publisher, source URL and SEC canonical URL survive UI presentation", () => {
+  const article = presentNewsArticle({
+    id: "real-42", headline: "Actual provider headline", summary: null,
+    publisher: "Example Wire", publishedAt: "2026-08-07T10:00:00.000Z",
+    sourceUrl: "https://example.com/original", relatedSymbols: ["AAPL"], provider: "finnhub",
+  });
+  assert.equal(article.publisher, "Example Wire");
+  assert.equal(article.publishedAt, "2026-08-07T10:00:00.000Z");
+  assert.equal(article.sourceUrl, "https://example.com/original");
+  assert.equal(article.external, true);
+
+  const filing = presentFiling({
+    accessionNumber: "0000320193-26-000001", formType: "10-Q", filingDate: "2026-08-01",
+    reportDate: "2026-06-30", companyId: "company-id", company: "Apple Inc.", cik: "0000320193",
+    primaryDocument: "aapl.htm", canonicalUrl: "https://www.sec.gov/Archives/example", source: "SEC",
+  });
+  assert.equal(filing.source, "SEC");
+  assert.equal(filing.canonicalUrl, "https://www.sec.gov/Archives/example");
+});
+
 test("malformed provider responses and unsupported requests fail explicitly", () => {
   assert.throws(() => normalizeTwelveDataQuote({ symbol: "AAPL" }, "AAPL"), (error: unknown) => error instanceof ProviderError && error.code === "MALFORMED_RESPONSE");
   assert.throws(() => normalizeTwelveDataBars({ values: [{ datetime: "bad" }] }), (error: unknown) => error instanceof ProviderError && error.code === "MALFORMED_RESPONSE");
   assert.throws(() => companyForSymbol("INVALID"), (error: unknown) => error instanceof ProviderError && error.code === "UNSUPPORTED_SYMBOL");
   assert.throws(() => parseMarketDataRequest({ resource: "bars", symbol: "AAPL", range: "5Y" }), /supported chart range/);
+});
+
+test("public request boundary rejects invalid methods, content and oversized bodies", async () => {
+  assert.throws(() => validatePublicRequest(new Request("https://example.com", { method: "GET" })), (error: unknown) => error instanceof ProviderError && error.status === 405);
+  assert.throws(() => validatePublicRequest(new Request("https://example.com", { method: "POST", body: "{}", headers: { "content-type": "text/plain" } })), (error: unknown) => error instanceof ProviderError && error.status === 415);
+  await assert.rejects(
+    readPublicRequestJson(new Request("https://example.com", { method: "POST", body: "x".repeat(4097), headers: { "content-type": "application/json" } })),
+    (error: unknown) => error instanceof ProviderError && error.status === 413,
+  );
+  await assert.rejects(
+    readPublicRequestJson(new Request("https://example.com", { method: "POST", body: "not-json", headers: { "content-type": "application/json" } })),
+    (error: unknown) => error instanceof ProviderError && error.code === "INVALID_REQUEST",
+  );
+});
+
+test("shared provider budgets enforce concurrent limits and cooldown decisions", async () => {
+  let count = 0;
+  let blockedUntil: string | null = null;
+  const sharedStore: ProviderBudgetStore = {
+    async consume(_provider, limit) {
+      if (blockedUntil) return { allowed: false, remaining: 0, retryAt: blockedUntil };
+      if (count >= 3) {
+        blockedUntil = new Date(Date.now() + limit.cooldownSeconds * 1000).toISOString();
+        return { allowed: false, remaining: 0, retryAt: blockedUntil };
+      }
+      count += 1;
+      return { allowed: true, remaining: 3 - count, retryAt: null };
+    },
+  };
+  const firstInstance = new ProviderRequestLimiter(sharedStore);
+  const secondInstance = new ProviderRequestLimiter(sharedStore);
+  const results = await Promise.allSettled(Array.from({ length: 10 }, (_, index) =>
+    (index % 2 ? firstInstance : secondInstance).assertAllowed("twelve-data")
+  ));
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 3);
+  assert.equal(results.filter((result) => result.status === "rejected").length, 7);
+  await assert.rejects(firstInstance.assertAllowed("twelve-data"), (error: unknown) => error instanceof ProviderError && error.code === "RATE_LIMITED");
+});
+
+test("cache hits skip provider budget and stale real data survives exhausted quota", async () => {
+  const meta = { source: "Twelve Data", provider: "twelve-data" as const, fetchedAt: "2026-08-07T10:00:00.000Z", asOf: "2026-08-07T10:00:00.000Z", isStale: false };
+  const quote = { companyId: companyForSymbol("AAPL").id, symbol: "AAPL", price: 200, change: 1, changePercent: .5, previousClose: 199, open: 199, high: 201, low: 198, volume: 1_000, exchange: "NASDAQ", currency: "USD", marketStatus: "open" as const, providerTimestamp: meta.asOf };
+  const records = new Map<string, CacheRecord<unknown>>([["quote:AAPL", { key: "quote:AAPL", resource: "quote", value: quote, meta, expiresAt: "2999-01-01T00:00:00.000Z" }]]);
+  const cache: CacheStore = {
+    get: async <T,>(key: string) => records.get(key) as CacheRecord<T> | undefined ?? null,
+    put: async <T,>(record: CacheRecord<T>) => { records.set(record.key, record); },
+  };
+  let budgetCalls = 0;
+  const limiter = new ProviderRequestLimiter({
+    async consume() { budgetCalls += 1; return { allowed: false, remaining: 0, retryAt: "2026-08-07T10:01:00.000Z" }; },
+  });
+  const unavailable = async () => { throw new Error("provider should not run"); };
+  const service = createMarketDataService({
+    cache, limiter,
+    market: { getQuote: unavailable, getBars: unavailable },
+    news: { getCompanyNews: unavailable }, filings: { getFilings: unavailable },
+    company: { getCompany: unavailable }, events: { getEvents: unavailable },
+  });
+  const fresh = await service({ resource: "quote", symbol: "AAPL" });
+  assert.equal((fresh.data as { price: number }).price, 200);
+  assert.equal(budgetCalls, 0);
+
+  records.set("quote:AAPL", { key: "quote:AAPL", resource: "quote", value: quote, meta, expiresAt: "2000-01-01T00:00:00.000Z" });
+  const stale = await service({ resource: "quote", symbol: "AAPL" });
+  assert.equal(stale.meta.isStale, true);
+  assert.equal(stale.meta.errorCode, "RATE_LIMITED");
+  assert.equal(budgetCalls, 1);
+});
+
+test("missing provider configuration fails before consuming shared budget", async () => {
+  const cache: CacheStore = { get: async () => null, put: async () => undefined };
+  let budgetCalls = 0;
+  const limiter = new ProviderRequestLimiter({
+    async consume() { budgetCalls += 1; return { allowed: true, remaining: 1, retryAt: null }; },
+  });
+  const unavailable = async () => { throw new Error("provider should not run"); };
+  const service = createMarketDataService({
+    cache, limiter,
+    assertProviderConfigured() { throw new ProviderError("MISSING_SECRET", "not configured", 503); },
+    market: { getQuote: unavailable, getBars: unavailable },
+    news: { getCompanyNews: unavailable }, filings: { getFilings: unavailable },
+    company: { getCompany: unavailable }, events: { getEvents: unavailable },
+  });
+  await assert.rejects(service({ resource: "quote", symbol: "AAPL" }), (error: unknown) => error instanceof ProviderError && error.code === "MISSING_SECRET");
+  assert.equal(budgetCalls, 0);
 });
 
 test("rate limits and missing provider secrets remain structured errors", async () => {

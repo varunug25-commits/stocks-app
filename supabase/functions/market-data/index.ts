@@ -1,6 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
-import type { Database, Json } from "../../database.types.ts";
+import type { Database, Json } from "../_shared/database.types.ts";
 import type { CacheRecord, CacheStore } from "../_shared/cache.ts";
 import type { DataErrorCode, DataProviderName, ResourceName } from "../_shared/contracts.ts";
 import { ProviderError } from "../_shared/errors.ts";
@@ -8,7 +8,9 @@ import { FinnhubProvider } from "../_shared/providers/finnhub.ts";
 import { RegistryCompanyProvider } from "../_shared/providers/company.ts";
 import { SecEdgarProvider } from "../_shared/providers/sec.ts";
 import { TwelveDataProvider } from "../_shared/providers/twelveData.ts";
-import { createMarketDataService, parseMarketDataRequest } from "../_shared/service.ts";
+import { ProviderRequestLimiter } from "../_shared/rateLimit.ts";
+import type { ProviderBudgetDecision, ProviderBudgetStore, QuotaProvider } from "../_shared/rateLimit.ts";
+import { createMarketDataService, parseMarketDataRequest, readPublicRequestJson } from "../_shared/service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,12 +34,23 @@ type CacheTable = {
   };
   upsert(value: CacheInsert): PromiseLike<{ error: CacheQueryError }>;
 };
+type AdminRpc = {
+  rpc(
+    name: "consume_provider_request_budget",
+    args: { p_provider: QuotaProvider; p_window_seconds: number; p_max_requests: number; p_cooldown_seconds: number },
+  ): PromiseLike<{ data: unknown; error: CacheQueryError }>;
+};
+
+function isBudgetDecision(value: unknown): value is ProviderBudgetDecision {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const decision = value as Record<string, unknown>;
+  return typeof decision.allowed === "boolean" && typeof decision.remaining === "number" &&
+    (decision.retryAt === null || typeof decision.retryAt === "string");
+}
 
 export default {
   fetch: withSupabase({ auth: ["publishable", "secret"] }, async (req, ctx) => {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
-    if (req.method !== "POST")
-      return response({ error: { code: "INVALID_REQUEST", message: "POST is required." } }, 405);
 
     const cacheTable = () => (ctx.supabaseAdmin as unknown as {
       from(table: "market_data_cache"): CacheTable;
@@ -83,17 +96,46 @@ export default {
       },
     };
 
+    const budget: ProviderBudgetStore = {
+      async consume(provider, limit) {
+        const { data, error } = await (ctx.supabaseAdmin as unknown as AdminRpc).rpc(
+          "consume_provider_request_budget",
+          {
+            p_provider: provider,
+            p_window_seconds: limit.windowSeconds,
+            p_max_requests: limit.maxRequests,
+            p_cooldown_seconds: limit.cooldownSeconds,
+          },
+        );
+        if (error || !isBudgetDecision(data))
+          throw new ProviderError("UPSTREAM_UNAVAILABLE", "Provider request budget is unavailable.", 503);
+        return data;
+      },
+    };
+
+    const twelveDataKey = Deno.env.get("TWELVE_DATA_API_KEY");
+    const finnhubKey = Deno.env.get("FINNHUB_API_KEY");
+    const secUserAgent = Deno.env.get("SEC_USER_AGENT");
     const service = createMarketDataService({
       cache,
-      market: new TwelveDataProvider(Deno.env.get("TWELVE_DATA_API_KEY")),
-      news: new FinnhubProvider(Deno.env.get("FINNHUB_API_KEY")),
-      events: new FinnhubProvider(Deno.env.get("FINNHUB_API_KEY")),
-      filings: new SecEdgarProvider(Deno.env.get("SEC_USER_AGENT")),
+      market: new TwelveDataProvider(twelveDataKey),
+      news: new FinnhubProvider(finnhubKey),
+      events: new FinnhubProvider(finnhubKey),
+      filings: new SecEdgarProvider(secUserAgent),
       company: new RegistryCompanyProvider(),
+      limiter: new ProviderRequestLimiter(budget),
+      assertProviderConfigured(provider) {
+        if (provider === "twelve-data" && !twelveDataKey)
+          throw new ProviderError("MISSING_SECRET", "Twelve Data is not configured.", 503);
+        if (provider === "finnhub" && !finnhubKey)
+          throw new ProviderError("MISSING_SECRET", "Finnhub is not configured.", 503);
+        if (provider === "sec-edgar" && !secUserAgent)
+          throw new ProviderError("MISSING_SECRET", "SEC_USER_AGENT is not configured.", 503);
+      },
     });
 
     try {
-      const request = parseMarketDataRequest(await req.json());
+      const request = parseMarketDataRequest(await readPublicRequestJson(req));
       return response(await service(request));
     } catch (error) {
       const providerError = error instanceof ProviderError

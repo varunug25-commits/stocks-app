@@ -159,7 +159,7 @@ export default function StockDetailScreen() {
           <SectionHeader title="Latest filings" />
           <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={filingResource} />
           <View style={styles.list}>
-            {filingData?.map((item) => <FilingRow item={{ id: item.accessionNumber, form: item.formType, title: `${item.formType} filing`, filed: item.filingDate, sourceId: "sec" }} key={item.accessionNumber} />)}
+            {filingData?.map((item) => <FilingRow item={item} key={item.accessionNumber} />)}
           </View>
           {filingData?.length === 0 ? <EmptyState description="SEC returned no supported 10-K, 10-Q or 8-K filings." title="No filing results" /> : null}
         </View>
@@ -167,7 +167,7 @@ export default function StockDetailScreen() {
           <SectionHeader title="Latest stories" />
           <ResourceStateNotice onRetry={() => void loadStock(symbol, range)} resource={newsResource} />
           <View style={styles.list}>
-            {newsData?.map((item) => <StoryRow item={{ id: item.id, title: item.headline, published: item.publishedAt, sourceId: item.publisher }} key={item.id} />)}
+            {newsData?.map((item) => <StoryRow item={item} key={item.id} />)}
           </View>
           {newsData?.length === 0 ? <EmptyState description="The news provider returned no permitted article metadata." title="No news results" /> : null}
         </View>

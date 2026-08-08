@@ -59,3 +59,13 @@ The Edge Function uses the protected `market_data_cache` table and one TTL map: 
 ## ADR-015 — Provider and licensing scope
 
 Twelve Data and Finnhub adapters are for development/internal prototype use only. No production commercial external-display right is assumed. SEC retrieval uses structured `data.sec.gov` submissions, a configurable descriptive User-Agent with monitored contact, and a conservative interval below the SEC maximum.
+
+## ADR-016 — Shared provider request budgets
+
+Provider quotas are enforced through one atomic Postgres function backed by `provider_request_windows`. The function takes a transaction-scoped advisory lock per provider, so separate Edge Function instances share the same Twelve Data, Finnhub, and SEC EDGAR budget. Central limits are eight Twelve Data requests per minute, twenty Finnhub requests per minute, and six SEC requests per second, each with a provider-specific cooldown. The limiter runs only inside a cache loader: fresh cache hits consume no upstream budget, while expired real cache entries can still return as explicitly stale when the shared budget is exhausted.
+
+The publishable Supabase key is intentionally public. Until real user authentication exists, provider quotas, the ten-symbol allowlist, strict request validation, a 4 KiB request-body ceiling, centralized caching, and structured cooldown errors form the abuse boundary. This caps provider usage but is not per-user authorization or a guarantee of compliance with every commercial provider plan; stronger per-user controls remain deferred with real authentication.
+
+## ADR-017 — External provider attribution
+
+Normalized company news keeps the provider-supplied publisher, timestamp, and source URL through the UI boundary. Available source URLs open as external links and are never relabeled as MarketBrief Editorial. SEC rows preserve and open the canonical official filing URL and identify SEC as the source. Explicit demo fixtures keep their own demo attribution and do not masquerade as external reporting.

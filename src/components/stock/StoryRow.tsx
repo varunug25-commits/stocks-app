@@ -1,15 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
-import type { StockStory } from "@/data/stocks";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import type { CompanyNewsArticle } from "@/data/real";
+import { presentNewsArticle } from "@/data/real";
 import { colors, spacing, typography } from "@/theme/tokens";
-export function StoryRow({ item }: { item: StockStory }) {
+export function StoryRow({ item }: { item: CompanyNewsArticle }) {
+  const story = presentNewsArticle(item);
+  const published = new Date(story.publishedAt).toLocaleString("en-US", {
+    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+  });
+  const content = (
+    <>
+      <View style={s.copy}>
+        <Text style={s.title}>{story.title}</Text>
+        <Text style={s.meta}>{story.publisher} · {published}{story.external ? " · External source" : ""}</Text>
+      </View>
+      <Ionicons color={colors.textTertiary} name={story.external ? "open-outline" : "newspaper-outline"} size={18} />
+    </>
+  );
+  if (story.sourceUrl) {
+    return (
+      <Pressable
+        accessibilityLabel={`Open ${story.title} from ${story.publisher}`}
+        accessibilityRole="link"
+        onPress={() => void Linking.openURL(story.sourceUrl!)}
+        style={({ pressed }) => [s.row, pressed && s.pressed]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
   return (
     <View style={s.row}>
-      <View style={s.copy}>
-        <Text style={s.title}>{item.title}</Text>
-        <Text style={s.meta}>{item.published} · MarketBrief Editorial</Text>
-      </View>
-      <Ionicons color={colors.textTertiary} name="chevron-forward" size={18} />
+      {content}
     </View>
   );
 }
@@ -22,6 +44,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  pressed: { opacity: 0.68 },
   copy: { flex: 1 },
   title: { ...typography.label, color: colors.textPrimary },
   meta: { ...typography.caption, color: colors.textTertiary, marginTop: 3 },
