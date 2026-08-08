@@ -60,7 +60,7 @@ export function PriceChart({
         <Text style={s.summary}>The local series could not be prepared.</Text>
       </View>
     );
-  const safeSelected = Math.min(selected, points.length - 1);
+  const safeSelected = Math.max(0, Math.min(selected, points.length - 1));
   const point = points[safeSelected]!;
   const coordinate = coordinates[safeSelected] ?? { x: width, y: H / 2 };
   return (

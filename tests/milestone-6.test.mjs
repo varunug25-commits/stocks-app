@@ -67,6 +67,11 @@ test("provider news and SEC filings retain external-source UI treatment", async 
   assert.match(filingRow, /Linking\.openURL\(filing\.canonicalUrl/);
 });
 
+test("real chart hydration clamps an initially empty selection", async () => {
+  const chart = await read("src/components/stock/PriceChart.tsx");
+  assert.match(chart, /Math\.max\(0, Math\.min\(selected, points\.length - 1\)\)/);
+});
+
 test("cancelled and deferred product capabilities remain absent", async () => {
   const sourceFiles = await readdir(new URL("../src/", import.meta.url), { recursive: true });
   const client = (await Promise.all(sourceFiles.filter((path) => /\.tsx?$/.test(path)).map((path) => read(`src/${path}`)))).join("\n");
