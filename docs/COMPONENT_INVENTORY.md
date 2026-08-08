@@ -81,3 +81,13 @@ All accept typed local data. The chart exposes a spoken summary, watchlist actio
 - Progressive controls: `BriefFilterSheet` using the existing native-feeling bottom-sheet foundation.
 
 The components accept typed generated local content, retain 44-point actions and accessible labels, and do not call storage, APIs, AI providers, or payment services directly.
+
+## Milestone 7 additions
+
+- `AskMarketBriefEntry`: restrained contextual entry row; never a bottom tab.
+- `IntelligencePanel`: typed confirmed, interpretation, uncertainty, and catalyst bullets.
+- `CitationSheet`: evidence metadata and original provider URLs.
+- `IntelligenceSkeleton`: compact module-only loading state.
+- `IntelligenceProvider`: shared request state with REAL/DEMO separation and in-flight protection.
+
+Display components receive typed resources and do not call model vendors. The client provider calls only the MarketBrief server endpoint.

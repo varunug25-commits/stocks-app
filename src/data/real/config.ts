@@ -18,3 +18,8 @@ export function edgeFunctionUrl(config = publicDataConfig) {
   if (!config.supabaseUrl || !config.publishableKey) return null;
   return `${config.supabaseUrl.replace(/\/$/, "")}/functions/v1/market-data`;
 }
+
+export function intelligenceFunctionUrl(config = publicDataConfig) {
+  if (!config.supabaseUrl || !config.publishableKey) return null;
+  return `${config.supabaseUrl.replace(/\/$/, "")}/functions/v1/market-intelligence`;
+}

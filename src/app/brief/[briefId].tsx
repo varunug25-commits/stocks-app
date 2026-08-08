@@ -20,6 +20,8 @@ import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
+import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
+import type { IntelligenceRequest } from "@/data/intelligence";
 import {
   buildBriefShareText,
   findBriefSeed,
@@ -29,6 +31,8 @@ import {
 import { useBriefs } from "@/features/briefs/BriefsProvider";
 import { selectBriefStatus } from "@/features/briefs/selectors";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useMarketData } from "@/features/market-data/MarketDataProvider";
+import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export default function BriefDetailScreen() {
@@ -36,6 +40,7 @@ export default function BriefDetailScreen() {
   const params = useLocalSearchParams<{ briefId?: string; preview?: string }>();
   const { state, dispatch, hydrated } = useBriefs();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
+  const { mode } = useMarketData();
   const [shareMessage, setShareMessage] = useState("");
   const seed = typeof params.briefId === "string" ? findBriefSeed(params.briefId) : undefined;
   const symbols = useMemo(
@@ -46,6 +51,14 @@ export default function BriefDetailScreen() {
     () => seed ? generateBrief(seed, symbols, { insufficientEvidence: params.preview === "insufficient" }) : null,
     [params.preview, seed, symbols],
   );
+  const intelligenceRequest = useMemo<IntelligenceRequest>(() => ({
+    task: "brief",
+    symbols: symbols.length ? symbols : ["AAPL"],
+    edition: seed?.type ?? "morning",
+    focusId: seed?.id,
+    timeWindow: "1D",
+  }), [seed?.id, seed?.type, symbols]);
+  const { resource: intelligenceResource, retry: retryIntelligence } = useIntelligenceRequest(intelligenceRequest, mode === "REAL" && watchlistHydrated && symbols.length > 0);
 
   useEffect(() => {
     if (brief && hydrated) dispatch({ type: "markRead", id: brief.id });
@@ -79,6 +92,35 @@ export default function BriefDetailScreen() {
     }
   };
 
+  if (mode === "REAL") return (
+    <Screen>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.nav}>
+          <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.back}>
+            <Ionicons color={colors.textPrimary} name="arrow-back" size={23} />
+          </Pressable>
+          <BriefStatusBadge status={status} />
+        </View>
+        <Text style={styles.eyebrow}>{brief.type === "morning" ? "MORNING BRIEF" : "EVENING RECAP"}</Text>
+        <Text style={styles.date}>{brief.dateLabel}</Text>
+        <Text style={styles.meta}>Grounded from currently available provider evidence</Text>
+        <View style={styles.groundedDetail}>
+          {symbols.length ? <IntelligencePanel onRetry={() => void retryIntelligence()} resource={intelligenceResource} /> : <BriefEmptyState mode="watchlist" onAction={() => router.push("/search" as Href)} />}
+        </View>
+        <View style={styles.actions}>
+          <SaveBriefButton onPress={() => { void Haptics.selectionAsync(); dispatch({ type: "toggleSaved", id: brief.id }); }} saved={saved} />
+        </View>
+        <View style={styles.askEntry}>
+          <AskMarketBriefEntry detail="Ask a follow-up from this edition’s watchlist context" label="Ask about this brief" onPress={() => router.push(`/ask?prompt=${encodeURIComponent("What changed since this morning?")}` as Href)} />
+        </View>
+        <View style={styles.disclaimer}>
+          <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={19} />
+          <Text style={styles.disclaimerText}>Facts are source-linked. Interpretation and uncertainty remain labelled. This is informational and not investment advice.</Text>
+        </View>
+      </ScrollView>
+    </Screen>
+  );
+
   return (
     <Screen>
       {params.preview === "offline" ? <OfflineBanner /> : null}
@@ -106,6 +148,9 @@ export default function BriefDetailScreen() {
             saved={saved}
           />
           <ShareBriefButton onPress={() => void share()} />
+        </View>
+        <View style={styles.askEntry}>
+          <AskMarketBriefEntry detail="Ask within this illustrative watchlist context" label="Ask about this brief" onPress={() => router.push(`/ask?prompt=${encodeURIComponent("What changed since this morning?")}` as Href)} />
         </View>
         {shareMessage ? <Text accessibilityLiveRegion="polite" style={styles.shareMessage}>{shareMessage}</Text> : null}
 
@@ -218,6 +263,8 @@ const styles = StyleSheet.create({
   title: { ...typography.display, color: colors.textPrimary, marginTop: spacing.xl },
   summary: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
   actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+  groundedDetail: { marginTop: spacing.xl },
+  askEntry: { marginTop: spacing.lg },
   shareMessage: { ...typography.caption, color: colors.teal, marginTop: spacing.xs },
   section: { gap: spacing.xs, marginTop: spacing.xl },
   summaryCard: { gap: spacing.xs, paddingTop: spacing.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },

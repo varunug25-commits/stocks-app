@@ -20,6 +20,9 @@ import { MarketStatusBadge } from "@/components/market/MarketStatusBadge";
 import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
+import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
+import type { IntelligenceRequest } from "@/data/intelligence";
+import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { generateBrief, latestBriefSeed } from "@/data/briefs";
 import { marketStatus } from "@/data/markets";
 import { isStockSymbol } from "@/data/stocks";
@@ -73,6 +76,13 @@ export default function TodayScreen() {
     () => generateBrief(latestBriefSeed("morning"), watchlistState.symbols),
     [watchlistState.symbols],
   );
+  const briefRequest = useMemo<IntelligenceRequest>(() => ({
+    task: "brief",
+    symbols: watchlistState.symbols.length ? watchlistState.symbols : ["AAPL"],
+    edition: "morning",
+    timeWindow: "1D",
+  }), [watchlistState.symbols]);
+  const { resource: briefResource, retry: retryBrief } = useIntelligenceRequest(briefRequest, mode === "REAL" && watchlistHydrated && watchlistState.symbols.length > 0);
   const breadth = useMemo(() => {
     let higher = 0;
     let lower = 0;
@@ -162,6 +172,10 @@ export default function TodayScreen() {
             )}
           </Animated.View>
 
+          <Animated.View entering={animation(45)} style={styles.askSection}>
+            <AskMarketBriefEntry detail="Ask what changed across your watchlist" onPress={() => router.push("/ask" as Href)} />
+          </Animated.View>
+
           <Animated.View entering={animation(60)} style={styles.section}>
             <SectionHeader eyebrow="ILLUSTRATIVE PREVIEW" title="What changed" />
             <StoryCard story={leadStory} />
@@ -174,18 +188,22 @@ export default function TodayScreen() {
           </Animated.View>
 
           <Animated.View entering={animation(120)} style={[styles.section, styles.briefSection]}>
-            <View style={styles.briefHeading}>
-              <View>
-                <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief.timestamp}</Text>
-                <Text style={styles.briefTitle}>{morningBrief.headline}</Text>
+            {mode === "REAL" ? (
+              watchlistState.symbols.length ? <IntelligencePanel onRetry={() => void retryBrief()} resource={briefResource} /> : <EmptyState description="Add companies to assemble a grounded edition." title="Morning brief needs a watchlist" />
+            ) : <>
+              <View style={styles.briefHeading}>
+                <View>
+                  <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief.timestamp}</Text>
+                  <Text style={styles.briefTitle}>{morningBrief.headline}</Text>
+                </View>
               </View>
-            </View>
-            {morningBrief.developments.map((point, index) => (
-              <View key={point} style={styles.briefPoint}>
-                <Text style={styles.briefNumber}>{String(index + 1).padStart(2, "0")}</Text>
-                <Text style={styles.briefPointText}>{point}</Text>
-              </View>
-            ))}
+              {morningBrief.developments.map((point, index) => (
+                <View key={point} style={styles.briefPoint}>
+                  <Text style={styles.briefNumber}>{String(index + 1).padStart(2, "0")}</Text>
+                  <Text style={styles.briefPointText}>{point}</Text>
+                </View>
+              ))}
+            </>}
             <Pressable accessibilityRole="button" onPress={() => router.push(`/brief/${morningBrief.id}` as Href)} style={styles.briefLink}>
               <Text style={styles.briefLinkText}>Read full publication</Text>
               <Ionicons color={colors.teal} name="arrow-forward" size={17} />
@@ -227,6 +245,7 @@ const styles = StyleSheet.create({
   textAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.xs, marginTop: -8 },
   textActionLabel: { ...typography.label, color: colors.teal },
   stockList: { overflow: "hidden" },
+  askSection: { marginTop: spacing.md },
   briefSection: { paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   briefHeading: { marginBottom: spacing.xs },
   briefEyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 0.75 },

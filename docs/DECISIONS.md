@@ -69,3 +69,15 @@ The publishable Supabase key is intentionally public. Until real user authentica
 ## ADR-017 — External provider attribution
 
 Normalized company news keeps the provider-supplied publisher, timestamp, and source URL through the UI boundary. Available source URLs open as external links and are never relabeled as MarketBrief Editorial. SEC rows preserve and open the canonical official filing URL and identify SEC as the source. Explicit demo fixtures keep their own demo attribution and do not masquerade as external reporting.
+
+## ADR-018 — Replaceable deterministic M7 provider first
+
+No paid model was authorized. Ship the complete server evidence, ranking, structured-output, validation, citation, caching, and UI path with `MockStructuredAIProvider`. A future live provider must implement the same `StructuredAIProvider` boundary and use a server-only Supabase secret. The mobile app must not know the vendor or secret.
+
+## ADR-019 — M7 sits above M6
+
+`market-intelligence` retrieves normalized evidence through the existing `market-data` Edge Function. M6 adapters, authentication headers, caches, provider budgets, stale recovery, and mobile resource state remain unchanged. Intelligence can fail independently without breaking financial data.
+
+## ADR-020 — Citations and time are server-owned
+
+Provider output may reference evidence IDs but may not create source URLs. The server validates every ID and builds returned source records from its own evidence set. Confirmed bullets without evidence are rejected, and the server overwrites `generatedAt`.
