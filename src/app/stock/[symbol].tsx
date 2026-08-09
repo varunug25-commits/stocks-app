@@ -38,6 +38,7 @@ import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceR
 import { buildStockTimeline, groupStockTimeline } from "@/features/timeline";
 import { useTheses } from "@/features/thesis";
 import { useGroups } from "@/features/groups";
+import { useTelemetry } from "@/features/telemetry";
 
 export default function StockDetailScreen() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function StockDetailScreen() {
   const { state, dispatch } = useWatchlist();
   const theses = useTheses();
   const groups = useGroups();
+  const telemetry = useTelemetry();
   const {
     mode, quotes, companies, bars, filings: filingResources, news, events,
     loadStock, loadQuote, loadBars, loadNews, loadFilings, loadEvents,
@@ -101,10 +103,11 @@ export default function StockDetailScreen() {
   ] : [];
   const added = state.symbols.includes(symbol);
   const toggle = () => {
-    if (added) return dispatch({ type: "remove", symbol });
+    if (added) { telemetry.track("stock_removed", { symbol }); return dispatch({ type: "remove", symbol }); }
     if (state.symbols.length >= WATCHLIST_LIMIT)
       return setLimitVisible(true);
     dispatch({ type: "add", symbol });
+    telemetry.track("stock_added", { symbol });
   };
   if (params.preview === "loading")
     return (
@@ -169,7 +172,7 @@ export default function StockDetailScreen() {
         </View>
         <View style={styles.section}>
           <SectionHeader eyebrow="OPTIONAL · SAVED ON THIS DEVICE" title="My thesis" />
-          <ThesisEditor onAsk={() => router.push(`/ask?symbol=${symbol}&mode=thesis&prompt=${encodeURIComponent("What changed vs my thesis?")}` as Href)} onSave={(value) => theses.save(symbol, value)} value={theses.state.bySymbol[symbol] ?? ""} />
+          <ThesisEditor onAsk={() => router.push(`/ask?symbol=${symbol}&mode=thesis&prompt=${encodeURIComponent("What changed vs my thesis?")}` as Href)} onSave={async (value) => { await theses.save(symbol, value); telemetry.track("thesis_saved", { symbol, outcome: value.trim() ? "saved" : "removed" }); }} value={theses.state.bySymbol[symbol] ?? ""} />
         </View>
         <View style={styles.section}>
           <SectionHeader eyebrow="LOCAL ORGANIZATION" title="Groups" />

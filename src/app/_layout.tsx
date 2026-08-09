@@ -14,6 +14,7 @@ import { ConfigurationUnavailable } from "@/components/system/ConfigurationUnava
 import { ChangeDetectionProvider } from "@/features/materiality";
 import { ThesisProvider } from "@/features/thesis";
 import { GroupProvider } from "@/features/groups";
+import { TelemetryProvider } from "@/features/telemetry";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -40,6 +41,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaProvider>
         <ThemeProvider value={marketBriefTheme}>
+          <TelemetryProvider>
           <OnboardingProvider>
           <WatchlistProvider>
           <MarketDataProvider>
@@ -68,6 +70,7 @@ export default function RootLayout() {
           </MarketDataProvider>
           </WatchlistProvider>
           </OnboardingProvider>
+          </TelemetryProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

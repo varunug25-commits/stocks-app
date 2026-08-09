@@ -118,8 +118,9 @@ test("REAL screens gate all static market and brief fixtures behind DEMO mode", 
 });
 
 test("durable intelligence budgets are service-role only and generation-cache aware", async () => {
-  const [migration, service, edge, panel] = await Promise.all([
+  const [migration, telemetryMigration, service, edge, panel] = await Promise.all([
     readFile(new URL("supabase/migrations/20260809115943_final_m7_hardening.sql", root), "utf8"),
+    readFile(new URL("supabase/migrations/20260809181520_product_telemetry.sql", root), "utf8"),
     readFile(new URL("supabase/functions/_shared/intelligence/service.ts", root), "utf8"),
     readFile(new URL("supabase/functions/market-intelligence/index.ts", root), "utf8"),
     readFile(new URL("src/components/intelligence/IntelligencePanel.tsx", root), "utf8"),
@@ -132,4 +133,8 @@ test("durable intelligence budgets are service-role only and generation-cache aw
   assert.match(edge, /consume_intelligence_request_budget/);
   assert.match(panel, /AI analysis temporarily unavailable/);
   assert.match(panel, /EVIDENCE SUMMARY/);
+  assert.match(telemetryMigration, /enable row level security/);
+  assert.match(telemetryMigration, /force row level security/);
+  assert.match(telemetryMigration, /revoke all[\s\S]*anon, authenticated/);
+  assert.match(telemetryMigration, /Raw questions, article bodies, thesis text, credentials/);
 });

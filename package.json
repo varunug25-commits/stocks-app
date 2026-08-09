@@ -13,7 +13,7 @@
     "lint": "eslint src tests",
     "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts",
     "doctor": "npx expo-doctor",
-    "functions:check": "deno check --config supabase/functions/market-data/deno.json supabase/functions/market-data/index.ts && deno check --config supabase/functions/market-intelligence/deno.json supabase/functions/market-intelligence/index.ts"
+    "functions:check": "deno check --config supabase/functions/market-data/deno.json supabase/functions/market-data/index.ts && deno check --config supabase/functions/market-intelligence/deno.json supabase/functions/market-intelligence/index.ts && deno check --config supabase/functions/product-events/deno.json supabase/functions/product-events/index.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

@@ -7,6 +7,8 @@ import { colors, spacing, typography } from "@/theme/tokens";
 import { CitationSheet } from "./CitationSheet";
 import { IntelligenceSkeleton } from "./IntelligenceSkeleton";
 import { WhyEvidenceState } from "./WhyEvidenceState";
+import { IntelligenceFeedback } from "./IntelligenceFeedback";
+import { useTelemetry } from "@/features/telemetry";
 
 const kindLabel: Record<ClaimKind, string> = {
   confirmed: "CONFIRMED",
@@ -27,6 +29,7 @@ export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
   showHeader?: boolean;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const telemetry = useTelemetry();
   if (resource.status === "idle" || resource.status === "loading") return <IntelligenceSkeleton />;
   if (resource.status === "error" || resource.status === "rate-limited")
     return <ErrorState description={resource.message} onRetry={onRetry} title="Explanation unavailable" />;
@@ -61,12 +64,13 @@ export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
       ))}
       <View style={styles.footer}>
         <Text style={styles.meta}>{response.meta.cached ? "Cached evidence" : "Fresh evidence"} · {response.meta.evidenceCount} records</Text>
-        <Pressable accessibilityRole="button" disabled={!response.sources.length} onPress={() => setSourcesOpen(true)} style={styles.sourceButton}>
+        <Pressable accessibilityRole="button" disabled={!response.sources.length} onPress={() => { telemetry.track("evidence_opened", { task: response.meta.task, symbolsCount: response.symbols.length }); setSourcesOpen(true); }} style={styles.sourceButton}>
           <Text style={[styles.sourceButtonText, !response.sources.length && styles.disabled]}>Sources · {response.sources.length}</Text>
           <Ionicons color={response.sources.length ? colors.teal : colors.textTertiary} name="chevron-forward" size={16} />
         </Pressable>
       </View>
-      <CitationSheet onClose={() => setSourcesOpen(false)} sources={response.sources} visible={sourcesOpen} />
+      <IntelligenceFeedback response={response} />
+      <CitationSheet onClose={() => setSourcesOpen(false)} onSourceOpen={(source) => telemetry.track("source_opened", { task: response.meta.task, symbol: source.symbol })} sources={response.sources} visible={sourcesOpen} />
     </View>
   );
 }

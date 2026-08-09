@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
 import { Screen } from "@/components/foundation/Screen";
@@ -10,17 +10,20 @@ import type { IntelligenceRequest } from "@/data/intelligence";
 import { isStockSymbol } from "@/data/stocks";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { colors, spacing, typography } from "@/theme/tokens";
+import { useTelemetry } from "@/features/telemetry";
 
 export default function WhyScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string }>();
   const validSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
+  const telemetry = useTelemetry();
   const request = useMemo<IntelligenceRequest>(() => ({
     task: "why_moved",
     symbols: validSymbol ? [validSymbol] : ["AAPL"],
     timeWindow: "1D",
   }), [validSymbol]);
   const { resource, retry } = useIntelligenceRequest(request, !!validSymbol);
+  useEffect(() => { if (validSymbol) telemetry.track("why_moved_opened", { symbol: validSymbol }); }, [telemetry, validSymbol]);
 
   if (!validSymbol) return <Screen><View style={styles.center}><EmptyState description="No supported company context is available." title="Evidence unavailable" /></View></Screen>;
   return (

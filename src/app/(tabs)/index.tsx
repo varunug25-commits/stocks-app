@@ -23,6 +23,7 @@ import { isStockSymbol } from "@/data/stocks";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
 import { useChangeDetection } from "@/features/materiality";
+import { useTelemetry } from "@/features/telemetry";
 import { selectTodayWatchlist } from "@/features/watchlist/todayStocks";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { colors, spacing, typography } from "@/theme/tokens";
@@ -44,6 +45,7 @@ export default function TodayScreen() {
   const { state: watchlist, hydrated } = useWatchlist();
   const { mode, quotes, companies, events, loadCompany } = useMarketData();
   const changes = useChangeDetection();
+  const telemetry = useTelemetry();
   const reduceMotion = useReducedMotion();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [referenceNow, setReferenceNow] = useState(() => Date.now());
@@ -85,6 +87,7 @@ export default function TodayScreen() {
   };
 
   const openChange = (change: NonNullable<typeof changes.result>["materialChanges"][number]) => {
+    telemetry.track("today_material_change_seen", { symbol: change.symbol, changeKind: change.kind });
     void changes.markSeen([change.id]);
     void Haptics.selectionAsync();
     router.push(change.kind === "event" || change.kind === "filing" ? `/stock/${change.symbol}` as Href : `/stock/${change.symbol}/why` as Href);

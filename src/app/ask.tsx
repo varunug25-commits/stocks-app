@@ -12,6 +12,7 @@ import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { useTheses } from "@/features/thesis";
 import { useChangeDetection } from "@/features/materiality";
 import { useBriefs } from "@/features/briefs/BriefsProvider";
+import { useTelemetry } from "@/features/telemetry";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 const suggestions = [
@@ -36,6 +37,7 @@ export default function AskMarketBriefScreen() {
   const theses = useTheses();
   const changes = useChangeDetection();
   const briefs = useBriefs();
+  const telemetry = useTelemetry();
   const scopedSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
   const routeSymbols = useMemo(() => typeof params.symbols === "string" ? params.symbols.split(",").map((symbol) => symbol.trim().toUpperCase()).filter(isStockSymbol).slice(0, 15) : [], [params.symbols]);
   const symbols = useMemo(() => scopedSymbol ? [scopedSymbol] : routeSymbols.length ? routeSymbols.filter((symbol) => state.symbols.includes(symbol)) : state.symbols, [routeSymbols, scopedSymbol, state.symbols]);
@@ -70,6 +72,7 @@ export default function AskMarketBriefScreen() {
     if (!clean || !symbols.length) return;
     setQuestion(clean);
     setSubmitted(true);
+    telemetry.track("ask_submitted", { task: presetTask, symbolsCount: symbols.length, mode: contextMode });
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 

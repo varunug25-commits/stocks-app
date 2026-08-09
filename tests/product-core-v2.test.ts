@@ -15,6 +15,8 @@ import { groupsReducer, initialGroupState } from "../src/features/groups/model.t
 import { createGroupStore } from "../src/features/groups/storage.ts";
 import { compareRealBriefs, createRealBriefStore, makeRealBriefRecord } from "../src/features/briefs/realStore.ts";
 import { deriveWhyEvidenceState } from "../src/features/intelligence/whyEvidenceState.ts";
+import { sanitizeTelemetryEvent } from "../src/features/telemetry/contracts.ts";
+import { parseProductEventPayload } from "../supabase/functions/_shared/productEvents.ts";
 
 const at = "2026-08-09T12:00:00.000Z";
 const ref = (id: string, title = id, sourceUrl: string | null = `https://example.com/${id}`) => ({ id, title, sourceUrl, occurredAt: at });
@@ -192,4 +194,13 @@ test("contextual Ask compares only against a validated anchor", async () => {
   assert.match(String(candidate.oneLineSummary), /1 new evidence item/);
   assert.match(JSON.stringify(candidate), /New company update/);
   assert.throws(() => parseIntelligenceRequest({ task: "ask", symbols: ["AAPL"], question: "Compare", contextMode: "current_brief", comparisonAnchor: { generatedAt: "not-a-date", sourceIds: [] } }), /anchor time is invalid/);
+});
+
+test("telemetry accepts only allowlisted events and privacy-safe fields", () => {
+  assert.equal(sanitizeTelemetryEvent("raw_question_recorded", { question: "secret" }), null);
+  assert.deepEqual(sanitizeTelemetryEvent("ask_submitted", { task: "ask", symbolsCount: 3, question: "What should I buy?", thesis: "private" }), { eventName: "ask_submitted", properties: { task: "ask", symbolsCount: 3 } });
+  const payload = parseProductEventPayload({ kind: "event", installationId: "123e4567-e89b-42d3-a456-426614174000", eventName: "ask_submitted", properties: { task: "ask", symbolsCount: 3 }, occurredAt: at }, Date.parse(at));
+  assert.equal(payload.kind, "event");
+  assert.throws(() => parseProductEventPayload({ kind: "event", installationId: "123e4567-e89b-42d3-a456-426614174000", eventName: "ask_submitted", properties: { question: "raw text" }, occurredAt: at }, Date.parse(at)), /properties are not allowed/);
+  assert.throws(() => parseProductEventPayload({ kind: "feedback", installationId: "123e4567-e89b-42d3-a456-426614174000", responseHash: "hash", task: "ask", symbols: ["AAPL"], helpful: false, reason: "free_text", occurredAt: at }, Date.parse(at)), /Feedback fields are invalid/);
 });
