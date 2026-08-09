@@ -41,6 +41,8 @@ Future logo records must include:
 
 Lead stories should use high-quality imagery with a clear relationship to the story. Each production image record must include source, author/owner when required, license or usage basis, alt text, crop focal point, and attribution text when required.
 
+Original generated artwork is recorded in `docs/ORIGINAL_MEDIA_MANIFEST.md`. It may establish publication atmosphere, but it must never be presented as publisher photography, evidence, a real market event, or an image of a named company. REAL intelligence surfaces remain source-led and do not infer factual meaning from decorative artwork.
+
 ## Accessibility and performance
 
 - Every meaningful image has useful alt text.
