@@ -26,6 +26,7 @@ test("Finnhub search normalization filters unsupported instruments and bounds re
     { symbol: "JPM", description: "JPMorgan Chase", type: "Common Stock" },
     { symbol: "SPY", description: "SPDR S&P 500 ETF", type: "ETF" },
     { symbol: "EURUSD", description: "Euro", type: "Forex" },
+    { symbol: "JPM.MX", description: "JPMorgan Mexico", type: "Common Stock" },
     { symbol: "ADBE", description: "Duplicate", type: "Common Stock" },
   ] }, 2);
   assert.deepEqual(results.map((entry) => entry.symbol), ["ADBE", "JPM"]);
@@ -35,6 +36,7 @@ test("Finnhub search normalization filters unsupported instruments and bounds re
 test("provider profile validation accepts supported US equities and rejects unsupported markets", () => {
   assert.equal(normalizeFinnhubCompany({ ticker: "ADBE", name: "Adobe Inc.", exchange: "NASDAQ NMS - GLOBAL MARKET", country: "US", currency: "USD" }, "ADBE").symbol, "ADBE");
   assert.throws(() => normalizeFinnhubCompany({ ticker: "7203", name: "Toyota", exchange: "TOKYO", country: "JP" }, "7203"), (error: unknown) => error instanceof ProviderError && error.code === "UNSUPPORTED_SYMBOL");
+  assert.throws(() => normalizeFinnhubCompany({}, "ZZZZZZ"), (error: unknown) => error instanceof ProviderError && error.code === "UNSUPPORTED_SYMBOL");
 });
 
 test("dynamic resource requests validate the company before an upstream quote", async () => {

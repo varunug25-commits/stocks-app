@@ -22,9 +22,9 @@ The mobile client never calls a model provider. It sends only a task, supported 
 
 ### Evidence and ranking
 
-Evidence types are `quote`, `price_move`, `news`, `filing`, `event`, and `company`. Each record has a server-created ID/content hash plus optional symbol, title, bounded text, publisher, time, provider URL, metadata, and deterministic relevance score.
+Evidence types are `quote`, `price_move`, `news`, `filing`, `event`, and `company`. Each record has a server-created ID/content hash plus optional symbol, title, bounded text, publisher, time, provider URL, metadata, and deterministic relevance score. Historical bars are reduced server-side to compact factual price context (five-session and period movement, high/low, median daily movement, and unusual-move ratio); raw bar arrays are never sent to the model.
 
-Ranking favors current moves, direct ticker/company-name matches, provider-related symbols, recent company-specific coverage, filings, upcoming events, and material absolute watchlist moves. Broad stories without a direct company match are penalized. Repeated URLs and normalized headlines are removed. Limits are 24 items, 480 characters per evidence text, and roughly 7,200 serialized context characters.
+Ranking favors current moves, direct ticker/company-name matches, provider-related symbols, recent company-specific coverage, filings, upcoming events, and material absolute watchlist moves. Broad stories without a direct company match are penalized. Repeated URLs and normalized headlines are removed. Per-symbol/type quotas prevent a noisy feed from crowding out quote, company, filing, event, and price-move evidence. A multi-stock brief retrieves rich evidence only for the five largest absolute movers while retaining quotes for every validated watchlist symbol. Limits are 24 items, 480 characters per evidence text, and roughly 7,200 serialized context characters.
 
 ### Claims and citations
 
@@ -38,19 +38,35 @@ Canonical claim kinds are `confirmed`, `interpretation`, `uncertainty`, and `cat
 - **Briefs:** REAL mode ranks material watchlist evidence into morning/evening bullets. DEMO stays deterministic and illustrative; REAL failure never falls back to demo narrative.
 - **Ask MarketBrief:** contextual to the current stock or shared watchlist, limited to supported evidence and a 280-character question. No generic finance-chat mode exists.
 
-The historical archive remains illustrative until grounded editions have durable publication storage.
+The historical archive is omitted in REAL mode until grounded editions have durable publication storage. DEMO mode retains clearly labelled illustrative editions.
+
+## Dynamic stock universe and real-first behavior
+
+- Finnhub-backed symbol/company search accepts a minimum of two characters, debounces requests, ignores stale responses, deduplicates matches, caches results, and returns at most 20 supported US-equity results.
+- Every requested symbol is normalized, syntax checked, and provider validated before quote, chart, news, event, filing, or intelligence retrieval. Unsupported symbols return `UNSUPPORTED_SYMBOL`; REAL mode never substitutes fixture data.
+- Twelve Data quotes/bars and SEC CIK resolution operate for provider-validated symbols outside the original demo fixtures. Company names, exchange, type, logo and sector use provider identity with neutral unavailable states when fields are absent.
+- The shared watchlist supports 15 symbols. Search additions, removal, ordering, Today, Watchlist, Stock Detail, Ask context and brief context use that shared persistent order and membership.
+- REAL Today, Markets and Briefs prioritize provider-backed watchlist/company resources and omit unsupported illustrative market-wide modules and historical publications. Static fixture narratives remain limited to DEMO mode and tests.
 
 ## Cache and cost controls
 
-Validated results are cached in server-only `intelligence_cache` with RLS and no mobile-role privileges. Keys include task, ordered symbols, normalized question hash, focus/edition, time window, evidence IDs/hashes, provider identity, and schema version. TTLs are 15 minutes for Why/Ask/news, 30 minutes for briefs, and 60 minutes for filing summaries. Evidence, provider, or schema changes invalidate the key. Live-provider activation advances the schema to `m7-v2`, so a previous mock result cannot be reused as a live response. Identical in-flight requests are deduplicated. An instance-local 20-request/minute limiter is included; distributed throttling remains pre-launch hardening. Gemini requests use the supported `generateContent` endpoint with JSON MIME mode, the current `responseJsonSchema` field, minimal thinking, an explicit provider abort deadline, no Google Search grounding, and the bounded M7 evidence context. The schema is intentionally compact because Gemini rejects overly complex/deep schemas; MarketBrief's server validator remains authoritative and fails closed on malformed structure, unsupported claims, citations, URLs, symbols, or length limits. Genuine Gemini transport, quota, permission, timeout, or invalid-output failures fall back to the deterministic provider with explicit mock metadata and a separate cache namespace. Request, evidence, cache, and MarketBrief backend failures do not silently become mock AI output.
+Validated results are cached in server-only `intelligence_cache` with RLS and no mobile-role privileges. Keys include task, ordered symbols, normalized question hash, focus/edition, time window, evidence IDs/hashes, provider identity, and schema version. TTLs are 15 minutes for Why/Ask/news, 30 minutes for briefs, and 60 minutes for filing summaries. Evidence, provider, or schema changes invalidate the key. Live-provider activation advances the schema to `m7-v2`, so a previous mock result cannot be reused as a live response. Identical in-flight requests are deduplicated.
+
+Durable database-backed request windows are consumed atomically through a service-role-only RPC after a cache miss and before live model generation. Temporary client identities are limited to 12 live generations/hour and the project to 120/hour; fresh intelligence cache hits consume neither budget. RLS, revoked mobile-role privileges, and an advisory lock protect the counters across Edge Function instances.
+
+Gemini requests use the supported `generateContent` endpoint with JSON MIME mode, the current `responseJsonSchema` field, minimal thinking, an explicit provider abort deadline, no Google Search grounding, and the bounded M7 evidence context. The schema is intentionally compact because Gemini rejects overly complex/deep schemas; MarketBrief's server validator remains authoritative and fails closed on malformed structure, unsupported claims, citations, URLs, symbols, or length limits. Genuine Gemini transport, quota, permission, timeout, or invalid-output failures fall back to the deterministic provider with explicit mock metadata and a separate cache namespace. The customer UI labels that state as “AI analysis temporarily unavailable” and “Evidence summary.” Request, evidence, cache, and MarketBrief backend failures do not silently become mock AI output.
 
 ## Live activation verification
 
-- Supabase `market-intelligence` version 40 is ACTIVE on development project `jkatugzutluclvnhqhle`.
+- Supabase `market-data` version 13 and `market-intelligence` version 42 are ACTIVE on development project `jkatugzutluclvnhqhle`.
 - A fresh `news_summary` request for AAPL returned HTTP 200 in 12.51 seconds with `provider: google-gemini-3.5-flash`, `providerMode: live`, `cached: false`, 3 validated sections, 8 server-controlled sources, and 11 evidence items.
 - Repeating that exact request returned HTTP 200 in 1.71 seconds with the same `generatedAt`, `providerMode: live`, and `cached: true`.
 - AAPL `why_moved` returned HTTP 200 from the previously validated live Gemini cache with 3 sections and 3 sources. It did not return deterministic/mock metadata.
 - Regression coverage verifies the provider key is sent only in the `X-Goog-Api-Key` header, never in the URL/body/output, and verifies live-provider failures use the separate deterministic fallback/cache while the live provider is retried on a later request.
+- Provider-backed searches resolved ADBE, JPM, COST, CRM and UBER. Each symbol returned real company, quote, chart, news, event and SEC filing resources; repeat requests retained `fetchedAt` and did not increase provider request-window counts.
+- ADBE Why and Ask returned live Gemini responses grounded in quote, price-move, news and event evidence. A ten-symbol brief for ADBE, JPM, COST, CRM, UBER, AAPL, MSFT, NVDA, TSLA and AMZN cited only the materially selected symbols rather than distributing claims equally.
+- Repeated cached intelligence requests left both identity and global durable-budget counts unchanged.
+- Browser verification at 390×844 confirmed REAL-mode search, add-to-watchlist, dynamic ADBE Stock Detail, real quote/chart/news/events/filings, grounded Why, and contextual Ask routing. This was web validation, not native-device validation.
 - No native Android or iPhone verification was performed for this activation pass.
 
 ## Prompt-injection and security
@@ -65,7 +81,8 @@ M7 does not rewrite M6. Quotes, bars, companies, news, events, filings, provider
 
 - Live generation depends on the configured Gemini free-tier availability and quota; without the server secret, the function truthfully reports the deterministic mock provider in response metadata.
 - Filing intelligence has metadata only because M6 does not provide filing-body text.
-- The previous-edition archive remains illustrative.
-- The rate limiter is instance-local, not distributed.
+- REAL previous-edition storage is not implemented, so the archive is omitted instead of populated with fixtures.
+- Finnhub search is the current no-paid-provider discovery source and is restricted to supported US-equity results; provider coverage and availability still govern what can be found.
+- Onboarding offers a small starter set before the provider-backed in-app Search becomes available.
 - No authentication, payments, alerts, push notifications, brokerage, trading, or recommendation engine was added.
 - Native verification is reported only if actually performed during final validation.

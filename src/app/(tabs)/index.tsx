@@ -87,8 +87,8 @@ export default function TodayScreen() {
     return resource?.status === "ready" || resource?.status === "stale" ? resource.data : [];
   }).filter((event) => event.scheduledAt).sort((a, b) => Date.parse(a.scheduledAt!) - Date.parse(b.scheduledAt!)).slice(0, 4), [eventResources, watchlistState.symbols]);
   const morningBrief = useMemo(
-    () => generateBrief(latestBriefSeed("morning"), watchlistState.symbols),
-    [watchlistState.symbols],
+    () => mode === "DEMO" ? generateBrief(latestBriefSeed("morning"), watchlistState.symbols) : null,
+    [mode, watchlistState.symbols],
   );
   const briefRequest = useMemo<IntelligenceRequest>(() => ({
     task: "brief",
@@ -206,18 +206,18 @@ export default function TodayScreen() {
             ) : <>
               <View style={styles.briefHeading}>
                 <View>
-                  <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief.timestamp}</Text>
-                  <Text style={styles.briefTitle}>{morningBrief.headline}</Text>
+                  <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief!.timestamp}</Text>
+                  <Text style={styles.briefTitle}>{morningBrief!.headline}</Text>
                 </View>
               </View>
-              {morningBrief.developments.map((point, index) => (
+              {morningBrief!.developments.map((point, index) => (
                 <View key={point} style={styles.briefPoint}>
                   <Text style={styles.briefNumber}>{String(index + 1).padStart(2, "0")}</Text>
                   <Text style={styles.briefPointText}>{point}</Text>
                 </View>
               ))}
             </>}
-            <Pressable accessibilityRole="button" onPress={() => router.push(mode === "REAL" ? "/briefs" as Href : `/brief/${morningBrief.id}` as Href)} style={styles.briefLink}>
+            <Pressable accessibilityRole="button" onPress={() => router.push(mode === "REAL" ? "/briefs" as Href : `/brief/${morningBrief!.id}` as Href)} style={styles.briefLink}>
               <Text style={styles.briefLinkText}>{mode === "REAL" ? "Open Briefs" : "Read full publication"}</Text>
               <Ionicons color={colors.teal} name="arrow-forward" size={17} />
             </Pressable>

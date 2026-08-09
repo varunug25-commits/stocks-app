@@ -66,8 +66,8 @@ export default function BriefsScreen() {
     [params.preview, watchlistState.symbols],
   );
   const latest = useMemo(
-    () => generateBrief(latestBriefSeed(selectedType), symbols),
-    [selectedType, symbols],
+    () => mode === "DEMO" ? generateBrief(latestBriefSeed(selectedType), symbols) : null,
+    [mode, selectedType, symbols],
   );
   const visibleHistory = useMemo(
     () => selectFilteredBriefs(briefHistory, state),
@@ -126,7 +126,7 @@ export default function BriefsScreen() {
               <IntelligencePanel onRetry={() => void retryIntelligence()} resource={intelligenceResource} />
               <Text style={styles.liveNote}>Generated from currently available provider evidence. Sources and uncertainty appear with the edition.</Text>
             </View>
-          ) : <BriefHeroCard brief={latest} onPress={() => router.push(`/brief/${latest.id}` as Href)} status={selectBriefStatus(latest.id, state)} />}
+          ) : <BriefHeroCard brief={latest!} onPress={() => router.push(`/brief/${latest!.id}` as Href)} status={selectBriefStatus(latest!.id, state)} />}
         </Animated.View>
         {!symbols.length ? (
           <View style={styles.emptyWrap}>

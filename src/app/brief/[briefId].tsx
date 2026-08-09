@@ -20,8 +20,7 @@ import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
-import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
-import type { IntelligenceRequest } from "@/data/intelligence";
+import { AskMarketBriefEntry } from "@/components/intelligence";
 import {
   buildBriefShareText,
   findBriefSeed,
@@ -32,7 +31,6 @@ import { useBriefs } from "@/features/briefs/BriefsProvider";
 import { selectBriefStatus } from "@/features/briefs/selectors";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
-import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export default function BriefDetailScreen() {
@@ -48,24 +46,17 @@ export default function BriefDetailScreen() {
     [params.preview, watchlistState.symbols],
   );
   const brief = useMemo(
-    () => seed ? generateBrief(seed, symbols, { insufficientEvidence: params.preview === "insufficient" }) : null,
-    [params.preview, seed, symbols],
+    () => mode === "DEMO" && seed ? generateBrief(seed, symbols, { insufficientEvidence: params.preview === "insufficient" }) : null,
+    [mode, params.preview, seed, symbols],
   );
-  const intelligenceRequest = useMemo<IntelligenceRequest>(() => ({
-    task: "brief",
-    symbols: symbols.length ? symbols : ["AAPL"],
-    edition: seed?.type ?? "morning",
-    focusId: seed?.id,
-    timeWindow: "1D",
-  }), [seed?.id, seed?.type, symbols]);
-  const { resource: intelligenceResource, retry: retryIntelligence } = useIntelligenceRequest(intelligenceRequest, mode === "REAL" && watchlistHydrated && symbols.length > 0);
-
   useEffect(() => {
     if (brief && hydrated) dispatch({ type: "markRead", id: brief.id });
   }, [brief, dispatch, hydrated]);
 
   if (!hydrated || !watchlistHydrated || params.preview === "loading")
     return <Screen><SkeletonState /></Screen>;
+  if (mode === "REAL")
+    return <Screen><View style={styles.center}><EmptyState description="No earlier generated brief yet. Open Briefs to generate the current grounded edition." title="Brief unavailable" /></View></Screen>;
   if (!brief)
     return (
       <Screen>
@@ -91,35 +82,6 @@ export default function BriefDetailScreen() {
       setShareMessage("Sharing is unavailable in this renderer. Your brief is unchanged.");
     }
   };
-
-  if (mode === "REAL") return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.nav}>
-          <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.back}>
-            <Ionicons color={colors.textPrimary} name="arrow-back" size={23} />
-          </Pressable>
-          <BriefStatusBadge status={status} />
-        </View>
-        <Text style={styles.eyebrow}>{brief.type === "morning" ? "MORNING BRIEF" : "EVENING RECAP"}</Text>
-        <Text style={styles.date}>{brief.dateLabel}</Text>
-        <Text style={styles.meta}>Grounded from currently available provider evidence</Text>
-        <View style={styles.groundedDetail}>
-          {symbols.length ? <IntelligencePanel onRetry={() => void retryIntelligence()} resource={intelligenceResource} /> : <BriefEmptyState mode="watchlist" onAction={() => router.push("/search" as Href)} />}
-        </View>
-        <View style={styles.actions}>
-          <SaveBriefButton onPress={() => { void Haptics.selectionAsync(); dispatch({ type: "toggleSaved", id: brief.id }); }} saved={saved} />
-        </View>
-        <View style={styles.askEntry}>
-          <AskMarketBriefEntry detail="Ask a follow-up from this edition’s watchlist context" label="Ask about this brief" onPress={() => router.push(`/ask?prompt=${encodeURIComponent("What changed since this morning?")}` as Href)} />
-        </View>
-        <View style={styles.disclaimer}>
-          <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={19} />
-          <Text style={styles.disclaimerText}>Facts are source-linked. Interpretation and uncertainty remain labelled. This is informational and not investment advice.</Text>
-        </View>
-      </ScrollView>
-    </Screen>
-  );
 
   return (
     <Screen>

@@ -1,5 +1,6 @@
 import type { EvidenceBundle, IntelligenceRequest, MarketDataEnvelope } from "./contracts.ts";
 import { normalizeEvidence, type RetrievedMarketData } from "./evidence.ts";
+import { IntelligenceError } from "./errors.ts";
 
 type Fetcher = typeof fetch;
 type Resource = "company" | "quote" | "bars" | "news" | "filings" | "events";
@@ -49,7 +50,10 @@ export async function retrieveEvidence(options: {
 
   const validity = await Promise.all(options.request.symbols.map(async (symbol) => ({ symbol, valid: await load(symbol, "company") })));
   const validSymbols = validity.filter((entry) => entry.valid).map((entry) => entry.symbol);
-  if (!validSymbols.length) return normalizeEvidence({ ...options.request, symbols: [] }, resources, errors);
+  if (errors.some((entry) => entry.resource === "company" && (entry.code === "UNSUPPORTED_SYMBOL" || entry.code === "NOT_FOUND")))
+    throw new IntelligenceError("UNSUPPORTED_SYMBOL", "One or more symbols could not be validated as supported US equities.", 400);
+  if (!validSymbols.length)
+    throw new IntelligenceError("EVIDENCE_UNAVAILABLE", "Company validation is temporarily unavailable.", 503);
 
   if (options.request.task === "news_summary") {
     await Promise.all(validSymbols.map((symbol) => load(symbol, "news")));

@@ -60,7 +60,9 @@ export function normalizeFinnhubSearch(payload: unknown, limit = 20): StockSearc
     const symbol = normalizeSymbol(nullableString(result.symbol) ?? "");
     const name = nullableString(result.description);
     const type = nullableString(result.type);
-    if (!name || !type || !isSupportedUsEquity({ symbol, type }) || seen.has(symbol)) return [];
+    const suffix = symbol.includes(".") ? symbol.split(".").at(-1) : null;
+    const likelyUsTicker = !/^\d+$/.test(symbol) && (!suffix || suffix === "A" || suffix === "B");
+    if (!name || !type || !likelyUsTicker || !isSupportedUsEquity({ symbol, type }) || seen.has(symbol)) return [];
     seen.add(symbol);
     return [{ symbol, name, exchange: null, assetType: type }];
   }).slice(0, limit);
@@ -68,9 +70,12 @@ export function normalizeFinnhubSearch(payload: unknown, limit = 20): StockSearc
 
 export function normalizeFinnhubCompany(payload: unknown, symbol: string): CompanyIdentity {
   const profile = recordValue(payload, "Finnhub company profile");
-  const ticker = normalizeSymbol(requiredString(profile.ticker, "ticker"));
-  const name = requiredString(profile.name, "company name");
-  const exchange = requiredString(profile.exchange, "exchange");
+  const rawTicker = nullableString(profile.ticker);
+  const name = nullableString(profile.name);
+  const exchange = nullableString(profile.exchange);
+  if (!rawTicker || !name || !exchange)
+    throw new ProviderError("UNSUPPORTED_SYMBOL", "MarketBrief could not validate this as a supported US equity.", 404);
+  const ticker = normalizeSymbol(rawTicker);
   const country = nullableString(profile.country);
   if (ticker !== symbol || !isSupportedUsEquity({ symbol: ticker, country, exchange }))
     throw new ProviderError("UNSUPPORTED_SYMBOL", "MarketBrief currently supports validated US equities.", 404);
