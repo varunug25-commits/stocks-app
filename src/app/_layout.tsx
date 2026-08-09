@@ -11,6 +11,7 @@ import { MarketDataProvider } from "@/features/market-data/MarketDataProvider";
 import { IntelligenceProvider } from "@/features/intelligence/IntelligenceProvider";
 import { publicDataConfig } from "@/data/real";
 import { ConfigurationUnavailable } from "@/components/system/ConfigurationUnavailable";
+import { ChangeDetectionProvider } from "@/features/materiality";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -40,6 +41,7 @@ export default function RootLayout() {
           <OnboardingProvider>
           <WatchlistProvider>
           <MarketDataProvider>
+          <ChangeDetectionProvider>
           <IntelligenceProvider>
           <BriefsProvider>
           <StatusBar style="light" />
@@ -56,6 +58,7 @@ export default function RootLayout() {
           </Stack>
           </BriefsProvider>
           </IntelligenceProvider>
+          </ChangeDetectionProvider>
           </MarketDataProvider>
           </WatchlistProvider>
           </OnboardingProvider>
