@@ -105,7 +105,8 @@ test("REAL screens gate all static market and brief fixtures behind DEMO mode", 
     readFile(new URL("src/app/stock/[symbol].tsx", root), "utf8"),
     readFile(new URL("src/app/search.tsx", root), "utf8"),
   ]);
-  assert.match(today, /mode === "DEMO" \? <Animated\.View/);
+  assert.match(today, /mode === "DEMO" \? generateBrief/);
+  assert.match(today, /useChangeDetection/);
   assert.match(markets, /Unsupported market-wide indices and sectors are omitted/);
   assert.match(briefs, /No earlier generated brief yet/);
   assert.match(detail, /companies\[symbol\]/);

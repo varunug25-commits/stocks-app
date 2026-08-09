@@ -25,16 +25,16 @@ test("premium foundation stays dark, restrained, and semantically colored", asyn
 
 test("Today uses the approved finance-first information order", async () => {
   const today = await read("src/app/(tabs)/index.tsx");
-  const sections = ["Watchlist summary", "What changed", "Next up", "MORNING BRIEF", "Market context"];
+  const sections = ["SINCE YOU LAST CHECKED", "Your other stocks", "What matters next", "Morning brief", 'label="Ask MarketBrief"'];
   let previous = -1;
   for (const section of sections) {
     const next = today.indexOf(section);
     assert.ok(next > previous, `${section} should follow the previous Today section`);
     previous = next;
   }
-  assert.match(today, /ResourceStateNotice/);
-  assert.match(today, /1D moves/);
-  assert.match(today, /ILLUSTRATIVE PREVIEW/);
+  assert.match(today, /MaterialChangeRow/);
+  assert.match(today, /Nothing material changed/);
+  assert.match(today, /Your baseline is ready/);
   assert.doesNotMatch(today, /DataModeBanner|EditorialHero|AIBriefingCard/);
 });
 
@@ -82,8 +82,8 @@ test("final product polish keeps debug and implementation language out of custom
     read("src/data/real/demo.ts"),
     read("src/components/navigation/BottomTabBar.tsx"),
   ]);
-  assert.match(today, /Personalized for your watchlist/);
-  assert.match(today, /summaryStocks[\s\S]*slice\(0, 3\)/);
+  assert.match(today, /SINCE YOU LAST CHECKED/);
+  assert.match(today, /baselineMovers[\s\S]*slice\(0, 3\)/);
   assert.doesNotMatch(today, /investor view|settings|bug-outline/);
   assert.doesNotMatch(watchlist, /Watchlist limit reached/);
   assert.doesNotMatch(profile, /Subscription|Not connected|M7 AI/);

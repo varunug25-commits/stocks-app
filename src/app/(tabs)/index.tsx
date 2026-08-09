@@ -3,241 +3,148 @@ import * as Haptics from "expo-haptics";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 
 import { EventCard } from "@/components/finance/EventCard";
-import { MarketIndexCard } from "@/components/finance/MarketIndexCard";
 import { StockRow } from "@/components/finance/StockRow";
-import { StoryCard } from "@/components/finance/StoryCard";
-import { DemoDataBadge, ErrorState, OfflineBanner } from "@/components/foundation/Feedback";
-import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
+import { ErrorState, OfflineBanner } from "@/components/foundation/Feedback";
 import { IconButton } from "@/components/foundation/IconButton";
 import { ProductHeader } from "@/components/foundation/ProductHeader";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
-import { MarketStatusBadge } from "@/components/market/MarketStatusBadge";
-import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
+import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
+import { MaterialChangeRow } from "@/components/materiality/MaterialChangeRow";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
-import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
-import type { IntelligenceRequest } from "@/data/intelligence";
-import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { generateBrief, latestBriefSeed } from "@/data/briefs";
-import { marketStatus } from "@/data/markets";
+import type { IntelligenceRequest } from "@/data/intelligence";
 import { isStockSymbol } from "@/data/stocks";
-import { events, leadStory, marketIndices, stories } from "@/data/today";
+import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
+import { useChangeDetection } from "@/features/materiality";
 import { selectTodayWatchlist } from "@/features/watchlist/todayStocks";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
-import { colors, glass, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 
-const enter = (delay: number) => FadeInDown.duration(300).delay(delay);
+const enter = (delay: number) => FadeInDown.duration(260).delay(delay);
+
+function relativeCheck(value: string | null, now: number) {
+  if (!value) return "Baseline in progress";
+  const minutes = Math.max(0, Math.floor((now - Date.parse(value)) / 60_000));
+  if (minutes < 1) return "Compared with just now";
+  if (minutes < 60) return `Compared with ${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return hours < 24 ? `Compared with ${hours}h ago` : `Compared with ${new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+}
 
 export default function TodayScreen() {
   const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
-  const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
-  const { mode, quotes, companies, news, events: eventResources, loadQuotes, loadCompany, loadNews, loadEvents } = useMarketData();
+  const { state: watchlist, hydrated } = useWatchlist();
+  const { mode, quotes, companies, events, loadCompany } = useMarketData();
+  const changes = useChangeDetection();
   const reduceMotion = useReducedMotion();
-  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [referenceNow, setReferenceNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (preview === "loading") return;
-    const timer = setTimeout(() => setIsLoading(false), 450);
-    return () => clearTimeout(timer);
-  }, [preview]);
+    if (!hydrated) return;
+    void Promise.all(watchlist.symbols.slice(0, 5).map(loadCompany));
+  }, [hydrated, loadCompany, watchlist.symbols]);
 
-  useEffect(() => {
-    if (!watchlistHydrated) return;
-    void loadQuotes(watchlistState.symbols);
-    if (mode === "REAL") void Promise.all(watchlistState.symbols.slice(0, 5).flatMap((symbol) => [loadCompany(symbol), loadNews(symbol), loadEvents(symbol)]));
-  }, [loadCompany, loadEvents, loadNews, loadQuotes, mode, watchlistHydrated, watchlistState.symbols]);
-
-  const personalizedStocks = useMemo(
-    () => selectTodayWatchlist(watchlistState.symbols),
-    [watchlistState.symbols],
-  );
-  const summaryStocks = useMemo(() => (mode === "REAL" ? watchlistState.symbols.map((symbol) => {
+  const demoStocks = useMemo(() => selectTodayWatchlist(watchlist.symbols), [watchlist.symbols]);
+  const baselineMovers = useMemo(() => (mode === "REAL" ? watchlist.symbols.map((symbol) => {
     const companyResource = companies[symbol];
     const company = companyResource?.status === "ready" || companyResource?.status === "stale" ? companyResource.data : null;
     return { symbol, name: company?.name ?? symbol, price: "", changePercent: 0, logoColor: colors.surfaceElevated, trend: [] };
-  }) : personalizedStocks)
-    .sort((left, right) => {
-      const leftResource = isStockSymbol(left.symbol) ? quotes[left.symbol] : undefined;
-      const rightResource = isStockSymbol(right.symbol) ? quotes[right.symbol] : undefined;
-      const leftChange = leftResource?.status === "ready" || leftResource?.status === "stale"
-        ? leftResource.data.changePercent
-        : null;
-      const rightChange = rightResource?.status === "ready" || rightResource?.status === "stale"
-        ? rightResource.data.changePercent
-        : null;
-      const leftMove = leftChange === null ? -1 : Math.abs(leftChange);
-      const rightMove = rightChange === null ? -1 : Math.abs(rightChange);
-      return rightMove - leftMove;
-    })
-    .slice(0, 3), [companies, mode, personalizedStocks, quotes, watchlistState.symbols]);
-  const realStories = useMemo(() => watchlistState.symbols.flatMap((symbol) => {
-    const resource = news[symbol];
-    return resource?.status === "ready" || resource?.status === "stale" ? resource.data : [];
-  }).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 3), [news, watchlistState.symbols]);
-  const realEvents = useMemo(() => watchlistState.symbols.flatMap((symbol) => {
-    const resource = eventResources[symbol];
-    return resource?.status === "ready" || resource?.status === "stale" ? resource.data : [];
-  }).filter((event) => event.scheduledAt).sort((a, b) => Date.parse(a.scheduledAt!) - Date.parse(b.scheduledAt!)).slice(0, 4), [eventResources, watchlistState.symbols]);
-  const morningBrief = useMemo(
-    () => mode === "DEMO" ? generateBrief(latestBriefSeed("morning"), watchlistState.symbols) : null,
-    [mode, watchlistState.symbols],
-  );
-  const briefRequest = useMemo<IntelligenceRequest>(() => ({
-    task: "brief",
-    symbols: watchlistState.symbols.length ? watchlistState.symbols : ["AAPL"],
-    edition: "morning",
-    timeWindow: "1D",
-  }), [watchlistState.symbols]);
-  const { resource: briefResource, retry: retryBrief } = useIntelligenceRequest(briefRequest, mode === "REAL" && watchlistHydrated && watchlistState.symbols.length > 0);
-  const breadth = useMemo(() => {
-    let higher = 0;
-    let lower = 0;
-    for (const symbol of watchlistState.symbols) {
-      const resource = quotes[symbol];
-      if (resource?.status !== "ready" && resource?.status !== "stale") continue;
-      const change = resource.data.changePercent;
-      if (change === null) continue;
-      if (change > 0) higher += 1;
-      if (change < 0) lower += 1;
-    }
-    return higher + lower ? `${higher} higher · ${lower} lower` : "Quotes loading";
-  }, [quotes, watchlistState.symbols]);
-  const today = new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  }).format(new Date());
-  const animation = (delay: number) => reduceMotion ? undefined : enter(delay);
+  }) : demoStocks).sort((left, right) => {
+    const leftQuote = quotes[left.symbol];
+    const rightQuote = quotes[right.symbol];
+    const leftMove = leftQuote?.status === "ready" || leftQuote?.status === "stale" ? Math.abs(leftQuote.data.changePercent ?? 0) : -1;
+    const rightMove = rightQuote?.status === "ready" || rightQuote?.status === "stale" ? Math.abs(rightQuote.data.changePercent ?? 0) : -1;
+    return rightMove - leftMove;
+  }).slice(0, 3), [companies, demoStocks, mode, quotes, watchlist.symbols]);
 
-  const handleRefresh = async () => {
+  const upcoming = useMemo(() => watchlist.symbols.flatMap((symbol) => {
+    const resource = events[symbol];
+    return resource?.status === "ready" || resource?.status === "stale" ? resource.data : [];
+  }).filter((event) => event.scheduledAt && Date.parse(event.scheduledAt) >= referenceNow - 86_400_000)
+    .sort((left, right) => Date.parse(left.scheduledAt!) - Date.parse(right.scheduledAt!)).slice(0, 4), [events, referenceNow, watchlist.symbols]);
+
+  const demoBrief = useMemo(() => mode === "DEMO" ? generateBrief(latestBriefSeed("morning"), watchlist.symbols) : null, [mode, watchlist.symbols]);
+  const briefRequest = useMemo<IntelligenceRequest>(() => ({ task: "brief", symbols: watchlist.symbols.length ? watchlist.symbols : ["AAPL"], edition: "morning", timeWindow: "1D" }), [watchlist.symbols]);
+  const { resource: briefResource, retry: retryBrief } = useIntelligenceRequest(briefRequest, mode === "REAL" && hydrated && watchlist.symbols.length > 0);
+  const animation = (delay: number) => reduceMotion ? undefined : enter(delay);
+  const date = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date(referenceNow));
+
+  const refresh = async () => {
     setIsRefreshing(true);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      await loadQuotes(watchlistState.symbols);
-    } finally {
-      setIsRefreshing(false);
-    }
+    try { await changes.refresh(); } finally { setReferenceNow(Date.now()); setIsRefreshing(false); }
   };
 
-  const handleRetry = () => {
-    setIsLoading(true);
-    router.replace("/" as Href);
-    setTimeout(() => setIsLoading(false), 450);
+  const openChange = (change: NonNullable<typeof changes.result>["materialChanges"][number]) => {
+    void changes.markSeen([change.id]);
+    void Haptics.selectionAsync();
+    router.push(change.kind === "event" || change.kind === "filing" ? `/stock/${change.symbol}` as Href : `/stock/${change.symbol}/why` as Href);
   };
 
-  if (isLoading || !watchlistHydrated || preview === "loading") {
-    return <Screen><SkeletonState /></Screen>;
-  }
-  if (preview === "error") {
-    return <Screen><View style={styles.stateWrap}><ErrorState description="Your feed could not be prepared. Your saved watchlist is unchanged." onRetry={handleRetry} title="Today needs a refresh" /></View></Screen>;
-  }
-  if (preview === "empty") {
-    return <Screen><View style={styles.stateWrap}><EmptyState description="Choose companies in Watchlist to make this feed yours." title="Your feed is ready to personalize" /></View></Screen>;
-  }
+  if (!hydrated || changes.loading || preview === "loading") return <Screen><SkeletonState /></Screen>;
+  if (preview === "error") return <Screen><View style={styles.state}><ErrorState description="Your previous baseline is safe. Try the comparison again." onRetry={() => void refresh()} title="Changes could not be checked" /></View></Screen>;
 
-  const status = mode === "REAL"
-    ? { ...marketStatus, state: "closed" as const, label: "Index status unavailable", detail: "No licensed index-status feed connected", updated: "Unavailable" }
-    : preview === "closed"
-      ? { ...marketStatus, state: "closed" as const, label: "Market closed", detail: "Next regular session shown with demo data" }
-      : marketStatus;
+  const result = changes.result;
+  const material = result?.materialChanges ?? [];
+  const quietCount = result?.quietSymbols.length ?? 0;
 
   return (
     <Screen>
       {preview === "offline" ? <OfflineBanner /> : null}
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl colors={[colors.teal]} onRefresh={() => void handleRefresh()} progressBackgroundColor={colors.surfaceElevated} refreshing={isRefreshing} tintColor={colors.teal} />}
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl colors={[colors.textPrimary]} onRefresh={() => void refresh()} progressBackgroundColor={colors.surfaceElevated} refreshing={isRefreshing} tintColor={colors.textPrimary} />}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.contentColumn}>
+        <View style={styles.column}>
           <Animated.View entering={animation(0)}>
-            <ProductHeader
-              actions={<><IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} /><IconButton accessibilityLabel="Notifications preference" icon="notifications-outline" onPress={() => router.push("/profile" as Href)} /></>}
-              eyebrow={today}
-              subtitle="Personalized for your watchlist"
-              title="MarketBrief"
-            />
+            <ProductHeader actions={<IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} />} eyebrow={date} title="MarketBrief" />
           </Animated.View>
 
-          <Animated.View entering={animation(30)} style={[styles.section, styles.watchlistSection]}>
-            <GlassBackdrop intensity={22} />
-            <View style={styles.watchlistHeading}>
-              <View>
-                <Text style={styles.watchlistTitle}>Watchlist summary</Text>
-                <Text style={styles.watchlistMeta}>{breadth} · 1D moves</Text>
-              </View>
-              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push("/watchlist" as Href)} style={styles.textAction}><Text style={styles.textActionLabel}>View all</Text></Pressable>
-            </View>
-            {watchlistState.symbols[0] ? <ResourceStateNotice onRetry={() => void loadQuotes(watchlistState.symbols)} resource={quotes[watchlistState.symbols[0]]} /> : null}
-            {summaryStocks.length ? (
-              <View style={styles.stockList}>
-                {summaryStocks.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}
-              </View>
-            ) : (
-              <EmptyState actionLabel="Search stocks" description="Add companies to see prices and daily moves here." onAction={() => router.push("/search" as Href)} title="Your watchlist is clear" />
-            )}
-          </Animated.View>
+          {!watchlist.symbols.length ? <Animated.View entering={animation(25)} style={styles.section}>
+            <EmptyState actionLabel="Search stocks" description="MarketBrief will track what changes and filter out the noise." onAction={() => router.push("/search" as Href)} title="Follow a few companies" />
+          </Animated.View> : result?.baselineReady ? <Animated.View entering={animation(25)} style={styles.section}>
+            <Text style={styles.eyebrow}>SINCE YOU LAST CHECKED</Text>
+            <Text style={styles.heroTitle}>Your baseline is ready</Text>
+            <Text style={styles.heroBody}>MarketBrief will compare future developments against this point. Current watchlist movers are shown below.</Text>
+            <View style={styles.baselineList}>{baselineMovers.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}</View>
+          </Animated.View> : <Animated.View entering={animation(25)} style={styles.section}>
+            <Text style={styles.eyebrow}>SINCE YOU LAST CHECKED</Text>
+            <Text style={styles.heroTitle}>{material.length ? `${material.length} ${material.length === 1 ? "thing matters" : "things matter"}` : "Nothing material changed"}</Text>
+            <Text style={styles.heroMeta}>{relativeCheck(changes.lastCheckedAt, referenceNow)}</Text>
+            {material.length ? <View style={styles.changeList}>{material.map((change, index) => <MaterialChangeRow change={change} index={index} key={change.id} onPress={() => openChange(change)} />)}</View> : <Text style={styles.heroBody}>No new watchlist development passed your attention threshold.</Text>}
+          </Animated.View>}
 
-          <Animated.View entering={animation(45)} style={styles.askSection}>
-            <AskMarketBriefEntry detail="Ask what changed across your watchlist" onPress={() => router.push("/ask" as Href)} />
-          </Animated.View>
-
-          <Animated.View entering={animation(60)} style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "PROVIDER-BACKED" : "ILLUSTRATIVE PREVIEW"} title="What changed" />
-            {mode === "REAL" ? realStories.length ? realStories.map((story) => <StoryCard key={story.id} onPress={story.sourceUrl ? () => void Linking.openURL(story.sourceUrl) : undefined} story={{ id: story.id, category: story.relatedSymbols[0] ?? "COMPANY", title: story.headline, summary: story.summary ?? "Open the publisher source for the full report.", source: story.publisher, published: new Date(story.publishedAt).toLocaleString(), readTime: "Source", palette: ["#000", "#000"], artwork: "grid" }} />) : <EmptyState description="No supported company news is available for your watchlist yet." title="No recent developments" /> : <><StoryCard story={leadStory} />{stories.map((story) => <StoryCard key={story.id} story={story} />)}</>}
-          </Animated.View>
-
-          <Animated.View entering={animation(90)} style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "PROVIDER EVENTS" : "EARNINGS & MACRO"} title="Next up" />
-            <View>{mode === "REAL" ? realEvents.length ? realEvents.map((event) => { const date = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(date.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <EmptyState description="No supported upcoming events are available for your watchlist." title="No events scheduled" /> : events.map((event) => <EventCard event={event} key={event.id} />)}</View>
-          </Animated.View>
-
-          <Animated.View entering={animation(120)} style={[styles.section, styles.briefSection]}>
-            {mode === "REAL" ? (
-              watchlistState.symbols.length ? <IntelligencePanel onRetry={() => void retryBrief()} resource={briefResource} /> : <EmptyState description="Add companies to assemble a grounded edition." title="Morning brief needs a watchlist" />
-            ) : <>
-              <View style={styles.briefHeading}>
-                <View>
-                  <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief!.timestamp}</Text>
-                  <Text style={styles.briefTitle}>{morningBrief!.headline}</Text>
-                </View>
-              </View>
-              {morningBrief!.developments.map((point, index) => (
-                <View key={point} style={styles.briefPoint}>
-                  <Text style={styles.briefNumber}>{String(index + 1).padStart(2, "0")}</Text>
-                  <Text style={styles.briefPointText}>{point}</Text>
-                </View>
-              ))}
-            </>}
-            <Pressable accessibilityRole="button" onPress={() => router.push(mode === "REAL" ? "/briefs" as Href : `/brief/${morningBrief!.id}` as Href)} style={styles.briefLink}>
-              <Text style={styles.briefLinkText}>{mode === "REAL" ? "Open Briefs" : "Read full publication"}</Text>
-              <Ionicons color={colors.teal} name="arrow-forward" size={17} />
-            </Pressable>
-          </Animated.View>
-
-          {mode === "DEMO" ? <Animated.View entering={animation(150)} style={styles.section}>
-            <SectionHeader eyebrow="DEMO DATA · 1D" title="Market context" />
-            <View style={styles.statusLine}>
-              <MarketStatusBadge status={status} />
-              <DemoDataBadge />
-            </View>
-            <ScrollView contentContainerStyle={styles.horizontalContent} horizontal showsHorizontalScrollIndicator={false}>
-              {marketIndices.map((index) => <MarketIndexCard index={index} key={index.id} />)}
-            </ScrollView>
+          {watchlist.symbols.length && !result?.baselineReady ? <Animated.View entering={animation(50)} style={styles.quietRow}>
+            <View style={styles.quietCopy}><Text style={styles.quietTitle}>Your other stocks</Text><Text style={styles.quietMeta}>{quietCount ? `Nothing material changed in ${quietCount} of ${watchlist.symbols.length} stocks.` : "Every watched stock with supported data is included above."}</Text></View>
+            <Pressable accessibilityRole="button" onPress={() => router.push("/watchlist" as Href)} style={styles.inlineAction}><Text style={styles.inlineActionText}>View all</Text></Pressable>
           </Animated.View> : null}
 
-          <View style={styles.disclaimer}>
-            <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={16} />
-            <Text style={styles.disclaimerText}>{mode === "REAL" ? "Company prices, news and events use configured providers when available. Missing resources remain unavailable rather than being replaced with demo values." : "Illustrative demo market and editorial content. Educational information, not investment advice."}</Text>
-          </View>
+          <Animated.View entering={animation(70)} style={styles.section}>
+            <SectionHeader eyebrow="KNOWN DATES · NEXT 7 DAYS" title="What matters next" />
+            {upcoming.length ? upcoming.map((event) => { const scheduled = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: scheduled.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(scheduled.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <EmptyState description="No provider-backed events are scheduled for the next seven days." title="No known catalysts" />}
+          </Animated.View>
+
+          <Animated.View entering={animation(90)} style={[styles.section, styles.brief]}>
+            <SectionHeader eyebrow="CURRENT EDITION" title="Morning brief" />
+            {mode === "REAL" ? watchlist.symbols.length ? <IntelligencePanel onRetry={() => void retryBrief()} resource={briefResource} /> : null : <><Text style={styles.briefTitle}>{demoBrief!.headline}</Text>{demoBrief!.developments.slice(0, 4).map((point, index) => <View key={point} style={styles.briefPoint}><Text style={styles.number}>{String(index + 1).padStart(2, "0")}</Text><Text style={styles.briefText}>{point}</Text></View>)}</>}
+            <Pressable accessibilityRole="button" onPress={() => router.push(mode === "REAL" ? "/briefs" as Href : `/brief/${demoBrief!.id}` as Href)} style={styles.link}><Text style={styles.linkText}>Open current brief</Text><Ionicons color={colors.textPrimary} name="arrow-forward" size={17} /></Pressable>
+          </Animated.View>
+
+          <Animated.View entering={animation(110)} style={styles.ask}>
+            <AskMarketBriefEntry detail="Ask from your watchlist changes and available evidence" label="Ask MarketBrief" onPress={() => router.push("/ask?prompt=What%20changed%20since%20I%20last%20checked%3F" as Href)} />
+          </Animated.View>
+
+          <View style={styles.disclosure}><Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={16} /><Text style={styles.disclosureText}>{mode === "REAL" ? "Changes use available provider evidence and your saved comparison baseline. Missing resources remain unavailable." : "Deliberate demo mode with illustrative market content. Informational only."}</Text></View>
         </View>
       </ScrollView>
     </Screen>
@@ -245,29 +152,30 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingBottom: 104, backgroundColor: colors.background },
-  contentColumn: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg },
-  stateWrap: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.lg },
-  section: { gap: spacing.xs, marginTop: spacing.xl },
-  statusLine: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  horizontalContent: { gap: spacing.xs, paddingRight: spacing.lg },
-  watchlistSection: { padding: spacing.md, borderRadius: radii.lg, backgroundColor: glass.fallbackStrong, borderWidth: 1, borderColor: glass.border, overflow: "hidden" },
-  watchlistHeading: { minHeight: 44, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
-  watchlistTitle: { ...typography.heading, color: colors.textPrimary },
-  watchlistMeta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
-  textAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.xs, marginTop: -8 },
-  textActionLabel: { ...typography.label, color: colors.teal },
-  stockList: { overflow: "hidden" },
-  askSection: { marginTop: spacing.md },
-  briefSection: { paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  briefHeading: { marginBottom: spacing.xs },
-  briefEyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 0.75 },
-  briefTitle: { ...typography.heading, color: colors.textPrimary, marginTop: 3 },
-  briefPoint: { minHeight: 56, flexDirection: "row", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSoft },
-  briefNumber: { ...typography.label, color: colors.textSecondary, width: 26 },
-  briefPointText: { ...typography.body, flex: 1, color: colors.textSecondary },
-  briefLink: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  briefLinkText: { ...typography.label, color: colors.teal },
-  disclaimer: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, marginTop: spacing.xxl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  disclaimerText: { ...typography.caption, flex: 1, color: colors.textTertiary },
+  scroll: { paddingBottom: 112, backgroundColor: colors.background },
+  column: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg },
+  state: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.lg },
+  section: { marginTop: spacing.xl },
+  eyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 0.9 },
+  heroTitle: { ...typography.display, color: colors.textPrimary, marginTop: spacing.xs },
+  heroMeta: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xs },
+  heroBody: { ...typography.body, color: colors.textSecondary, maxWidth: 520, marginTop: spacing.sm },
+  changeList: { marginTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  baselineList: { marginTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  quietRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  quietCopy: { flex: 1 },
+  quietTitle: { ...typography.label, color: colors.textPrimary },
+  quietMeta: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  inlineAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.xs },
+  inlineActionText: { ...typography.label, color: colors.textPrimary },
+  brief: { paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  briefTitle: { ...typography.heading, color: colors.textPrimary, marginTop: spacing.sm },
+  briefPoint: { minHeight: 52, flexDirection: "row", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSoft },
+  number: { ...typography.label, width: 26, color: colors.textTertiary },
+  briefText: { ...typography.body, flex: 1, color: colors.textSecondary },
+  link: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  linkText: { ...typography.label, color: colors.textPrimary },
+  ask: { marginTop: spacing.lg },
+  disclosure: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, marginTop: spacing.xxl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  disclosureText: { ...typography.caption, flex: 1, color: colors.textTertiary },
 });
