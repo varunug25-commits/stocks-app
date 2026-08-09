@@ -7,6 +7,8 @@ import test from "node:test";
 import { MemoryIntelligenceCache, intelligenceCacheKey } from "../supabase/functions/_shared/intelligence/cache.ts";
 import type { EvidenceItem, IntelligenceRequest, MarketDataEnvelope, ModelCandidate } from "../supabase/functions/_shared/intelligence/contracts.ts";
 import { boundEvidence, buildUntrustedEvidenceContext, evidenceHash, normalizeEvidence, scoreNews } from "../supabase/functions/_shared/intelligence/evidence.ts";
+import { IntelligenceError } from "../supabase/functions/_shared/intelligence/errors.ts";
+import { GeminiStructuredAIProvider, geminiModel } from "../supabase/functions/_shared/intelligence/gemini.ts";
 import { MockStructuredAIProvider, type StructuredAIProvider } from "../supabase/functions/_shared/intelligence/provider.ts";
 import { parseIntelligenceRequest } from "../supabase/functions/_shared/intelligence/request.ts";
 import { retrieveEvidence } from "../supabase/functions/_shared/intelligence/retrieval.ts";
@@ -149,6 +151,26 @@ test("M7 cache invalidates when evidence content changes", async () => {
   assert.notEqual(evidenceHash([source]), evidenceHash([current]));
 });
 
+test("M7 falls back truthfully on genuine live-provider failure and keeps provider caches separate", async () => {
+  let liveCalls = 0;
+  const live: StructuredAIProvider = {
+    name: "failing-live", mode: "live",
+    async generateStructuredResponse() {
+      liveCalls += 1;
+      throw new IntelligenceError("PROVIDER_UNAVAILABLE", "Live provider unavailable.", 503);
+    },
+  };
+  const cache = new MemoryIntelligenceCache();
+  const service = createIntelligenceService({ provider: live, fallbackProvider: new MockStructuredAIProvider(), cache, retrieve: async () => ({ evidence: [source], symbols: ["AAPL"], errors: [] }) });
+  const first = await service(request);
+  const second = await service(request);
+  assert.equal(first.meta.providerMode, "mock");
+  assert.equal(first.meta.provider, "marketbrief-deterministic");
+  assert.equal(second.meta.cached, true);
+  assert.equal(liveCalls, 2);
+  assert.notEqual(intelligenceCacheKey(request, [source], live.name).key, intelligenceCacheKey(request, [source], "marketbrief-deterministic").key);
+});
+
 test("M7 watchlist briefs prioritize the largest ranked moves instead of equal stock coverage", async () => {
   const bundle = normalizeEvidence({ task: "brief", symbols: ["AAPL", "AMD"], edition: "morning" }, {
     AAPL: { quote: envelope({ price: 220, change: .2, changePercent: .09, providerTimestamp: meta.asOf }) },
@@ -190,6 +212,40 @@ test("M7 server retrieval never puts provider credentials in URLs or response pa
   assert.doesNotMatch(clientSource, /AI_PROVIDER_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY/);
 });
 
+test("M7 Gemini provider keeps its server secret out of URLs and sends it only in the auth header", async () => {
+  const secret = "server-only-test-secret";
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+  const provider = new GeminiStructuredAIProvider(secret, async (input, init) => {
+    calls.push({ url: String(input), init });
+    return Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify(validCandidate()) }] } }] });
+  });
+  const candidate = await provider.generateStructuredResponse({ request, evidence: [source], untrustedContext: buildUntrustedEvidenceContext([source]) });
+  assert.equal(provider.name, `google-${geminiModel}`);
+  assert.equal(provider.mode, "live");
+  assert.deepEqual(candidate.symbols, ["AAPL"]);
+  assert.equal(calls.length, 1);
+  assert.doesNotMatch(calls[0]!.url, new RegExp(secret));
+  assert.equal((calls[0]!.init?.headers as Record<string, string>)["X-Goog-Api-Key"], secret);
+  assert.doesNotMatch(String(calls[0]!.init?.body), new RegExp(secret));
+  assert.match(String(calls[0]!.init?.body), /responseJsonSchema/);
+  assert.doesNotMatch(String(calls[0]!.init?.body), /"responseSchema"/);
+  assert.match(String(calls[0]!.init?.body), /Output JSON schema/);
+  assert.match(String(calls[0]!.init?.body), /thinkingLevel\":\"minimal/);
+  assert.match(String(calls[0]!.init?.body), /"maxOutputTokens":8192/);
+  assert.doesNotMatch(String(calls[0]!.init?.body), /maxLength/);
+  assert.match(calls[0]!.url, /\/v1beta\/models\/gemini-3\.5-flash:generateContent$/);
+  assert.doesNotMatch(JSON.stringify(candidate), new RegExp(secret));
+});
+
+test("M7 Gemini provider converts upstream failures into safe errors without leaking its secret", async () => {
+  const secret = "server-only-failure-secret";
+  const provider = new GeminiStructuredAIProvider(secret, async () => Response.json({ error: { message: `bad ${secret}` } }, { status: 401 }));
+  await assert.rejects(
+    provider.generateStructuredResponse({ request, evidence: [source], untrustedContext: "bounded evidence" }),
+    (error: unknown) => error instanceof Error && !error.message.includes(secret) && /rejected the configured credential/.test(error.message),
+  );
+});
+
 test("M7 mobile calls authenticate only with the public project key in headers", async () => {
   const client = await read("src/data/intelligence/client.ts");
   assert.match(client, /apikey: config\.publishableKey/);
@@ -213,6 +269,8 @@ test("M7 one engine and one provider abstraction power all four customer capabil
   ]);
   assert.match(rootLayout, /IntelligenceProvider/);
   for (const screen of [stock, today, briefs, ask]) assert.match(screen, /Intelligence|AskMarketBrief/);
+  assert.match(edge, /GeminiStructuredAIProvider/);
+  assert.match(edge, /MARKETBRIEF_AI_API_KEY/);
   assert.match(edge, /MockStructuredAIProvider/);
   assert.match(edge, /createIntelligenceService/);
   assert.doesNotMatch(`${rootLayout}${stock}${today}${briefs}${ask}`, /OPENAI_API_KEY|ANTHROPIC_API_KEY/);

@@ -23,7 +23,7 @@ const TTL_SECONDS: Record<IntelligenceRequest["task"], number> = {
   filing_summary: 60 * 60,
 };
 
-export function intelligenceCacheKey(request: IntelligenceRequest, evidence: EvidenceItem[]) {
+export function intelligenceCacheKey(request: IntelligenceRequest, evidence: EvidenceItem[], provider = "unspecified") {
   const currentEvidenceHash = evidenceHash(evidence);
   const requestFingerprint = stableHash(JSON.stringify({
     task: request.task,
@@ -32,6 +32,7 @@ export function intelligenceCacheKey(request: IntelligenceRequest, evidence: Evi
     question: request.question?.toLowerCase().replace(/\s+/g, " ").trim(),
     focusId: request.focusId,
     timeWindow: request.timeWindow,
+    provider,
     schema: INTELLIGENCE_SCHEMA_VERSION,
   }));
   return { key: `intelligence:${requestFingerprint}:${currentEvidenceHash}`, evidenceHash: currentEvidenceHash };

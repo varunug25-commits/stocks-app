@@ -1,4 +1,4 @@
-export const INTELLIGENCE_SCHEMA_VERSION = "m7-v1";
+export const INTELLIGENCE_SCHEMA_VERSION = "m7-v2";
 
 export type IntelligenceTask =
   | "why_moved"

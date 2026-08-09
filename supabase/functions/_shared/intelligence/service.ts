@@ -13,42 +13,54 @@ import {
   isFreshIntelligence,
 } from "./cache.ts";
 import { validateProviderOutput } from "./validation.ts";
+import { IntelligenceError } from "./errors.ts";
+
+const fallbackCodes = new Set(["PROVIDER_UNAVAILABLE", "RATE_LIMITED", "INVALID_PROVIDER_OUTPUT"]);
 
 export function createIntelligenceService(dependencies: {
   provider: StructuredAIProvider;
+  fallbackProvider?: StructuredAIProvider;
   cache: IntelligenceCacheStore;
   retrieve(request: IntelligenceRequest): Promise<EvidenceBundle>;
   now?: () => number;
 }) {
   return async function generate(request: IntelligenceRequest): Promise<MarketBriefIntelligenceResponse> {
     const bundle = await dependencies.retrieve(request);
-    const { key, evidenceHash } = intelligenceCacheKey(request, bundle.evidence);
     const now = dependencies.now?.() ?? Date.now();
-    const cached = await dependencies.cache.get(key);
-    if (cached && cached.evidenceHash === evidenceHash && isFreshIntelligence(cached, now)) {
-      return { ...cached.value, meta: { ...cached.value.meta, cached: true } };
+    const runProvider = async (provider: StructuredAIProvider) => {
+      const { key, evidenceHash } = intelligenceCacheKey(request, bundle.evidence, provider.name);
+      const cached = await dependencies.cache.get(key);
+      if (cached && cached.evidenceHash === evidenceHash && isFreshIntelligence(cached, now)) {
+        return { ...cached.value, meta: { ...cached.value.meta, cached: true } };
+      }
+      return dedupeIntelligenceRequest(key, async () => {
+        const candidate = await provider.generateStructuredResponse({
+          request,
+          evidence: bundle.evidence,
+          untrustedContext: buildUntrustedEvidenceContext(bundle.evidence),
+        });
+        const value = validateProviderOutput({
+          candidate,
+          request,
+          evidence: bundle.evidence,
+          provider,
+          generatedAt: new Date(now).toISOString(),
+        });
+        await dependencies.cache.put({
+          key,
+          evidenceHash,
+          expiresAt: intelligenceExpiry(request.task, now),
+          value,
+        });
+        return value;
+      });
+    };
+    try {
+      return await runProvider(dependencies.provider);
+    } catch (error) {
+      if (!dependencies.fallbackProvider || !(error instanceof IntelligenceError) || !fallbackCodes.has(error.code)) throw error;
+      return runProvider(dependencies.fallbackProvider);
     }
-    return dedupeIntelligenceRequest(key, async () => {
-      const candidate = await dependencies.provider.generateStructuredResponse({
-        request,
-        evidence: bundle.evidence,
-        untrustedContext: buildUntrustedEvidenceContext(bundle.evidence),
-      });
-      const value = validateProviderOutput({
-        candidate,
-        request,
-        evidence: bundle.evidence,
-        provider: dependencies.provider,
-        generatedAt: new Date(now).toISOString(),
-      });
-      await dependencies.cache.put({
-        key,
-        evidenceHash,
-        expiresAt: intelligenceExpiry(request.task, now),
-        value,
-      });
-      return value;
-    });
   };
 }
 

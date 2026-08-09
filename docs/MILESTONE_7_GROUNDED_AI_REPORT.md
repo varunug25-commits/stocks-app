@@ -18,7 +18,7 @@ The mobile client never calls a model provider. It sends only a task, supported 
 
 ### Provider abstraction
 
-`StructuredAIProvider` exposes `generateStructuredResponse({ request, evidence, untrustedContext })`. The milestone ships `MockStructuredAIProvider`, a deterministic zero-token provider. No paid AI request, AI SDK, or AI secret is included.
+`StructuredAIProvider` exposes `generateStructuredResponse({ request, evidence, untrustedContext })`. The milestone keeps `MockStructuredAIProvider` as a deterministic zero-token fallback and adds the server-only `GeminiStructuredAIProvider` for the stable `gemini-3.5-flash` model. The live provider is selected only when `MARKETBRIEF_AI_API_KEY` exists in the Supabase Edge Function environment; the key is sent in the supported `X-Goog-Api-Key` header and never appears in a URL, client bundle, log, response, or repository file.
 
 ### Evidence and ranking
 
@@ -42,7 +42,16 @@ The historical archive remains illustrative until grounded editions have durable
 
 ## Cache and cost controls
 
-Validated results are cached in server-only `intelligence_cache` with RLS and no mobile-role privileges. Keys include task, ordered symbols, normalized question hash, focus/edition, time window, evidence IDs/hashes, and schema version. TTLs are 15 minutes for Why/Ask/news, 30 minutes for briefs, and 60 minutes for filing summaries. Evidence or schema changes invalidate the key. Identical in-flight requests are deduplicated. An instance-local 20-request/minute limiter is included; distributed throttling remains pre-launch hardening.
+Validated results are cached in server-only `intelligence_cache` with RLS and no mobile-role privileges. Keys include task, ordered symbols, normalized question hash, focus/edition, time window, evidence IDs/hashes, provider identity, and schema version. TTLs are 15 minutes for Why/Ask/news, 30 minutes for briefs, and 60 minutes for filing summaries. Evidence, provider, or schema changes invalidate the key. Live-provider activation advances the schema to `m7-v2`, so a previous mock result cannot be reused as a live response. Identical in-flight requests are deduplicated. An instance-local 20-request/minute limiter is included; distributed throttling remains pre-launch hardening. Gemini requests use the supported `generateContent` endpoint with JSON MIME mode, the current `responseJsonSchema` field, minimal thinking, an explicit provider abort deadline, no Google Search grounding, and the bounded M7 evidence context. The schema is intentionally compact because Gemini rejects overly complex/deep schemas; MarketBrief's server validator remains authoritative and fails closed on malformed structure, unsupported claims, citations, URLs, symbols, or length limits. Genuine Gemini transport, quota, permission, timeout, or invalid-output failures fall back to the deterministic provider with explicit mock metadata and a separate cache namespace. Request, evidence, cache, and MarketBrief backend failures do not silently become mock AI output.
+
+## Live activation verification
+
+- Supabase `market-intelligence` version 40 is ACTIVE on development project `jkatugzutluclvnhqhle`.
+- A fresh `news_summary` request for AAPL returned HTTP 200 in 12.51 seconds with `provider: google-gemini-3.5-flash`, `providerMode: live`, `cached: false`, 3 validated sections, 8 server-controlled sources, and 11 evidence items.
+- Repeating that exact request returned HTTP 200 in 1.71 seconds with the same `generatedAt`, `providerMode: live`, and `cached: true`.
+- AAPL `why_moved` returned HTTP 200 from the previously validated live Gemini cache with 3 sections and 3 sources. It did not return deterministic/mock metadata.
+- Regression coverage verifies the provider key is sent only in the `X-Goog-Api-Key` header, never in the URL/body/output, and verifies live-provider failures use the separate deterministic fallback/cache while the live provider is retried on a later request.
+- No native Android or iPhone verification was performed for this activation pass.
 
 ## Prompt-injection and security
 
@@ -54,8 +63,7 @@ M7 does not rewrite M6. Quotes, bars, companies, news, events, filings, provider
 
 ## Limitations
 
-- Generation is deterministic mock behavior, not a live language model.
-- A real provider/model decision and server-only secret are still required before claiming live AI.
+- Live generation depends on the configured Gemini free-tier availability and quota; without the server secret, the function truthfully reports the deterministic mock provider in response metadata.
 - Filing intelligence has metadata only because M6 does not provide filing-body text.
 - The previous-edition archive remains illustrative.
 - The rate limiter is instance-local, not distributed.

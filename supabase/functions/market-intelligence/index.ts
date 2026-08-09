@@ -8,6 +8,7 @@ import type {
 import type { MarketBriefIntelligenceResponse } from "../_shared/intelligence/contracts.ts";
 import { stableHash } from "../_shared/intelligence/evidence.ts";
 import { IntelligenceError } from "../_shared/intelligence/errors.ts";
+import { GeminiStructuredAIProvider } from "../_shared/intelligence/gemini.ts";
 import { MockStructuredAIProvider } from "../_shared/intelligence/provider.ts";
 import { readIntelligenceRequest } from "../_shared/intelligence/request.ts";
 import { retrieveEvidence } from "../_shared/intelligence/retrieval.ts";
@@ -95,8 +96,13 @@ export default {
       };
 
       const request = await readIntelligenceRequest(req);
+      const aiApiKey = Deno.env.get("MARKETBRIEF_AI_API_KEY")?.trim();
+      const mockProvider = new MockStructuredAIProvider();
       const service = createIntelligenceService({
-        provider: new MockStructuredAIProvider(),
+        provider: aiApiKey
+          ? new GeminiStructuredAIProvider(aiApiKey)
+          : mockProvider,
+        ...(aiApiKey ? { fallbackProvider: mockProvider } : {}),
         cache,
         retrieve: (input) => retrieveEvidence({
           request: input,
