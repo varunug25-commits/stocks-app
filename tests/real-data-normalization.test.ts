@@ -9,7 +9,7 @@ import { FinnhubProvider, normalizeFinnhubNews } from "../supabase/functions/_sh
 import { normalizeSecSubmissions, SecEdgarProvider } from "../supabase/functions/_shared/providers/sec.ts";
 import { normalizeTwelveDataBars, normalizeTwelveDataQuote, TwelveDataProvider } from "../supabase/functions/_shared/providers/twelveData.ts";
 import { createMarketDataService, parseMarketDataRequest, readPublicRequestJson, validatePublicRequest } from "../supabase/functions/_shared/service.ts";
-import { edgeFunctionUrl, resolveDataMode } from "../src/data/real/config.ts";
+import { edgeFunctionUrl, resolveDataMode, resolvePublicDataConfig } from "../src/data/real/config.ts";
 import { MarketDataClientError, requestMarketData } from "../src/data/real/client.ts";
 import { formatFreshness } from "../src/data/real/freshness.ts";
 import { errorToResource } from "../src/data/real/resource.ts";
@@ -319,6 +319,29 @@ test("REAL configuration never silently falls back to DEMO", async () => {
   assert.equal(errorToResource(new MarketDataClientError("MISSING_CONFIGURATION", "missing")).status, "unavailable");
   assert.equal(resolveDataMode("DEMO"), "DEMO");
   assert.equal(resolveDataMode("REAL"), "REAL");
+});
+
+test("production configuration fails closed instead of opening a demo experience", () => {
+  const missing = resolvePublicDataConfig({ runtime: "production" });
+  assert.equal(missing.mode, "REAL");
+  assert.equal(missing.configurationError, "Live market configuration is incomplete.");
+
+  const explicitDemo = resolvePublicDataConfig({ dataMode: "DEMO", runtime: "production" });
+  assert.equal(explicitDemo.mode, "REAL");
+  assert.ok(explicitDemo.configurationError);
+
+  const developmentDemo = resolvePublicDataConfig({ dataMode: "DEMO", runtime: "development" });
+  assert.equal(developmentDemo.mode, "DEMO");
+  assert.equal(developmentDemo.configurationError, null);
+
+  const configuredReal = resolvePublicDataConfig({
+    dataMode: "REAL",
+    runtime: "production",
+    supabaseUrl: "https://example.supabase.co",
+    publishableKey: "public-key",
+  });
+  assert.equal(configuredReal.mode, "REAL");
+  assert.equal(configuredReal.configurationError, null);
 });
 
 test("freshness labels distinguish recent, timestamped and stale data", () => {

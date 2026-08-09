@@ -9,6 +9,8 @@ import { WatchlistProvider } from "@/features/watchlist/WatchlistProvider";
 import { BriefsProvider } from "@/features/briefs/BriefsProvider";
 import { MarketDataProvider } from "@/features/market-data/MarketDataProvider";
 import { IntelligenceProvider } from "@/features/intelligence/IntelligenceProvider";
+import { publicDataConfig } from "@/data/real";
+import { ConfigurationUnavailable } from "@/components/system/ConfigurationUnavailable";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -26,6 +28,11 @@ const marketBriefTheme = {
 };
 
 export default function RootLayout() {
+  if (publicDataConfig.configurationError) return (
+    <SafeAreaProvider>
+      <ConfigurationUnavailable />
+    </SafeAreaProvider>
+  );
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaProvider>
