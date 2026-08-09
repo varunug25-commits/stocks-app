@@ -8,6 +8,7 @@ import { OnboardingProvider } from "@/features/onboarding/OnboardingProvider";
 import { WatchlistProvider } from "@/features/watchlist/WatchlistProvider";
 import { BriefsProvider } from "@/features/briefs/BriefsProvider";
 import { MarketDataProvider } from "@/features/market-data/MarketDataProvider";
+import { IntelligenceProvider } from "@/features/intelligence/IntelligenceProvider";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -32,6 +33,7 @@ export default function RootLayout() {
           <OnboardingProvider>
           <WatchlistProvider>
           <MarketDataProvider>
+          <IntelligenceProvider>
           <BriefsProvider>
           <StatusBar style="light" />
           <Stack screenOptions={{ headerShown: false }}>
@@ -43,8 +45,10 @@ export default function RootLayout() {
             <Stack.Screen name="stock/[symbol]" />
             <Stack.Screen name="stock/[symbol]/why" />
             <Stack.Screen name="brief/[briefId]" />
+            <Stack.Screen name="ask" />
           </Stack>
           </BriefsProvider>
+          </IntelligenceProvider>
           </MarketDataProvider>
           </WatchlistProvider>
           </OnboardingProvider>

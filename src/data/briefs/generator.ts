@@ -49,35 +49,40 @@ const impactFor = (
   sufficientEvidence: boolean,
 ): BriefStockImpact => {
   const price = prices[symbol];
+  if (!price) throw new Error(`No illustrative brief data is available for ${symbol}.`);
+  const insight = insights[symbol];
+  const symbolCatalysts = catalysts[symbol] ?? [];
   const magnitude = Math.abs(price.changePercent);
   return {
     symbol,
     direction: price.change >= 0 ? "up" : "down",
     changePercent: price.changePercent,
     reason: sufficientEvidence
-      ? insights[symbol].summary
+      ? insight?.summary ?? "No illustrative explanation is available."
       : "The price move is confirmed, but a reliable cause is not.",
     impact: magnitude >= 3 ? "High" : magnitude >= 1 ? "Medium" : "Low",
-    nextCatalyst: catalysts[symbol][0]?.title ?? "Next company update",
+    nextCatalyst: symbolCatalysts[0]?.title ?? "Next company update",
     sourceIds: sufficientEvidence ? ["market", "editorial"] : ["market"],
   };
 };
 
 const eventsFor = (symbols: StockSymbol[]): BriefEvent[] => {
-  const stockEvents = symbols.slice(0, 3).map((symbol) => ({
+  const stockEvents = symbols.slice(0, 3).map((symbol) => {
+    const symbolCatalysts = catalysts[symbol] ?? [];
+    return {
     id: `${symbol}-event`,
-    timing: catalysts[symbol][0]?.date ?? "Upcoming",
-    title: `${symbol} · ${catalysts[symbol][0]?.title ?? "Company update"}`,
+    timing: symbolCatalysts[0]?.date ?? "Upcoming",
+    title: `${symbol} · ${symbolCatalysts[0]?.title ?? "Company update"}`,
     detail:
-      catalysts[symbol][0]?.detail ??
+      symbolCatalysts[0]?.detail ??
       "The next company update may change the current interpretation.",
-    kind: catalysts[symbol][0]?.id.includes("earnings")
+    kind: symbolCatalysts[0]?.id.includes("earnings")
       ? "earnings" as const
       : "catalyst" as const,
     symbol,
     sourceIds: ["editorial" as const],
-  }));
-  const filing = symbols[0] ? filings[symbols[0]][0] : undefined;
+  }; });
+  const filing = symbols[0] ? filings[symbols[0]]?.[0] : undefined;
   const filingEvent = symbols[0] && filing
     ? {
         id: `${symbols[0]}-filing`,

@@ -1,0 +1,129 @@
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { IntelligencePanel } from "@/components/intelligence";
+import { Screen } from "@/components/foundation/Screen";
+import type { IntelligenceRequest, IntelligenceTask } from "@/data/intelligence";
+import { isStockSymbol } from "@/data/stocks";
+import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
+import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { colors, radii, spacing, typography } from "@/theme/tokens";
+
+const suggestions = [
+  "Why did this stock move today?",
+  "What are the next known catalysts?",
+  "Summarize the latest filing.",
+  "What important news affected my watchlist?",
+];
+
+function taskFromParam(value: string | undefined): IntelligenceTask {
+  return value === "news_summary" || value === "filing_summary" ? value : "ask";
+}
+
+export default function AskMarketBriefScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ symbol?: string; task?: string; prompt?: string; focusId?: string }>();
+  const { state, hydrated } = useWatchlist();
+  const scopedSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
+  const symbols = useMemo(() => scopedSymbol ? [scopedSymbol] : state.symbols, [scopedSymbol, state.symbols]);
+  const presetTask = taskFromParam(params.task);
+  const presetQuestion = typeof params.prompt === "string" ? params.prompt : "";
+  const [question, setQuestion] = useState(presetQuestion);
+  const [submitted, setSubmitted] = useState(presetTask !== "ask" || !!presetQuestion);
+  const request = useMemo<IntelligenceRequest>(() => ({
+    task: presetTask,
+    symbols: symbols.length ? symbols : ["AAPL"],
+    ...(presetTask === "ask" ? { question: question.trim() || "What changed in my watchlist?" } : {}),
+    ...(params.focusId ? { focusId: params.focusId } : {}),
+    timeWindow: "1D",
+  }), [params.focusId, presetTask, question, symbols]);
+  const { resource, retry } = useIntelligenceRequest(request, hydrated && submitted && symbols.length > 0);
+
+  const submit = (nextQuestion = question) => {
+    const clean = nextQuestion.trim();
+    if (!clean || !symbols.length) return;
+    setQuestion(clean);
+    setSubmitted(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  return (
+    <Screen>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.nav}>
+            <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.back}>
+              <Ionicons color={colors.textPrimary} name="arrow-back" size={22} />
+            </Pressable>
+            <Text style={styles.navTitle}>Ask MarketBrief</Text>
+            <View style={styles.navSpacer} />
+          </View>
+          <Text style={styles.eyebrow}>{scopedSymbol ? `${scopedSymbol} CONTEXT` : `WATCHLIST · ${symbols.length} STOCKS`}</Text>
+          <Text style={styles.title}>{presetTask === "news_summary" ? "Quick read" : presetTask === "filing_summary" ? "Filing intelligence" : "Ask from available evidence"}</Text>
+          <Text style={styles.intro}>Answers are limited to quotes, relevant news, filings, events and company records already available to MarketBrief.</Text>
+
+          {presetTask === "ask" ? (
+            <>
+              <View style={styles.composer}>
+                <TextInput
+                  accessibilityLabel="Question for MarketBrief"
+                  maxLength={280}
+                  multiline
+                  onChangeText={(value) => { setQuestion(value); setSubmitted(false); }}
+                  onSubmitEditing={() => submit()}
+                  placeholder="What changed and what should I monitor?"
+                  placeholderTextColor={colors.textTertiary}
+                  style={styles.input}
+                  value={question}
+                />
+                <Pressable accessibilityLabel="Ask MarketBrief" accessibilityRole="button" disabled={!question.trim() || !symbols.length} onPress={() => submit()} style={[styles.send, (!question.trim() || !symbols.length) && styles.sendDisabled]}>
+                  <Ionicons color={question.trim() && symbols.length ? colors.background : colors.disabledText} name="arrow-up" size={20} />
+                </Pressable>
+              </View>
+              {!submitted ? (
+                <View style={styles.suggestions}>
+                  <Text style={styles.suggestionLabel}>SUGGESTED QUESTIONS</Text>
+                  {suggestions.map((suggestion) => (
+                    <Pressable accessibilityRole="button" key={suggestion} onPress={() => submit(suggestion)} style={styles.suggestion}>
+                      <Text style={styles.suggestionText}>{suggestion}</Text>
+                      <Ionicons color={colors.teal} name="arrow-forward" size={16} />
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+            </>
+          ) : null}
+
+          {!symbols.length ? <Text style={styles.empty}>Add a stock to your watchlist before asking a watchlist question.</Text> : null}
+          {submitted && symbols.length ? <View style={styles.result}><IntelligencePanel onRetry={() => void retry()} resource={resource} /></View> : null}
+          <Text style={styles.disclosure}>Informational only. Confirmed facts remain source-linked; interpretation and uncertainty are labelled separately. No buy, sell or price-target guidance.</Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl },
+  nav: { minHeight: 58, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  back: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8 },
+  navTitle: { ...typography.label, color: colors.textPrimary },
+  navSpacer: { width: 36 },
+  eyebrow: { ...typography.caption, color: colors.teal, letterSpacing: 1, marginTop: spacing.lg },
+  title: { ...typography.display, color: colors.textPrimary, marginTop: spacing.xs },
+  intro: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
+  composer: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, padding: spacing.sm, marginTop: spacing.xl, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  input: { ...typography.body, minHeight: 50, maxHeight: 120, flex: 1, color: colors.textPrimary, paddingHorizontal: spacing.xs, paddingVertical: spacing.sm },
+  send: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: colors.teal },
+  sendDisabled: { backgroundColor: colors.disabled },
+  suggestions: { marginTop: spacing.xl, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  suggestionLabel: { ...typography.caption, color: colors.textTertiary, letterSpacing: .8, paddingVertical: spacing.sm },
+  suggestion: { minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  suggestionText: { ...typography.body, flex: 1, color: colors.textSecondary },
+  result: { marginTop: spacing.xl },
+  empty: { ...typography.body, color: colors.warning, marginTop: spacing.xl },
+  disclosure: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xxl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+});

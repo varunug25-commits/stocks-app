@@ -1,8 +1,9 @@
-import type { CompanyNewsArticle, MarketEvent, NormalizedResponse } from "../contracts.ts";
+import type { CompanyNewsArticle, MarketEvent, NormalizedResponse, StockSearchResult } from "../contracts.ts";
 import { ProviderError, errorFromStatus, toProviderError } from "../errors.ts";
 import type { CompanyIdentity } from "../contracts.ts";
 import { isoTimestamp, nullableString, recordValue, requiredString } from "./normalization.ts";
-import type { EventsProvider, NewsProvider } from "./types.ts";
+import type { CompanyProvider, EventsProvider, NewsProvider } from "./types.ts";
+import { isSupportedUsEquity, normalizeSymbol } from "../symbols.ts";
 
 type Fetcher = typeof fetch;
 
@@ -49,7 +50,50 @@ export function normalizeFinnhubEarnings(payload: unknown, company: CompanyIdent
   });
 }
 
-export class FinnhubProvider implements NewsProvider, EventsProvider {
+export function normalizeFinnhubSearch(payload: unknown, limit = 20): StockSearchResult[] {
+  const value = recordValue(payload, "Finnhub symbol lookup");
+  if (!Array.isArray(value.result))
+    throw new ProviderError("MALFORMED_RESPONSE", "Finnhub symbol lookup omitted results.");
+  const seen = new Set<string>();
+  return value.result.flatMap((raw) => {
+    const result = recordValue(raw, "Finnhub symbol result");
+    const symbol = normalizeSymbol(nullableString(result.symbol) ?? "");
+    const name = nullableString(result.description);
+    const type = nullableString(result.type);
+    const suffix = symbol.includes(".") ? symbol.split(".").at(-1) : null;
+    const likelyUsTicker = !/^\d+$/.test(symbol) && (!suffix || suffix === "A" || suffix === "B");
+    if (!name || !type || !likelyUsTicker || !isSupportedUsEquity({ symbol, type }) || seen.has(symbol)) return [];
+    seen.add(symbol);
+    return [{ symbol, name, exchange: null, assetType: type }];
+  }).slice(0, limit);
+}
+
+export function normalizeFinnhubCompany(payload: unknown, symbol: string): CompanyIdentity {
+  const profile = recordValue(payload, "Finnhub company profile");
+  const rawTicker = nullableString(profile.ticker);
+  const name = nullableString(profile.name);
+  const exchange = nullableString(profile.exchange);
+  if (!rawTicker || !name || !exchange)
+    throw new ProviderError("UNSUPPORTED_SYMBOL", "MarketBrief could not validate this as a supported US equity.", 404);
+  const ticker = normalizeSymbol(rawTicker);
+  const country = nullableString(profile.country);
+  if (ticker !== symbol || !isSupportedUsEquity({ symbol: ticker, country, exchange }))
+    throw new ProviderError("UNSUPPORTED_SYMBOL", "MarketBrief currently supports validated US equities.", 404);
+  return {
+    id: `finnhub:${ticker}`,
+    symbol: ticker,
+    name,
+    exchange,
+    currency: nullableString(profile.currency) ?? "USD",
+    cik: null,
+    sector: nullableString(profile.finnhubIndustry),
+    industry: nullableString(profile.finnhubIndustry),
+    logoUrl: nullableString(profile.logo),
+    logoSource: nullableString(profile.logo) ? "Finnhub company profile" : null,
+  };
+}
+
+export class FinnhubProvider implements NewsProvider, EventsProvider, CompanyProvider {
   private readonly apiKey: string | undefined;
   private readonly fetcher: Fetcher;
   constructor(apiKey: string | undefined, fetcher: Fetcher = fetch) {
@@ -90,5 +134,17 @@ export class FinnhubProvider implements NewsProvider, EventsProvider {
     const to = new Date(Date.now() + 120 * 86_400_000).toISOString().slice(0, 10);
     const data = normalizeFinnhubEarnings(await this.request("calendar/earnings", new URLSearchParams({ symbol: company.symbol, from, to })), company);
     return { data, meta: { source: "Finnhub earnings calendar", provider: "finnhub", fetchedAt, asOf: fetchedAt, isStale: false } };
+  }
+
+  async search(query: string): Promise<NormalizedResponse<StockSearchResult[]>> {
+    const fetchedAt = new Date().toISOString();
+    const data = normalizeFinnhubSearch(await this.request("search", new URLSearchParams({ q: query })), 20);
+    return { data, meta: { source: "Finnhub symbol lookup", provider: "finnhub", fetchedAt, asOf: fetchedAt, isStale: false } };
+  }
+
+  async getCompany(symbol: string): Promise<NormalizedResponse<CompanyIdentity>> {
+    const fetchedAt = new Date().toISOString();
+    const data = normalizeFinnhubCompany(await this.request("stock/profile2", new URLSearchParams({ symbol })), symbol);
+    return { data, meta: { source: "Finnhub company profile", provider: "finnhub", fetchedAt, asOf: fetchedAt, isStale: false } };
   }
 }

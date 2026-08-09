@@ -20,6 +20,7 @@ import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
+import { AskMarketBriefEntry } from "@/components/intelligence";
 import {
   buildBriefShareText,
   findBriefSeed,
@@ -29,6 +30,7 @@ import {
 import { useBriefs } from "@/features/briefs/BriefsProvider";
 import { selectBriefStatus } from "@/features/briefs/selectors";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useMarketData } from "@/features/market-data/MarketDataProvider";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export default function BriefDetailScreen() {
@@ -36,6 +38,7 @@ export default function BriefDetailScreen() {
   const params = useLocalSearchParams<{ briefId?: string; preview?: string }>();
   const { state, dispatch, hydrated } = useBriefs();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
+  const { mode } = useMarketData();
   const [shareMessage, setShareMessage] = useState("");
   const seed = typeof params.briefId === "string" ? findBriefSeed(params.briefId) : undefined;
   const symbols = useMemo(
@@ -43,16 +46,17 @@ export default function BriefDetailScreen() {
     [params.preview, watchlistState.symbols],
   );
   const brief = useMemo(
-    () => seed ? generateBrief(seed, symbols, { insufficientEvidence: params.preview === "insufficient" }) : null,
-    [params.preview, seed, symbols],
+    () => mode === "DEMO" && seed ? generateBrief(seed, symbols, { insufficientEvidence: params.preview === "insufficient" }) : null,
+    [mode, params.preview, seed, symbols],
   );
-
   useEffect(() => {
     if (brief && hydrated) dispatch({ type: "markRead", id: brief.id });
   }, [brief, dispatch, hydrated]);
 
   if (!hydrated || !watchlistHydrated || params.preview === "loading")
     return <Screen><SkeletonState /></Screen>;
+  if (mode === "REAL")
+    return <Screen><View style={styles.center}><EmptyState description="No earlier generated brief yet. Open Briefs to generate the current grounded edition." title="Brief unavailable" /></View></Screen>;
   if (!brief)
     return (
       <Screen>
@@ -106,6 +110,9 @@ export default function BriefDetailScreen() {
             saved={saved}
           />
           <ShareBriefButton onPress={() => void share()} />
+        </View>
+        <View style={styles.askEntry}>
+          <AskMarketBriefEntry detail="Ask within this illustrative watchlist context" label="Ask about this brief" onPress={() => router.push(`/ask?prompt=${encodeURIComponent("What changed since this morning?")}` as Href)} />
         </View>
         {shareMessage ? <Text accessibilityLiveRegion="polite" style={styles.shareMessage}>{shareMessage}</Text> : null}
 
@@ -218,6 +225,8 @@ const styles = StyleSheet.create({
   title: { ...typography.display, color: colors.textPrimary, marginTop: spacing.xl },
   summary: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
   actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+  groundedDetail: { marginTop: spacing.xl },
+  askEntry: { marginTop: spacing.lg },
   shareMessage: { ...typography.caption, color: colors.teal, marginTop: spacing.xs },
   section: { gap: spacing.xs, marginTop: spacing.xl },
   summaryCard: { gap: spacing.xs, paddingTop: spacing.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },

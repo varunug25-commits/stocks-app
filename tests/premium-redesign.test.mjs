@@ -89,11 +89,11 @@ test("final product polish keeps debug and implementation language out of custom
   assert.match(tabs, /GlassBackdrop/);
 });
 
-test("REAL Markets leads with supported equity movers before illustrative context", async () => {
+test("REAL Markets uses supported equity resources and omits illustrative market-wide values", async () => {
   const markets = await read("src/app/(tabs)/markets.tsx");
   const realMovers = markets.indexOf('mode === "REAL" ? moversSection');
-  const marketContext = markets.indexOf("Market-wide context");
-  assert.ok(realMovers >= 0 && realMovers < marketContext);
+  assert.ok(realMovers >= 0);
   assert.match(markets, /Provider-backed equity prices lead/);
-  assert.match(markets, /ILLUSTRATIVE PREVIEW/);
+  assert.match(markets, /mode === "DEMO" \? <View style=\{styles\.section\}>/);
+  assert.match(markets, /Unsupported market-wide indices and sectors are omitted/);
 });

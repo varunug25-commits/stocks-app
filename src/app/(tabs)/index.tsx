@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 
 import { EventCard } from "@/components/finance/EventCard";
@@ -20,6 +20,9 @@ import { MarketStatusBadge } from "@/components/market/MarketStatusBadge";
 import { ResourceStateNotice } from "@/components/market/ResourceStateNotice";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
+import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
+import type { IntelligenceRequest } from "@/data/intelligence";
+import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { generateBrief, latestBriefSeed } from "@/data/briefs";
 import { marketStatus } from "@/data/markets";
 import { isStockSymbol } from "@/data/stocks";
@@ -35,7 +38,7 @@ export default function TodayScreen() {
   const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
-  const { mode, quotes, loadQuotes } = useMarketData();
+  const { mode, quotes, companies, news, events: eventResources, loadQuotes, loadCompany, loadNews, loadEvents } = useMarketData();
   const reduceMotion = useReducedMotion();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -47,14 +50,20 @@ export default function TodayScreen() {
   }, [preview]);
 
   useEffect(() => {
-    if (watchlistHydrated) void loadQuotes(watchlistState.symbols);
-  }, [loadQuotes, watchlistHydrated, watchlistState.symbols]);
+    if (!watchlistHydrated) return;
+    void loadQuotes(watchlistState.symbols);
+    if (mode === "REAL") void Promise.all(watchlistState.symbols.slice(0, 5).flatMap((symbol) => [loadCompany(symbol), loadNews(symbol), loadEvents(symbol)]));
+  }, [loadCompany, loadEvents, loadNews, loadQuotes, mode, watchlistHydrated, watchlistState.symbols]);
 
   const personalizedStocks = useMemo(
     () => selectTodayWatchlist(watchlistState.symbols),
     [watchlistState.symbols],
   );
-  const summaryStocks = useMemo(() => [...personalizedStocks]
+  const summaryStocks = useMemo(() => (mode === "REAL" ? watchlistState.symbols.map((symbol) => {
+    const companyResource = companies[symbol];
+    const company = companyResource?.status === "ready" || companyResource?.status === "stale" ? companyResource.data : null;
+    return { symbol, name: company?.name ?? symbol, price: "", changePercent: 0, logoColor: colors.surfaceElevated, trend: [] };
+  }) : personalizedStocks)
     .sort((left, right) => {
       const leftResource = isStockSymbol(left.symbol) ? quotes[left.symbol] : undefined;
       const rightResource = isStockSymbol(right.symbol) ? quotes[right.symbol] : undefined;
@@ -68,11 +77,26 @@ export default function TodayScreen() {
       const rightMove = rightChange === null ? -1 : Math.abs(rightChange);
       return rightMove - leftMove;
     })
-    .slice(0, 3), [personalizedStocks, quotes]);
+    .slice(0, 3), [companies, mode, personalizedStocks, quotes, watchlistState.symbols]);
+  const realStories = useMemo(() => watchlistState.symbols.flatMap((symbol) => {
+    const resource = news[symbol];
+    return resource?.status === "ready" || resource?.status === "stale" ? resource.data : [];
+  }).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 3), [news, watchlistState.symbols]);
+  const realEvents = useMemo(() => watchlistState.symbols.flatMap((symbol) => {
+    const resource = eventResources[symbol];
+    return resource?.status === "ready" || resource?.status === "stale" ? resource.data : [];
+  }).filter((event) => event.scheduledAt).sort((a, b) => Date.parse(a.scheduledAt!) - Date.parse(b.scheduledAt!)).slice(0, 4), [eventResources, watchlistState.symbols]);
   const morningBrief = useMemo(
-    () => generateBrief(latestBriefSeed("morning"), watchlistState.symbols),
-    [watchlistState.symbols],
+    () => mode === "DEMO" ? generateBrief(latestBriefSeed("morning"), watchlistState.symbols) : null,
+    [mode, watchlistState.symbols],
   );
+  const briefRequest = useMemo<IntelligenceRequest>(() => ({
+    task: "brief",
+    symbols: watchlistState.symbols.length ? watchlistState.symbols : ["AAPL"],
+    edition: "morning",
+    timeWindow: "1D",
+  }), [watchlistState.symbols]);
+  const { resource: briefResource, retry: retryBrief } = useIntelligenceRequest(briefRequest, mode === "REAL" && watchlistHydrated && watchlistState.symbols.length > 0);
   const breadth = useMemo(() => {
     let higher = 0;
     let lower = 0;
@@ -162,50 +186,57 @@ export default function TodayScreen() {
             )}
           </Animated.View>
 
+          <Animated.View entering={animation(45)} style={styles.askSection}>
+            <AskMarketBriefEntry detail="Ask what changed across your watchlist" onPress={() => router.push("/ask" as Href)} />
+          </Animated.View>
+
           <Animated.View entering={animation(60)} style={styles.section}>
-            <SectionHeader eyebrow="ILLUSTRATIVE PREVIEW" title="What changed" />
-            <StoryCard story={leadStory} />
-            {stories.map((story) => <StoryCard key={story.id} story={story} />)}
+            <SectionHeader eyebrow={mode === "REAL" ? "PROVIDER-BACKED" : "ILLUSTRATIVE PREVIEW"} title="What changed" />
+            {mode === "REAL" ? realStories.length ? realStories.map((story) => <StoryCard key={story.id} onPress={story.sourceUrl ? () => void Linking.openURL(story.sourceUrl) : undefined} story={{ id: story.id, category: story.relatedSymbols[0] ?? "COMPANY", title: story.headline, summary: story.summary ?? "Open the publisher source for the full report.", source: story.publisher, published: new Date(story.publishedAt).toLocaleString(), readTime: "Source", palette: ["#000", "#000"], artwork: "grid" }} />) : <EmptyState description="No supported company news is available for your watchlist yet." title="No recent developments" /> : <><StoryCard story={leadStory} />{stories.map((story) => <StoryCard key={story.id} story={story} />)}</>}
           </Animated.View>
 
           <Animated.View entering={animation(90)} style={styles.section}>
-            <SectionHeader eyebrow="EARNINGS & MACRO" title="Next up" />
-            <View>{events.map((event) => <EventCard event={event} key={event.id} />)}</View>
+            <SectionHeader eyebrow={mode === "REAL" ? "PROVIDER EVENTS" : "EARNINGS & MACRO"} title="Next up" />
+            <View>{mode === "REAL" ? realEvents.length ? realEvents.map((event) => { const date = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(date.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <EmptyState description="No supported upcoming events are available for your watchlist." title="No events scheduled" /> : events.map((event) => <EventCard event={event} key={event.id} />)}</View>
           </Animated.View>
 
           <Animated.View entering={animation(120)} style={[styles.section, styles.briefSection]}>
-            <View style={styles.briefHeading}>
-              <View>
-                <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief.timestamp}</Text>
-                <Text style={styles.briefTitle}>{morningBrief.headline}</Text>
+            {mode === "REAL" ? (
+              watchlistState.symbols.length ? <IntelligencePanel onRetry={() => void retryBrief()} resource={briefResource} /> : <EmptyState description="Add companies to assemble a grounded edition." title="Morning brief needs a watchlist" />
+            ) : <>
+              <View style={styles.briefHeading}>
+                <View>
+                  <Text style={styles.briefEyebrow}>MORNING BRIEF · {morningBrief!.timestamp}</Text>
+                  <Text style={styles.briefTitle}>{morningBrief!.headline}</Text>
+                </View>
               </View>
-            </View>
-            {morningBrief.developments.map((point, index) => (
-              <View key={point} style={styles.briefPoint}>
-                <Text style={styles.briefNumber}>{String(index + 1).padStart(2, "0")}</Text>
-                <Text style={styles.briefPointText}>{point}</Text>
-              </View>
-            ))}
-            <Pressable accessibilityRole="button" onPress={() => router.push(`/brief/${morningBrief.id}` as Href)} style={styles.briefLink}>
-              <Text style={styles.briefLinkText}>Read full publication</Text>
+              {morningBrief!.developments.map((point, index) => (
+                <View key={point} style={styles.briefPoint}>
+                  <Text style={styles.briefNumber}>{String(index + 1).padStart(2, "0")}</Text>
+                  <Text style={styles.briefPointText}>{point}</Text>
+                </View>
+              ))}
+            </>}
+            <Pressable accessibilityRole="button" onPress={() => router.push(mode === "REAL" ? "/briefs" as Href : `/brief/${morningBrief!.id}` as Href)} style={styles.briefLink}>
+              <Text style={styles.briefLinkText}>{mode === "REAL" ? "Open Briefs" : "Read full publication"}</Text>
               <Ionicons color={colors.teal} name="arrow-forward" size={17} />
             </Pressable>
           </Animated.View>
 
-          <Animated.View entering={animation(150)} style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE INDEX CONTEXT" : "DEMO DATA · 1D"} title="Market context" />
+          {mode === "DEMO" ? <Animated.View entering={animation(150)} style={styles.section}>
+            <SectionHeader eyebrow="DEMO DATA · 1D" title="Market context" />
             <View style={styles.statusLine}>
               <MarketStatusBadge status={status} />
-              {mode === "DEMO" ? <DemoDataBadge /> : null}
+              <DemoDataBadge />
             </View>
             <ScrollView contentContainerStyle={styles.horizontalContent} horizontal showsHorizontalScrollIndicator={false}>
               {marketIndices.map((index) => <MarketIndexCard index={index} key={index.id} />)}
             </ScrollView>
-          </Animated.View>
+          </Animated.View> : null}
 
           <View style={styles.disclaimer}>
             <Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={16} />
-            <Text style={styles.disclaimerText}>{mode === "REAL" ? "Company prices use configured providers when available. Indices, calendar items and editorial explanations remain clearly illustrative." : "Illustrative demo market and editorial content. Educational information, not investment advice."}</Text>
+            <Text style={styles.disclaimerText}>{mode === "REAL" ? "Company prices, news and events use configured providers when available. Missing resources remain unavailable rather than being replaced with demo values." : "Illustrative demo market and editorial content. Educational information, not investment advice."}</Text>
           </View>
         </View>
       </ScrollView>
@@ -227,6 +258,7 @@ const styles = StyleSheet.create({
   textAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.xs, marginTop: -8 },
   textActionLabel: { ...typography.label, color: colors.teal },
   stockList: { overflow: "hidden" },
+  askSection: { marginTop: spacing.md },
   briefSection: { paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   briefHeading: { marginBottom: spacing.xs },
   briefEyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 0.75 },

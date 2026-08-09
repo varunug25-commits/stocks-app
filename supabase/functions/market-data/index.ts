@@ -5,7 +5,6 @@ import type { CacheRecord, CacheStore } from "../_shared/cache.ts";
 import type { DataErrorCode, DataProviderName, ResourceName } from "../_shared/contracts.ts";
 import { ProviderError } from "../_shared/errors.ts";
 import { FinnhubProvider } from "../_shared/providers/finnhub.ts";
-import { RegistryCompanyProvider } from "../_shared/providers/company.ts";
 import { SecEdgarProvider } from "../_shared/providers/sec.ts";
 import { TwelveDataProvider } from "../_shared/providers/twelveData.ts";
 import { ProviderRequestLimiter } from "../_shared/rateLimit.ts";
@@ -122,7 +121,7 @@ export default {
       news: new FinnhubProvider(finnhubKey),
       events: new FinnhubProvider(finnhubKey),
       filings: new SecEdgarProvider(secUserAgent),
-      company: new RegistryCompanyProvider(),
+      company: new FinnhubProvider(finnhubKey),
       limiter: new ProviderRequestLimiter(budget),
       assertProviderConfigured(provider) {
         if (provider === "twelve-data" && !twelveDataKey)

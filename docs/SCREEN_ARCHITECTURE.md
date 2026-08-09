@@ -104,3 +104,12 @@ All Milestone 2 market and search content comes from local typed modules and the
 - Stock-impact rows route to the existing `/stock/[symbol]` detail.
 
 `BriefsProvider` owns validated, persisted read IDs, saved IDs, selected type, history filters, and dismissed notices. The deterministic generator under `src/data/briefs/` combines typed local templates, stock content, events, filings, and sources with `WatchlistProvider.state.symbols` in its stored order. Onboarding remains an initial migration input only, never active brief membership.
+
+## Milestone 7 grounded-intelligence architecture
+
+- `/stock/[symbol]/why` is the expanded source-linked Why It Moved view.
+- `/ask` handles stock/watchlist questions, relevant-news quick reads, and filing summaries.
+- `/brief/[briefId]` renders a grounded REAL-mode edition and preserves the illustrative DEMO edition.
+- Ask entry points live on Today, Stock Detail, and Brief Detail. Ask is intentionally not a sixth tab.
+
+All four capabilities share `IntelligenceProvider` in the mobile shell and the server-side `market-intelligence` evidence engine. Intelligence resource state is isolated, so an explanation failure cannot replace quote, chart, news, filing, or event state.

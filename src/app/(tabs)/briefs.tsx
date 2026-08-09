@@ -25,6 +25,9 @@ import { ProductHeader } from "@/components/foundation/ProductHeader";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { SkeletonState } from "@/components/system/SkeletonState";
+import { EmptyState } from "@/components/system/EmptyState";
+import { IntelligencePanel } from "@/components/intelligence";
+import type { IntelligenceRequest } from "@/data/intelligence";
 import {
   briefHistory,
   generateBrief,
@@ -37,6 +40,8 @@ import {
   selectFilteredBriefs,
 } from "@/features/briefs/selectors";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useMarketData } from "@/features/market-data/MarketDataProvider";
+import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 export default function BriefsScreen() {
@@ -47,6 +52,7 @@ export default function BriefsScreen() {
   }>();
   const { state, dispatch, hydrated } = useBriefs();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
+  const { mode } = useMarketData();
   const reduceMotion = useReducedMotion();
   const [filterOpen, setFilterOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -60,13 +66,20 @@ export default function BriefsScreen() {
     [params.preview, watchlistState.symbols],
   );
   const latest = useMemo(
-    () => generateBrief(latestBriefSeed(selectedType), symbols),
-    [selectedType, symbols],
+    () => mode === "DEMO" ? generateBrief(latestBriefSeed(selectedType), symbols) : null,
+    [mode, selectedType, symbols],
   );
   const visibleHistory = useMemo(
     () => selectFilteredBriefs(briefHistory, state),
     [state],
   );
+  const intelligenceRequest = useMemo<IntelligenceRequest>(() => ({
+    task: "brief",
+    symbols: symbols.length ? symbols : ["AAPL"],
+    edition: selectedType,
+    timeWindow: "1D",
+  }), [selectedType, symbols]);
+  const { resource: intelligenceResource, retry: retryIntelligence } = useIntelligenceRequest(intelligenceRequest, mode === "REAL" && watchlistHydrated && symbols.length > 0);
 
   const retry = () => {
     setRetrying(true);
@@ -99,7 +112,7 @@ export default function BriefsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <ProductHeader actions={<DemoDataBadge />} eyebrow="PUBLICATION ARCHIVE" subtitle="Morning context and evening recap, clearly marked as local illustrative content." title="Briefs" />
+        <ProductHeader actions={mode === "DEMO" ? <DemoDataBadge /> : undefined} eyebrow="PUBLICATION ARCHIVE" subtitle={mode === "REAL" ? "Source-linked watchlist context, compressed into a concise edition." : "Morning context and evening recap, clearly marked as illustrative content."} title="Briefs" />
         <BriefTypeSelector
           onChange={(value) => dispatch({ type: "selectType", value })}
           value={selectedType}
@@ -108,11 +121,12 @@ export default function BriefsScreen() {
           entering={reduceMotion ? undefined : FadeInDown.duration(360)}
           style={styles.heroWrap}
         >
-          <BriefHeroCard
-            brief={latest}
-            onPress={() => router.push(`/brief/${latest.id}` as Href)}
-            status={selectBriefStatus(latest.id, state)}
-          />
+          {mode === "REAL" ? (
+            <View style={styles.groundedHero}>
+              <IntelligencePanel onRetry={() => void retryIntelligence()} resource={intelligenceResource} />
+              <Text style={styles.liveNote}>Generated from currently available provider evidence. Sources and uncertainty appear with the edition.</Text>
+            </View>
+          ) : <BriefHeroCard brief={latest!} onPress={() => router.push(`/brief/${latest!.id}` as Href)} status={selectBriefStatus(latest!.id, state)} />}
         </Animated.View>
         {!symbols.length ? (
           <View style={styles.emptyWrap}>
@@ -122,7 +136,7 @@ export default function BriefsScreen() {
             />
           </View>
         ) : null}
-        <View style={styles.historySection}>
+        {mode === "DEMO" ? <View style={styles.historySection}>
           <SectionHeader
             actionLabel="Filter"
             onAction={() => setFilterOpen(true)}
@@ -154,11 +168,9 @@ export default function BriefsScreen() {
               }}
             />
           )}
-        </View>
+        </View> : <View style={styles.historySection}><SectionHeader title="Previous briefs" /><EmptyState description="No earlier generated brief yet." title="No brief history" /></View>}
         <Text style={styles.disclosure}>
-          Brief narratives and price moves are illustrative demo content,
-          separate from provider-backed company data. No recommendation is
-          presented.
+          {mode === "REAL" ? "The current edition uses provider-backed evidence. No earlier generated brief is stored yet. No recommendation is presented." : "Brief narratives and price moves are illustrative demo content, separate from provider-backed company data. No recommendation is presented."}
         </Text>
       </ScrollView>
       <BriefFilterSheet
@@ -177,6 +189,10 @@ const styles = StyleSheet.create({
   scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 104, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: "center", padding: spacing.lg },
   heroWrap: { marginTop: spacing.md },
+  groundedHero: { paddingTop: spacing.xs },
+  readLink: { minHeight: 48, justifyContent: "center", paddingVertical: spacing.md },
+  readLinkText: { ...typography.label, color: colors.teal },
+  liveNote: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.sm },
   emptyWrap: { marginTop: spacing.md },
   historySection: { gap: spacing.xs, marginTop: spacing.xl },
   filterSummary: { minHeight: 32, flexDirection: "row", alignItems: "center", gap: spacing.xs },

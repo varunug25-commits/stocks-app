@@ -49,6 +49,19 @@ export function normalizeSecSubmissions(payload: unknown, company: CompanyIdenti
   });
 }
 
+export function resolveSecCompany(payload: unknown, symbol: string) {
+  const root = recordValue(payload, "SEC company ticker directory");
+  for (const value of Object.values(root)) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const record = value as Record<string, unknown>;
+    if (nullableString(record.ticker)?.toUpperCase() !== symbol) continue;
+    const cik = String(record.cik_str ?? "").replace(/\D/g, "").padStart(10, "0");
+    if (!/^\d{10}$/.test(cik)) break;
+    return { cik, name: nullableString(record.title) };
+  }
+  throw new ProviderError("NOT_FOUND", "No SEC company record is available for this symbol.", 404);
+}
+
 export class SecEdgarProvider implements FilingsProvider {
   private readonly userAgent: string | undefined;
   private readonly fetcher: Fetcher;
@@ -65,13 +78,30 @@ export class SecEdgarProvider implements FilingsProvider {
   async getFilings(company: CompanyIdentity): Promise<NormalizedResponse<SecFiling[]>> {
     if (!this.userAgent)
       throw new ProviderError("MISSING_SECRET", "SEC_USER_AGENT is not configured.", 503);
-    if (!company.cik)
-      throw new ProviderError("NOT_FOUND", "No SEC CIK is registered for this company.", 404);
+    let resolvedCompany = company;
+    if (!company.cik) {
+      await reserveSecRequestSlot(this.minimumIntervalMs);
+      let directoryResponse: Response;
+      try {
+        directoryResponse = await this.fetcher("https://www.sec.gov/files/company_tickers.json", {
+          headers: { "User-Agent": this.userAgent, Accept: "application/json" },
+        });
+      } catch (error) {
+        throw toProviderError(error, "SEC EDGAR");
+      }
+      if (!directoryResponse.ok) throw errorFromStatus(directoryResponse.status, "SEC EDGAR");
+      let directory: unknown;
+      try { directory = await directoryResponse.json() as unknown; } catch {
+        throw new ProviderError("MALFORMED_RESPONSE", "SEC company directory returned unreadable JSON.");
+      }
+      const match = resolveSecCompany(directory, company.symbol);
+      resolvedCompany = { ...company, cik: match.cik, name: match.name ?? company.name };
+    }
     await reserveSecRequestSlot(this.minimumIntervalMs);
     const fetchedAt = new Date().toISOString();
     let response: Response;
     try {
-      response = await this.fetcher(`https://data.sec.gov/submissions/CIK${company.cik}.json`, {
+      response = await this.fetcher(`https://data.sec.gov/submissions/CIK${resolvedCompany.cik}.json`, {
         headers: { "User-Agent": this.userAgent, Accept: "application/json" },
       });
     } catch (error) {
@@ -84,7 +114,7 @@ export class SecEdgarProvider implements FilingsProvider {
     } catch {
       throw new ProviderError("MALFORMED_RESPONSE", "SEC EDGAR returned unreadable JSON.");
     }
-    const data = normalizeSecSubmissions(payload, company);
+    const data = normalizeSecSubmissions(payload, resolvedCompany);
     return { data, meta: { source: "SEC EDGAR submissions API", provider: "sec-edgar", fetchedAt, asOf: data[0]?.filingDate ?? null, isStale: false } };
   }
 }

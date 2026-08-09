@@ -8,6 +8,7 @@ export const CACHE_TTLS_SECONDS: Record<ResourceName, number> = {
   news: 60 * 15,
   filings: 60 * 60 * 6,
   events: 60 * 60,
+  search: 60 * 60 * 6,
 };
 
 export type CacheRecord<T> = {

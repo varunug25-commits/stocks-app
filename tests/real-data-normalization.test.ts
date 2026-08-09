@@ -22,7 +22,7 @@ test("Twelve Data quote normalization preserves available values and unknowns", 
     volume: "45678901", exchange: "NASDAQ", currency: "USD", timestamp: 1_722_998_400,
     is_market_open: true,
   }, "AAPL");
-  assert.equal(quote.companyId, companyForSymbol("AAPL").id);
+  assert.equal(quote.companyId, "symbol:AAPL");
   assert.equal(quote.price, 231.42);
   assert.equal(quote.volume, 45_678_901);
   assert.equal(quote.marketStatus, "open");

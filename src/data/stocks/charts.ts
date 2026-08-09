@@ -37,7 +37,7 @@ export function getChartSeries(
       value: Number(
         (
           price *
-          (1 + (value - end + offsets[symbol] * offsetTaper) / 100)
+          (1 + (value - end + (offsets[symbol] ?? 0) * offsetTaper) / 100)
         ).toFixed(2),
       ),
     };

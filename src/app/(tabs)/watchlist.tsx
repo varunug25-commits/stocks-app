@@ -24,7 +24,7 @@ export default function WatchlistScreen() {
   const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const { state, dispatch, hydrated } = useWatchlist();
-  const { mode, quotes, loadQuotes } = useMarketData();
+  const { mode, quotes, companies, loadQuotes, loadCompany } = useMarketData();
   const [editing, setEditing] = useState(false);
   const [remove, setRemove] = useState<StockSymbol | null>(null);
   const [limit, setLimit] = useState(false);
@@ -32,8 +32,11 @@ export default function WatchlistScreen() {
   const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
-    if (hydrated) void loadQuotes(state.symbols);
-  }, [hydrated, loadQuotes, state.symbols]);
+    if (hydrated) {
+      void loadQuotes(state.symbols);
+      void Promise.all(state.symbols.map(loadCompany));
+    }
+  }, [hydrated, loadCompany, loadQuotes, state.symbols]);
 
   const handleRetry = () => {
     setRetrying(true);
@@ -71,9 +74,13 @@ export default function WatchlistScreen() {
         {symbols[0] ? <ResourceStateNotice onRetry={() => void loadQuotes(symbols)} resource={quotes[symbols[0]]} /> : null}
         {symbols.length ? (
           <View style={styles.list}>
-            {symbols.map((symbol) => (
-              <WatchlistRow
-                company={companyBySymbol[symbol]}
+            {symbols.map((symbol) => {
+              const resource = companies[symbol];
+              const providerCompany = resource?.status === "ready" || resource?.status === "stale" ? resource.data : null;
+              const demoCompany = companyBySymbol[symbol];
+              const company = providerCompany ?? demoCompany ?? { symbol, name: symbol, logoColor: null };
+              return <WatchlistRow
+                company={company}
                 editing={editing}
                 key={symbol}
                 onMoveDown={() => dispatch({ type: "move", symbol, direction: 1 })}
@@ -82,8 +89,8 @@ export default function WatchlistScreen() {
                 onRemove={() => setRemove(symbol)}
                 quote={quotes[symbol]}
                 trend={localWatchlistRows.find((row) => row.symbol === symbol)?.trend}
-              />
-            ))}
+              />;
+            })}
           </View>
         ) : (
           <EmptyState actionLabel="Search stocks" description="Add companies to build a focused daily signal list." onAction={() => router.push("/search" as Href)} title="Your watchlist is clear" />

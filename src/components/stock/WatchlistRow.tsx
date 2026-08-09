@@ -6,7 +6,6 @@ import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { Sparkline } from "@/components/finance/Sparkline";
 import type { DataResource, MarketQuote } from "@/data/real";
 import { formatFreshness } from "@/data/real";
-import type { Company } from "@/data/stocks";
 import { formatPrice } from "@/data/stocks";
 import { colors, numerals, spacing, typography } from "@/theme/tokens";
 
@@ -20,7 +19,7 @@ export function WatchlistRow({
   onMoveUp,
   onMoveDown,
 }: {
-  company: Company;
+  company: { symbol: string; name: string; logoColor?: string | null };
   quote?: DataResource<MarketQuote>;
   editing: boolean;
   trend?: number[];

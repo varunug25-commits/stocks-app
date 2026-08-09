@@ -41,7 +41,8 @@ test("approved screens consume the shared market-data provider", async () => {
   const stock = await read("src/app/stock/[symbol].tsx");
   assert.match(stock, /filingResources/);
   assert.match(stock, /barKey/);
-  assert.match(stock, /Illustrative non-AI explanation/);
+  assert.match(stock, /IntelligencePanel/);
+  assert.match(stock, /loadQuote\(symbol\)/);
 });
 
 test("market resources use the same symbol and range keys read by screens", async () => {

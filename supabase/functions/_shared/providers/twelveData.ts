@@ -1,6 +1,5 @@
 import type { ChartRange, MarketQuote, NormalizedResponse, PriceBar } from "../contracts.ts";
 import { ProviderError, errorFromStatus, toProviderError } from "../errors.ts";
-import { companyForSymbol } from "../registry.ts";
 import { isoTimestamp, nullableNumber, nullableString, recordValue, requiredNumber, requiredString } from "./normalization.ts";
 import type { MarketDataProvider } from "./types.ts";
 
@@ -25,7 +24,6 @@ export function normalizeTwelveDataQuote(payload: unknown, symbol: string): Mark
   const value = recordValue(payload, "Twelve Data quote");
   const failure = providerFailure(value);
   if (failure) throw failure;
-  const company = companyForSymbol(symbol);
   const status = value.is_market_open === true
     ? "open"
     : value.is_market_open === false
@@ -38,7 +36,7 @@ export function normalizeTwelveDataQuote(payload: unknown, symbol: string): Mark
     value.datetime,
   ].map(isoTimestamp).find((timestamp) => timestamp !== null) ?? null;
   return {
-    companyId: company.id,
+    companyId: `symbol:${symbol}`,
     symbol: requiredString(value.symbol, "symbol").toUpperCase(),
     price: requiredNumber(value.close ?? value.price, "latest price"),
     change: nullableNumber(value.change),
@@ -110,7 +108,6 @@ export class TwelveDataProvider implements MarketDataProvider {
   }
 
   async getQuote(symbol: string): Promise<NormalizedResponse<MarketQuote>> {
-    companyForSymbol(symbol);
     const fetchedAt = new Date().toISOString();
     const data = normalizeTwelveDataQuote(
       await this.request("quote", new URLSearchParams({ symbol })),
@@ -120,7 +117,6 @@ export class TwelveDataProvider implements MarketDataProvider {
   }
 
   async getBars(symbol: string, range: ChartRange): Promise<NormalizedResponse<PriceBar[]>> {
-    companyForSymbol(symbol);
     const config = rangeConfig[range];
     const fetchedAt = new Date().toISOString();
     const data = normalizeTwelveDataBars(await this.request("time_series", new URLSearchParams({

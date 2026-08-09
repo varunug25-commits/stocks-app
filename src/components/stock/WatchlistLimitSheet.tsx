@@ -22,7 +22,7 @@ export function WatchlistLimitSheet({
           size={24}
         />
         <Text style={s.body}>
-          Your watchlist supports up to five companies. Remove one before
+          Your watchlist supports up to 15 companies. Remove one before
           adding another.
         </Text>
       </View>

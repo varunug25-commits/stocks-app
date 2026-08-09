@@ -7,6 +7,7 @@ import type {
   NormalizedResponse,
   PriceBar,
   SecFiling,
+  StockSearchResult,
 } from "../contracts.ts";
 
 export interface MarketDataProvider {
@@ -21,6 +22,7 @@ export interface FilingsProvider {
 }
 export interface CompanyProvider {
   getCompany(symbol: string): Promise<NormalizedResponse<CompanyIdentity>>;
+  search(query: string): Promise<NormalizedResponse<StockSearchResult[]>>;
 }
 export interface EventsProvider {
   getEvents(company: CompanyIdentity): Promise<NormalizedResponse<MarketEvent[]>>;

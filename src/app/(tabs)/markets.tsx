@@ -3,9 +3,12 @@ import * as Haptics from "expo-haptics";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { MarketIndexCard } from "@/components/finance/MarketIndexCard";
+import { EventCard } from "@/components/finance/EventCard";
+import { StoryCard } from "@/components/finance/StoryCard";
+import { EmptyState } from "@/components/system/EmptyState";
 import { DemoDataBadge } from "@/components/foundation/Feedback";
 import { IconButton } from "@/components/foundation/IconButton";
 import { ProductHeader } from "@/components/foundation/ProductHeader";
@@ -22,6 +25,7 @@ import { AppBottomSheet } from "@/components/system/AppBottomSheet";
 import { earningsEvents, economicEvents, marketIndices, marketStatus, mostActive, sectors, topGainers, topLosers } from "@/data/markets";
 import { isStockSymbol } from "@/data/stocks";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
+import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 type Filter = "Overview" | "Gainers" | "Losers" | "Active";
@@ -30,16 +34,34 @@ export default function MarketsScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("Overview");
   const [detail, setDetail] = useState<{ title: string; body: string } | null>(null);
-  const { mode, quotes, loadQuotes } = useMarketData();
-  const movers = useMemo(
+  const { state: watchlistState, hydrated } = useWatchlist();
+  const { mode, quotes, companies, news, events, loadQuotes, loadCompany, loadNews, loadEvents } = useMarketData();
+  const demoMovers = useMemo(
     () => filter === "Gainers" ? topGainers : filter === "Losers" ? topLosers : mostActive,
     [filter],
   );
-  const moverSymbols = useMemo(
+  const demoMoverSymbols = useMemo(
     () => [...new Set([...topGainers, ...topLosers, ...mostActive].map((item) => item.symbol))].filter(isStockSymbol),
     [],
   );
-  useEffect(() => { void loadQuotes(moverSymbols); }, [loadQuotes, moverSymbols]);
+  const moverSymbols = useMemo(() => mode === "REAL" ? watchlistState.symbols : demoMoverSymbols, [demoMoverSymbols, mode, watchlistState.symbols]);
+  useEffect(() => {
+    if (!hydrated) return;
+    void loadQuotes(moverSymbols);
+    if (mode === "REAL") void Promise.all(moverSymbols.flatMap((symbol) => [loadCompany(symbol), loadNews(symbol), loadEvents(symbol)]));
+  }, [hydrated, loadCompany, loadEvents, loadNews, loadQuotes, mode, moverSymbols]);
+  const realMovers = useMemo(() => watchlistState.symbols.map((symbol) => {
+    const resource = companies[symbol];
+    const company = resource?.status === "ready" || resource?.status === "stale" ? resource.data : null;
+    return { symbol, name: company?.name ?? symbol, price: "", changePercent: 0, volume: "", logoColor: colors.surfaceElevated, trend: [] };
+  }).sort((left, right) => {
+    const leftQuote = quotes[left.symbol]; const rightQuote = quotes[right.symbol];
+    const leftMove = leftQuote?.status === "ready" || leftQuote?.status === "stale" ? Math.abs(leftQuote.data.changePercent ?? 0) : -1;
+    const rightMove = rightQuote?.status === "ready" || rightQuote?.status === "stale" ? Math.abs(rightQuote.data.changePercent ?? 0) : -1;
+    return rightMove - leftMove;
+  }), [companies, quotes, watchlistState.symbols]);
+  const realNews = useMemo(() => watchlistState.symbols.flatMap((symbol) => { const resource = news[symbol]; return resource?.status === "ready" || resource?.status === "stale" ? resource.data : []; }).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 5), [news, watchlistState.symbols]);
+  const realEvents = useMemo(() => watchlistState.symbols.flatMap((symbol) => { const resource = events[symbol]; return resource?.status === "ready" || resource?.status === "stale" ? resource.data : []; }).filter((event) => event.scheduledAt).sort((a, b) => Date.parse(a.scheduledAt!) - Date.parse(b.scheduledAt!)).slice(0, 5), [events, watchlistState.symbols]);
   const choose = (next: Filter) => { void Haptics.selectionAsync(); setFilter(next); };
   const status = mode === "REAL"
     ? { ...marketStatus, state: "closed" as const, label: "Index status unavailable", detail: "No licensed index-status feed connected", updated: "Unavailable" }
@@ -51,7 +73,8 @@ export default function MarketsScreen() {
       <ScrollView contentContainerStyle={styles.chips} horizontal showsHorizontalScrollIndicator={false}>
         {(["Overview", "Gainers", "Losers", "Active"] as Filter[]).map((item) => <FilterChip key={item} label={item} onPress={() => choose(item)} selected={filter === item} />)}
       </ScrollView>
-      <View style={styles.list}>{movers.map((mover) => <MarketMoverRow key={mover.symbol} mover={mover} onPress={() => router.push(`/stock/${mover.symbol}` as Href)} quote={isStockSymbol(mover.symbol) ? quotes[mover.symbol] : undefined} />)}</View>
+      <View style={styles.list}>{(mode === "REAL" ? realMovers : demoMovers).map((mover) => <MarketMoverRow key={mover.symbol} mover={mover} onPress={() => router.push(`/stock/${mover.symbol}` as Href)} quote={isStockSymbol(mover.symbol) ? quotes[mover.symbol] : undefined} />)}</View>
+      {mode === "REAL" && !realMovers.length ? <EmptyState actionLabel="Search stocks" description="Add companies to compare their supported daily moves." onAction={() => router.push("/search" as Href)} title="No watchlist movers yet" /> : null}
     </View>
   );
 
@@ -73,10 +96,8 @@ export default function MarketsScreen() {
 
           {mode === "REAL" ? moversSection : null}
 
-          {mode === "REAL" ? <View style={styles.contextHeading}><SectionHeader eyebrow="SECONDARY · ILLUSTRATIVE" title="Market-wide context" /><Text style={styles.contextCopy}>Licensed index and sector feeds are unavailable. The previews below demonstrate layout only.</Text></View> : null}
-
-          <View style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE PREVIEW · 1D" : "DEMO DATA · 1D"} title="Major indices" />
+          {mode === "DEMO" ? <View style={styles.section}>
+            <SectionHeader eyebrow="DEMO DATA · 1D" title="Major indices" />
             <ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>
               {marketIndices.map((index) => (
                 <Pressable accessibilityRole="button" key={index.id} onPress={() => setDetail({ title: index.name, body: index.summary })}>
@@ -84,14 +105,14 @@ export default function MarketsScreen() {
                 </Pressable>
               ))}
             </ScrollView>
-          </View>
+          </View> : null}
 
-          <View style={styles.section}>
-            <SectionHeader eyebrow={mode === "REAL" ? "ILLUSTRATIVE PREVIEW · 1D" : "DEMO DATA · 1D"} title="Sector performance" />
+          {mode === "DEMO" ? <View style={styles.section}>
+            <SectionHeader eyebrow="DEMO DATA · 1D" title="Sector performance" />
             <ScrollView contentContainerStyle={styles.horizontal} horizontal showsHorizontalScrollIndicator={false}>
               {sectors.map((sector) => <SectorPerformanceCard key={sector.id} onPress={() => setDetail({ title: sector.name, body: `${sector.leaders} are illustrative leaders for this sector preview.` })} sector={sector} />)}
             </ScrollView>
-          </View>
+          </View> : null}
 
           <View style={styles.coverage}>
             <View style={styles.coverageIcon}><Ionicons color={colors.textSecondary} name="globe-outline" size={18} /></View>
@@ -103,18 +124,20 @@ export default function MarketsScreen() {
 
           {mode === "DEMO" ? moversSection : null}
 
-          <View style={styles.section}>
+          {mode === "REAL" ? <><View style={styles.section}><SectionHeader eyebrow="PROVIDER EVENTS" title="Upcoming company events" />{realEvents.length ? realEvents.map((event) => { const date = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(date.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <EmptyState description="No supported upcoming events are available." title="No events scheduled" />}</View><View style={styles.section}><SectionHeader eyebrow="PROVIDER NEWS" title="Latest relevant news" />{realNews.length ? realNews.map((story) => <StoryCard key={story.id} onPress={story.sourceUrl ? () => void Linking.openURL(story.sourceUrl) : undefined} story={{ id: story.id, category: story.relatedSymbols[0] ?? "COMPANY", title: story.headline, summary: story.summary ?? "Open the publisher source for the full report.", source: story.publisher, published: new Date(story.publishedAt).toLocaleString(), readTime: "Source", palette: ["#000", "#000"], artwork: "grid" }} />) : <EmptyState description="No supported company news is available." title="No recent news" />}</View></> : null}
+
+          {mode === "DEMO" ? <View style={styles.section}>
             <SectionHeader eyebrow="ILLUSTRATIVE CALENDAR" title="Earnings" />
             <View style={styles.stack}>{earningsEvents.map((event) => <EarningsEventCard event={event} key={event.id} />)}</View>
-          </View>
-          <View style={styles.section}>
+          </View> : null}
+          {mode === "DEMO" ? <View style={styles.section}>
             <SectionHeader eyebrow="ILLUSTRATIVE CALENDAR" title="Economic events" />
             <View style={styles.stack}>{economicEvents.map((event) => <EconomicEventCard event={event} key={event.id} />)}</View>
-          </View>
+          </View> : null}
 
           <View style={styles.disclosure}>
             <Ionicons color={colors.textTertiary} name="information-circle-outline" size={17} />
-            <Text style={styles.disclosureText}>{mode === "REAL" ? "Supported equity prices use configured providers. Indices, sectors and calendars remain illustrative until licensed sources are available." : "Illustrative demo data only. Demo mode is explicit and never replaces unavailable provider data."}</Text>
+            <Text style={styles.disclosureText}>{mode === "REAL" ? "This view uses supported watchlist quotes, company news and events. Unsupported market-wide indices and sectors are omitted rather than estimated." : "Illustrative demo data only. Demo mode is explicit and never replaces unavailable provider data."}</Text>
           </View>
         </View>
       </ScrollView>
