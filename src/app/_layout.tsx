@@ -13,6 +13,7 @@ import { publicDataConfig } from "@/data/real";
 import { ConfigurationUnavailable } from "@/components/system/ConfigurationUnavailable";
 import { ChangeDetectionProvider } from "@/features/materiality";
 import { ThesisProvider } from "@/features/thesis";
+import { GroupProvider } from "@/features/groups";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -43,6 +44,7 @@ export default function RootLayout() {
           <WatchlistProvider>
           <MarketDataProvider>
           <ChangeDetectionProvider>
+          <GroupProvider>
           <ThesisProvider>
           <IntelligenceProvider>
           <BriefsProvider>
@@ -61,6 +63,7 @@ export default function RootLayout() {
           </BriefsProvider>
           </IntelligenceProvider>
           </ThesisProvider>
+          </GroupProvider>
           </ChangeDetectionProvider>
           </MarketDataProvider>
           </WatchlistProvider>

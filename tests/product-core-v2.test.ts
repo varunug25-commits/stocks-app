@@ -11,6 +11,8 @@ import { createThesisStore, MAX_THESIS_LENGTH } from "../src/features/thesis/sto
 import type { StorageAdapter } from "../src/storage/preferencesCore.ts";
 import { MockStructuredAIProvider } from "../supabase/functions/_shared/intelligence/provider.ts";
 import { parseIntelligenceRequest } from "../supabase/functions/_shared/intelligence/request.ts";
+import { groupsReducer, initialGroupState } from "../src/features/groups/model.ts";
+import { createGroupStore } from "../src/features/groups/storage.ts";
 
 const at = "2026-08-09T12:00:00.000Z";
 const ref = (id: string, title = id, sourceUrl: string | null = `https://example.com/${id}`) => ({ id, title, sourceUrl, occurredAt: at });
@@ -134,4 +136,20 @@ test("thesis remains user context rather than evidence", async () => {
   assert.match(text, /No new evidence directly relevant/);
   assert.match(text, /context, not evidence/);
   assert.doesNotMatch(text, /thesis is correct|thesis is incorrect/i);
+});
+
+test("watchlist groups support overlapping membership and validated persistence", async () => {
+  let state = groupsReducer(initialGroupState, { type: "create", id: "ai", name: "AI" });
+  state = groupsReducer(state, { type: "create", id: "long", name: "Long term" });
+  state = groupsReducer(state, { type: "toggle-symbol", id: "ai", symbol: "AMD" });
+  state = groupsReducer(state, { type: "toggle-symbol", id: "long", symbol: "AMD" });
+  assert.deepEqual(state.groups.map((group) => group.symbols), [["AMD"], ["AMD"]]);
+  assert.equal(groupsReducer(state, { type: "create", id: "duplicate", name: " ai " }), state);
+  const values = new Map<string, string>();
+  const adapter: StorageAdapter = { getItem: async (key) => values.get(key) ?? null, setItem: async (key, value) => { values.set(key, value); }, removeItem: async (key) => { values.delete(key); } };
+  const store = createGroupStore(adapter);
+  await store.save(state);
+  assert.deepEqual(await store.load(), state);
+  values.set("marketbrief.groups.v1", "{bad json");
+  assert.deepEqual(await store.load(), initialGroupState);
 });

@@ -18,18 +18,21 @@ import { watchlist as localWatchlistRows } from "@/data/today";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
 import { WATCHLIST_LIMIT } from "@/features/watchlist/model";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useGroups } from "@/features/groups";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 export default function WatchlistScreen() {
   const router = useRouter();
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const { state, dispatch, hydrated } = useWatchlist();
+  const groups = useGroups();
   const { mode, quotes, companies, loadQuotes, loadCompany } = useMarketData();
   const [editing, setEditing] = useState(false);
   const [remove, setRemove] = useState<StockSymbol | null>(null);
   const [limit, setLimit] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     if (hydrated) {
@@ -53,7 +56,8 @@ export default function WatchlistScreen() {
     return <Screen><View style={styles.center}><ErrorState description="Your stored membership and order remain untouched." onRetry={handleRetry} title="Watchlist needs a refresh" /></View></Screen>;
   }
 
-  const symbols = preview === "empty" ? [] : state.symbols;
+  const selectedGroup = groups.state.groups.find((group) => group.id === selectedGroupId);
+  const symbols = preview === "empty" ? [] : selectedGroup ? state.symbols.filter((symbol) => selectedGroup.symbols.includes(symbol)) : state.symbols;
   const add = () => state.symbols.length >= WATCHLIST_LIMIT ? setLimit(true) : router.push("/search" as Href);
 
   return (
@@ -70,6 +74,8 @@ export default function WatchlistScreen() {
           subtitle={editing ? "Reorder or remove companies. Changes save automatically." : "Compact prices, daily movement, trend, and source freshness."}
           title="Watchlist"
         />
+
+        {groups.state.groups.length ? <View style={styles.groupArea}><ScrollView contentContainerStyle={styles.groupStrip} horizontal showsHorizontalScrollIndicator={false}><Pressable accessibilityRole="button" onPress={() => setSelectedGroupId(null)} style={[styles.groupChip, !selectedGroup && styles.groupChipSelected]}><Text style={[styles.groupChipText, !selectedGroup && styles.groupChipTextSelected]}>All</Text></Pressable>{groups.state.groups.map((group) => <Pressable accessibilityRole="button" key={group.id} onPress={() => setSelectedGroupId(group.id)} style={[styles.groupChip, selectedGroup?.id === group.id && styles.groupChipSelected]}><Text style={[styles.groupChipText, selectedGroup?.id === group.id && styles.groupChipTextSelected]}>{group.name}</Text></Pressable>)}</ScrollView>{selectedGroup && symbols.length ? <Pressable accessibilityRole="button" onPress={() => router.push(`/ask?symbols=${symbols.join(",")}&mode=watchlist&prompt=${encodeURIComponent(`What changed in my ${selectedGroup.name} group?`)}` as Href)} style={styles.askGroup}><Text style={styles.askGroupText}>Ask about {selectedGroup.name}</Text><Ionicons color={colors.textPrimary} name="arrow-forward" size={16} /></Pressable> : null}</View> : null}
 
         {symbols[0] ? <ResourceStateNotice onRetry={() => void loadQuotes(symbols)} resource={quotes[symbols[0]]} /> : null}
         {symbols.length ? (
@@ -119,4 +125,12 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.62 },
   list: { marginTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   note: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  groupArea: { marginTop: spacing.sm },
+  groupStrip: { gap: spacing.xs, paddingVertical: spacing.xs },
+  groupChip: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  groupChipSelected: { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
+  groupChipText: { ...typography.label, color: colors.textSecondary },
+  groupChipTextSelected: { color: colors.background },
+  askGroup: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  askGroupText: { ...typography.label, color: colors.textPrimary },
 });

@@ -29,11 +29,12 @@ function modeFromParam(value: string | undefined, stockScoped: boolean): Intelli
 
 export default function AskMarketBriefScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ symbol?: string; task?: string; prompt?: string; focusId?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ symbol?: string; symbols?: string; task?: string; prompt?: string; focusId?: string; mode?: string }>();
   const { state, hydrated } = useWatchlist();
   const theses = useTheses();
   const scopedSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
-  const symbols = useMemo(() => scopedSymbol ? [scopedSymbol] : state.symbols, [scopedSymbol, state.symbols]);
+  const routeSymbols = useMemo(() => typeof params.symbols === "string" ? params.symbols.split(",").map((symbol) => symbol.trim().toUpperCase()).filter(isStockSymbol).slice(0, 15) : [], [params.symbols]);
+  const symbols = useMemo(() => scopedSymbol ? [scopedSymbol] : routeSymbols.length ? routeSymbols.filter((symbol) => state.symbols.includes(symbol)) : state.symbols, [routeSymbols, scopedSymbol, state.symbols]);
   const presetTask = taskFromParam(params.task);
   const contextMode = modeFromParam(params.mode, !!scopedSymbol);
   const savedThesis = scopedSymbol ? theses.state.bySymbol[scopedSymbol] : undefined;

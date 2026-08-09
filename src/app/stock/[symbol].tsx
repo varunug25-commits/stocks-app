@@ -13,6 +13,7 @@ import { SourceList } from "@/components/stock/SourceList";
 import { StockHeader } from "@/components/stock/StockHeader";
 import { TimelineRow } from "@/components/stock/TimelineRow";
 import { ThesisEditor } from "@/components/stock/ThesisEditor";
+import { StockGroupEditor } from "@/components/stock/StockGroupEditor";
 import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
 import { WatchlistLimitSheet } from "@/components/stock/WatchlistLimitSheet";
 import { OfflineBanner } from "@/components/foundation/Feedback";
@@ -36,12 +37,14 @@ import type { IntelligenceRequest } from "@/data/intelligence";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { buildStockTimeline, groupStockTimeline } from "@/features/timeline";
 import { useTheses } from "@/features/thesis";
+import { useGroups } from "@/features/groups";
 
 export default function StockDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; preview?: string }>();
   const { state, dispatch } = useWatchlist();
   const theses = useTheses();
+  const groups = useGroups();
   const {
     mode, quotes, companies, bars, filings: filingResources, news, events,
     loadStock, loadQuote, loadBars, loadNews, loadFilings, loadEvents,
@@ -167,6 +170,10 @@ export default function StockDetailScreen() {
         <View style={styles.section}>
           <SectionHeader eyebrow="OPTIONAL · SAVED ON THIS DEVICE" title="My thesis" />
           <ThesisEditor onAsk={() => router.push(`/ask?symbol=${symbol}&mode=thesis&prompt=${encodeURIComponent("What changed vs my thesis?")}` as Href)} onSave={(value) => theses.save(symbol, value)} value={theses.state.bySymbol[symbol] ?? ""} />
+        </View>
+        <View style={styles.section}>
+          <SectionHeader eyebrow="LOCAL ORGANIZATION" title="Groups" />
+          <StockGroupEditor groups={groups.state.groups} onToggle={(id) => groups.toggleSymbol(id, symbol)} symbol={symbol} />
         </View>
         <View style={styles.section}>
           <SectionHeader

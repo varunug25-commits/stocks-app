@@ -1,0 +1,14 @@
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import type { WatchlistGroup } from "@/features/groups";
+import { MAX_GROUP_NAME_LENGTH } from "@/features/groups";
+import { colors, radii, spacing, typography } from "@/theme/tokens";
+
+export function GroupManager({ groups, onCreate, onRemove }: { groups: WatchlistGroup[]; onCreate(name: string): void; onRemove(id: string): void }) {
+  const [name, setName] = useState("");
+  const create = () => { const clean = name.trim(); if (!clean) return; onCreate(clean); setName(""); };
+  return <View style={styles.box}><Text style={styles.intro}>Organize companies into overlapping lists such as AI, Long term, or Earnings watch.</Text><View style={styles.composer}><TextInput accessibilityLabel="New watchlist group name" maxLength={MAX_GROUP_NAME_LENGTH} onChangeText={setName} onSubmitEditing={create} placeholder="New group" placeholderTextColor={colors.textTertiary} style={styles.input} value={name} /><Pressable accessibilityRole="button" disabled={!name.trim()} onPress={create} style={[styles.add, !name.trim() && styles.disabled]}><Text style={styles.addText}>Add</Text></Pressable></View>{groups.map((group) => <View key={group.id} style={styles.row}><View style={styles.copy}><Text style={styles.name}>{group.name}</Text><Text style={styles.meta}>{group.symbols.length} {group.symbols.length === 1 ? "company" : "companies"}</Text></View><Pressable accessibilityLabel={`Delete ${group.name} group`} accessibilityRole="button" onPress={() => onRemove(group.id)} style={styles.remove}><Text style={styles.removeText}>Delete</Text></Pressable></View>)}</View>;
+}
+const styles = StyleSheet.create({
+  box: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }, intro: { ...typography.caption, color: colors.textTertiary, paddingVertical: spacing.sm }, composer: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm }, input: { ...typography.body, flex: 1, minHeight: 44, color: colors.textPrimary, paddingHorizontal: spacing.sm, borderRadius: radii.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, add: { minWidth: 64, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radii.sm, backgroundColor: colors.textPrimary }, disabled: { backgroundColor: colors.disabled }, addText: { ...typography.label, color: colors.background }, row: { minHeight: 58, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, copy: { flex: 1 }, name: { ...typography.label, color: colors.textPrimary }, meta: { ...typography.caption, color: colors.textTertiary }, remove: { minHeight: 44, justifyContent: "center" }, removeText: { ...typography.label, color: colors.negative },
+});
