@@ -14,6 +14,7 @@ import { parseIntelligenceRequest } from "../supabase/functions/_shared/intellig
 import { groupsReducer, initialGroupState } from "../src/features/groups/model.ts";
 import { createGroupStore } from "../src/features/groups/storage.ts";
 import { compareRealBriefs, createRealBriefStore, makeRealBriefRecord } from "../src/features/briefs/realStore.ts";
+import { deriveWhyEvidenceState } from "../src/features/intelligence/whyEvidenceState.ts";
 
 const at = "2026-08-09T12:00:00.000Z";
 const ref = (id: string, title = id, sourceUrl: string | null = `https://example.com/${id}`) => ({ id, title, sourceUrl, occurredAt: at });
@@ -172,4 +173,23 @@ test("validated REAL brief history persists separately and computes honest delta
   assert.deepEqual((await store.load()).map((record) => record.id), [current.id, previous.id]);
   values.set("marketbrief.real-briefs.v1", "{corrupt");
   assert.deepEqual(await store.load(), []);
+});
+
+test("Why evidence states stay qualitative and resolve no-catalyst and mixed cases", () => {
+  const base = { headline: "Why", oneLineSummary: "Summary", generatedAt: at, symbols: ["AAPL"], sourceIds: [] as string[], sources: [] as { id: string; type: "news"; publisher?: string }[], sections: [{ id: "u", title: "Uncertainty", bullets: [{ id: "u", text: "No cause", kind: "uncertainty" as const, sourceIds: [] as string[] }] }], meta: { task: "why_moved" as const, provider: "test", providerMode: "live" as const, cached: false, evidenceCount: 0, schemaVersion: "test" } };
+  assert.equal(deriveWhyEvidenceState(base).state, "NO CLEAR CATALYST");
+  const mixed = { ...base, sourceIds: ["n1"], sources: [{ id: "n1", type: "news" as const, publisher: "Wire" }], sections: [{ id: "i", title: "Interpretation", bullets: [{ id: "i", text: "May contribute", kind: "interpretation" as const, sourceIds: ["n1"] }] }] };
+  const assessment = deriveWhyEvidenceState(mixed);
+  assert.equal(assessment.state, "MIXED EVIDENCE");
+  assert.equal(assessment.strength, "Limited");
+  assert.doesNotMatch(JSON.stringify(assessment), /\d+%|confidence percentage/i);
+});
+
+test("contextual Ask compares only against a validated anchor", async () => {
+  const request = parseIntelligenceRequest({ task: "ask", symbols: ["AAPL"], question: "What changed since this brief?", contextMode: "current_brief", comparisonAnchor: { generatedAt: "2026-08-08T12:00:00.000Z", sourceIds: ["old"] } });
+  const provider = new MockStructuredAIProvider();
+  const candidate = await provider.generateStructuredResponse({ request, untrustedContext: "evidence", evidence: [{ id: "new", type: "news", symbol: "AAPL", title: "New company update", relevanceScore: 90, contentHash: "hash" }] });
+  assert.match(String(candidate.oneLineSummary), /1 new evidence item/);
+  assert.match(JSON.stringify(candidate), /New company update/);
+  assert.throws(() => parseIntelligenceRequest({ task: "ask", symbols: ["AAPL"], question: "Compare", contextMode: "current_brief", comparisonAnchor: { generatedAt: "not-a-date", sourceIds: [] } }), /anchor time is invalid/);
 });

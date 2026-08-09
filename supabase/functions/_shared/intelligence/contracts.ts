@@ -82,6 +82,7 @@ export type IntelligenceRequest = {
   timeWindow?: "1D" | "1W" | "1M";
   contextMode?: IntelligenceContextMode;
   userThesis?: { symbol: string; text: string };
+  comparisonAnchor?: { generatedAt: string; sourceIds: string[] };
 };
 
 export type ModelCandidate = {

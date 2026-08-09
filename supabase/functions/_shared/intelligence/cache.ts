@@ -34,6 +34,7 @@ export function intelligenceCacheKey(request: IntelligenceRequest, evidence: Evi
     timeWindow: request.timeWindow,
     contextMode: request.contextMode,
     userThesisHash: request.userThesis ? stableHash(`${request.userThesis.symbol}:${request.userThesis.text}`) : undefined,
+    comparisonAnchor: request.comparisonAnchor,
     provider,
     schema: INTELLIGENCE_SCHEMA_VERSION,
   }));

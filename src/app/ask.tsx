@@ -10,6 +10,8 @@ import { isStockSymbol } from "@/data/stocks";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { useTheses } from "@/features/thesis";
+import { useChangeDetection } from "@/features/materiality";
+import { useBriefs } from "@/features/briefs/BriefsProvider";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 const suggestions = [
@@ -29,15 +31,25 @@ function modeFromParam(value: string | undefined, stockScoped: boolean): Intelli
 
 export default function AskMarketBriefScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ symbol?: string; symbols?: string; task?: string; prompt?: string; focusId?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ symbol?: string; symbols?: string; task?: string; prompt?: string; focusId?: string; mode?: string; briefId?: string }>();
   const { state, hydrated } = useWatchlist();
   const theses = useTheses();
+  const changes = useChangeDetection();
+  const briefs = useBriefs();
   const scopedSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
   const routeSymbols = useMemo(() => typeof params.symbols === "string" ? params.symbols.split(",").map((symbol) => symbol.trim().toUpperCase()).filter(isStockSymbol).slice(0, 15) : [], [params.symbols]);
   const symbols = useMemo(() => scopedSymbol ? [scopedSymbol] : routeSymbols.length ? routeSymbols.filter((symbol) => state.symbols.includes(symbol)) : state.symbols, [routeSymbols, scopedSymbol, state.symbols]);
   const presetTask = taskFromParam(params.task);
   const contextMode = modeFromParam(params.mode, !!scopedSymbol);
   const savedThesis = scopedSymbol ? theses.state.bySymbol[scopedSymbol] : undefined;
+  const comparisonAnchor = useMemo(() => {
+    if (contextMode === "current_brief" && typeof params.briefId === "string") {
+      const record = briefs.realHistory.find((item) => item.id === params.briefId);
+      return record ? { generatedAt: record.generatedAt, sourceIds: record.response.sourceIds } : undefined;
+    }
+    if (contextMode === "since_last_check" && changes.result?.previousCapturedAt) return { generatedAt: changes.result.previousCapturedAt, sourceIds: [...new Set(changes.result.materialChanges.flatMap((change) => change.evidenceIds))] };
+    return undefined;
+  }, [briefs.realHistory, changes.result, contextMode, params.briefId]);
   const presetQuestion = typeof params.prompt === "string" ? params.prompt : "";
   const [question, setQuestion] = useState(presetQuestion);
   const [submitted, setSubmitted] = useState(presetTask !== "ask" || !!presetQuestion);
@@ -49,7 +61,8 @@ export default function AskMarketBriefScreen() {
     timeWindow: "1D",
     contextMode,
     ...(contextMode === "thesis" && scopedSymbol && savedThesis ? { userThesis: { symbol: scopedSymbol, text: savedThesis } } : {}),
-  }), [contextMode, params.focusId, presetTask, question, savedThesis, scopedSymbol, symbols]);
+    ...(comparisonAnchor ? { comparisonAnchor } : {}),
+  }), [comparisonAnchor, contextMode, params.focusId, presetTask, question, savedThesis, scopedSymbol, symbols]);
   const { resource, retry } = useIntelligenceRequest(request, hydrated && theses.hydrated && submitted && symbols.length > 0 && (contextMode !== "thesis" || !!savedThesis));
 
   const submit = (nextQuestion = question) => {
@@ -96,7 +109,7 @@ export default function AskMarketBriefScreen() {
               {!submitted ? (
                 <View style={styles.suggestions}>
                   <Text style={styles.suggestionLabel}>SUGGESTED QUESTIONS</Text>
-                  {(contextMode === "thesis" ? ["What new evidence relates to my thesis?", "What may clarify my thesis next?"] : suggestions).map((suggestion) => (
+                  {(contextMode === "thesis" ? ["What new evidence relates to my thesis?", "What may clarify my thesis next?"] : contextMode === "since_last_check" ? ["Which changes were material?", "Which stocks had no meaningful developments?"] : contextMode === "current_brief" ? ["What evidence is newer than this brief?", "What known catalysts are next?"] : contextMode === "catalysts" ? ["What are my next known events?", "Which events are within seven days?"] : suggestions).map((suggestion) => (
                     <Pressable accessibilityRole="button" key={suggestion} onPress={() => submit(suggestion)} style={styles.suggestion}>
                       <Text style={styles.suggestionText}>{suggestion}</Text>
                       <Ionicons color={colors.teal} name="arrow-forward" size={16} />

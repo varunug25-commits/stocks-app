@@ -42,6 +42,16 @@ export function parseIntelligenceRequest(value: unknown): IntelligenceRequest {
       throw new IntelligenceError("INVALID_REQUEST", "User thesis must match a requested symbol and be 500 characters or fewer.", 400);
     userThesis = { symbol, text };
   }
+  let comparisonAnchor: IntelligenceRequest["comparisonAnchor"];
+  if (input.comparisonAnchor !== undefined) {
+    if (!input.comparisonAnchor || typeof input.comparisonAnchor !== "object" || Array.isArray(input.comparisonAnchor))
+      throw new IntelligenceError("INVALID_REQUEST", "Comparison anchor must be structured metadata.", 400);
+    const anchor = input.comparisonAnchor as Record<string, unknown>;
+    const generatedAt = typeof anchor.generatedAt === "string" ? anchor.generatedAt : "";
+    const sourceIds = Array.isArray(anchor.sourceIds) ? [...new Set(anchor.sourceIds.filter((id): id is string => typeof id === "string" && id.length > 0 && id.length <= 160))].slice(0, 40) : [];
+    if (!Number.isFinite(Date.parse(generatedAt))) throw new IntelligenceError("INVALID_REQUEST", "Comparison anchor time is invalid.", 400);
+    comparisonAnchor = { generatedAt, sourceIds };
+  }
   return {
     task: input.task as IntelligenceTask,
     symbols: normalizedSymbols,
@@ -51,6 +61,7 @@ export function parseIntelligenceRequest(value: unknown): IntelligenceRequest {
     timeWindow: timeWindow as IntelligenceRequest["timeWindow"],
     ...(typeof input.contextMode === "string" ? { contextMode: input.contextMode as IntelligenceRequest["contextMode"] } : {}),
     ...(userThesis ? { userThesis } : {}),
+    ...(comparisonAnchor ? { comparisonAnchor } : {}),
   };
 }
 

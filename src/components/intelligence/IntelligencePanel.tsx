@@ -6,6 +6,7 @@ import type { ClaimKind, IntelligenceResource } from "@/data/intelligence";
 import { colors, spacing, typography } from "@/theme/tokens";
 import { CitationSheet } from "./CitationSheet";
 import { IntelligenceSkeleton } from "./IntelligenceSkeleton";
+import { WhyEvidenceState } from "./WhyEvidenceState";
 
 const kindLabel: Record<ClaimKind, string> = {
   confirmed: "CONFIRMED",
@@ -42,6 +43,7 @@ export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
           {response.oneLineSummary ? <Text style={styles.summary}>{response.oneLineSummary}</Text> : null}
         </View>
       ) : null}
+      {response.meta.task === "why_moved" ? <WhyEvidenceState response={response} /> : null}
       {response.sections.map((section) => (
         <View key={section.id} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.title.toUpperCase()}</Text>

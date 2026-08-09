@@ -129,6 +129,20 @@ function filingCandidate(input: StructuredGenerationInput): ModelCandidate {
 
 function askCandidate(input: StructuredGenerationInput): ModelCandidate {
   const question = input.request.question?.toLowerCase() ?? "";
+  if (input.request.contextMode === "current_brief" || input.request.contextMode === "since_last_check") {
+    const anchor = input.request.comparisonAnchor;
+    const previous = new Set(anchor?.sourceIds ?? []);
+    const fresh = anchor ? input.evidence.filter((entry) => !previous.has(entry.id)).slice(0, 5) : [];
+    return {
+      headline: input.request.contextMode === "current_brief" ? "Since this brief" : "Since you last checked",
+      oneLineSummary: !anchor ? "A valid comparison point is unavailable." : fresh.length ? `${fresh.length} new evidence ${fresh.length === 1 ? "item" : "items"} is available.` : "No new supported evidence was found after the comparison point.",
+      symbols: input.request.symbols,
+      sections: [
+        section("new-evidence", "New verified evidence", fresh.map((entry, index) => claim(`new-${index}`, entry.text ?? entry.title ?? "New evidence is available.", "confirmed", [entry.id]))),
+        section("comparison-limits", "Comparison limits", [claim("comparison-limit", anchor ? "No change is inferred when current evidence does not provide a verifiable delta." : "The requested comparison cannot be made without a saved anchor.", "uncertainty")]),
+      ].filter(Boolean),
+    };
+  }
   if (input.request.contextMode === "thesis" || /thesis/.test(question)) {
     const thesis = input.request.userThesis;
     const words = thesis?.text.toLowerCase().match(/[a-z0-9]{4,}/g) ?? [];

@@ -12,6 +12,7 @@ export type IntelligenceRequest = {
   timeWindow?: "1D" | "1W" | "1M";
   contextMode?: IntelligenceContextMode;
   userThesis?: { symbol: StockSymbol; text: string };
+  comparisonAnchor?: { generatedAt: string; sourceIds: string[] };
 };
 export type BulletClaim = { id: string; text: string; kind: ClaimKind; sourceIds: string[] };
 export type IntelligenceSection = { id: string; title: string; bullets: BulletClaim[] };

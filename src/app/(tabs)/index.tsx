@@ -141,7 +141,7 @@ export default function TodayScreen() {
           </Animated.View>
 
           <Animated.View entering={animation(110)} style={styles.ask}>
-            <AskMarketBriefEntry detail="Ask from your watchlist changes and available evidence" label="Ask MarketBrief" onPress={() => router.push("/ask?prompt=What%20changed%20since%20I%20last%20checked%3F" as Href)} />
+            <AskMarketBriefEntry detail="Ask from your watchlist changes and available evidence" label="Ask MarketBrief" onPress={() => router.push("/ask?mode=since_last_check&prompt=What%20changed%20since%20I%20last%20checked%3F" as Href)} />
           </Animated.View>
 
           <View style={styles.disclosure}><Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={16} /><Text style={styles.disclosureText}>{mode === "REAL" ? "Changes use available provider evidence and your saved comparison baseline. Missing resources remain unavailable." : "Deliberate demo mode with illustrative market content. Informational only."}</Text></View>

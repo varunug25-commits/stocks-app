@@ -14,6 +14,7 @@ export function intelligenceRequestKey(request: IntelligenceRequest) {
     timeWindow: request.timeWindow,
     contextMode: request.contextMode,
     userThesis: request.userThesis,
+    comparisonAnchor: request.comparisonAnchor,
   });
 }
 
