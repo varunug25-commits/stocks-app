@@ -1,14 +1,10 @@
-export type StockSymbol =
-  | "AAPL"
-  | "MSFT"
-  | "NVDA"
-  | "TSLA"
-  | "AMZN"
-  | "GOOGL"
-  | "META"
-  | "AMD"
-  | "PLTR"
-  | "NFLX";
+export type StockSymbol = string;
+export type StockIdentity = {
+  symbol: StockSymbol;
+  name: string;
+  exchange?: string;
+  assetType?: string;
+};
 export type Company = {
   symbol: StockSymbol;
   name: string;
@@ -103,6 +99,18 @@ export const companies: Company[] = [
 export const companyBySymbol = Object.fromEntries(
   companies.map((company) => [company.symbol, company]),
 ) as Record<StockSymbol, Company>;
+export const demoStockSymbols = new Set(companies.map((company) => company.symbol));
+export function normalizeStockSymbol(value: string) {
+  return value.trim().toUpperCase();
+}
 export function isStockSymbol(value: unknown): value is StockSymbol {
-  return typeof value === "string" && value in companyBySymbol;
+  return typeof value === "string" && /^[A-Z][A-Z0-9.-]{0,7}$/.test(value);
+}
+export function isDemoStockSymbol(value: unknown): value is StockSymbol {
+  return isStockSymbol(value) && demoStockSymbols.has(value);
+}
+export function demoCompanyForSymbol(symbol: StockSymbol): Company {
+  const company = companyBySymbol[symbol];
+  if (!company) throw new Error(`No demo company is available for ${symbol}.`);
+  return company;
 }

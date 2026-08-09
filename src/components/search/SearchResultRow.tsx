@@ -25,7 +25,7 @@ export function SearchResultRow({
   const resolved = quote?.status === "ready" || quote?.status === "stale" ? quote.data : null;
   const changePercent = resolved?.changePercent ?? null;
   const positive = (changePercent ?? 0) >= 0;
-  const price = resolved ? formatPrice(resolved.price) : quote?.status === "loading" || !quote ? "Loading…" : "Unavailable";
+  const price = resolved ? formatPrice(resolved.price) : quote?.status === "loading" ? "Loading…" : quote ? "Unavailable" : "Open for quote";
   return (
     <View style={styles.row}>
       <Pressable
@@ -42,7 +42,7 @@ export function SearchResultRow({
         <View style={styles.copy}>
           <Text style={styles.symbol}>{stock.symbol}</Text>
           <Text numberOfLines={1} style={styles.meta}>
-            {stock.name} · {stock.sector}
+            {[stock.name, stock.exchange ?? stock.sector, stock.assetType].filter(Boolean).join(" · ")}
           </Text>
         </View>
         <View style={styles.value}>
@@ -53,7 +53,7 @@ export function SearchResultRow({
               { color: positive ? colors.positive : colors.negative },
             ]}
           >
-            {changePercent === null ? "No quote" : `${positive ? "+" : ""}${changePercent.toFixed(2)}%`}
+            {changePercent === null ? "Provider validated" : `${positive ? "+" : ""}${changePercent.toFixed(2)}%`}
           </Text>
         </View>
       </Pressable>

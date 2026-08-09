@@ -40,7 +40,7 @@ export default function StockDetailScreen() {
   const params = useLocalSearchParams<{ symbol?: string; preview?: string }>();
   const { state, dispatch } = useWatchlist();
   const {
-    mode, quotes, bars, filings: filingResources, news, events,
+    mode, quotes, companies, bars, filings: filingResources, news, events,
     loadStock, loadQuote, loadBars, loadNews, loadFilings, loadEvents,
   } = useMarketData();
   const [limitVisible, setLimitVisible] = useState(false);
@@ -59,14 +59,17 @@ export default function StockDetailScreen() {
       <Screen>
         <View style={styles.center}>
           <EmptyState
-            description="This company is not in the demo catalog."
+            description="Enter a valid supported U.S. equity symbol."
             title="Stock unavailable"
           />
         </View>
       </Screen>
     );
   const symbol = validSymbol;
-  const company = companyBySymbol[symbol];
+  const companyResource = companies[symbol];
+  const providerCompany = companyResource?.status === "ready" || companyResource?.status === "stale" ? companyResource.data : null;
+  const demoCompany = companyBySymbol[symbol];
+  const company = providerCompany ?? demoCompany ?? { symbol, name: symbol, exchange: "Validation pending", sector: null, logoColor: null };
   const quoteResource = quotes[symbol];
   const quote = quoteResource?.status === "ready" || quoteResource?.status === "stale" ? quoteResource.data : null;
   const barResource = bars[barKey(symbol, range)];
@@ -162,7 +165,7 @@ export default function StockDetailScreen() {
           {statistics.length ? <MarketStatsGrid items={statistics} /> : <EmptyState description="The quote provider did not return session statistics." title="Statistics unavailable" />}
         </View>
         <View style={styles.section}>
-          <SectionHeader actionLabel={latestFilings?.length ? "Key changes" : undefined} onAction={() => latestFilings?.[0] ? router.push(`/ask?symbol=${symbol}&task=filing_summary&focusId=${encodeURIComponent(latestFilings[0].accessionNumber)}` as Href) : undefined} title="Latest filings" />
+          <SectionHeader title="Latest filings" />
           <ResourceStateNotice onRetry={() => void loadFilings(symbol)} resource={filingResource} />
           <View style={styles.list}>
             {latestFilings?.map((item) => <FilingRow item={item} key={item.accessionNumber} />)}
@@ -190,7 +193,7 @@ export default function StockDetailScreen() {
             size={18}
           />
           <Text style={styles.disclaimerText}>
-            {mode === "REAL" ? "Provider data may be delayed, stale or unavailable. Editorial explanation remains illustrative." : "Illustrative demo data for informational purposes only. Not investment advice."}
+            {mode === "REAL" ? "Provider data may be delayed, stale or unavailable. Grounded summaries identify their supporting evidence and uncertainty." : "Illustrative demo data for informational purposes only. Not investment advice."}
           </Text>
         </View>
       </ScrollView>

@@ -2,7 +2,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { WatchlistButton } from "./WatchlistButton";
-import type { Company } from "@/data/stocks";
 import { colors, spacing, typography } from "@/theme/tokens";
 export function StockHeader({
   company,
@@ -10,7 +9,7 @@ export function StockHeader({
   onToggle,
   onBack,
 }: {
-  company: Company;
+  company: { symbol: string; name: string; exchange: string; sector?: string | null; logoColor?: string | null };
   added: boolean;
   onToggle: () => void;
   onBack: () => void;
@@ -39,7 +38,7 @@ export function StockHeader({
         <View>
           <Text style={s.name}>{company.name}</Text>
           <Text style={s.meta}>
-            {company.exchange} · {company.sector}
+            {[company.exchange, company.sector].filter(Boolean).join(" · ")}
           </Text>
         </View>
       </View>

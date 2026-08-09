@@ -1,4 +1,4 @@
-import { companyBySymbol, prices } from "@/data/stocks";
+import { demoCompanyForSymbol, prices } from "@/data/stocks";
 import type { StockSymbol } from "@/data/stocks";
 import type { BulletClaim, IntelligenceRequest, IntelligenceSection, IntelligenceSource, MarketBriefIntelligenceResponse } from "./contracts";
 
@@ -12,6 +12,7 @@ const source = (symbol: StockSymbol): IntelligenceSource => ({
 });
 const move = (symbol: keyof typeof prices): BulletClaim => {
   const snapshot = prices[symbol];
+  if (!snapshot) throw new Error(`No illustrative intelligence is available for ${symbol}.`);
   return {
     id: `demo-move-${symbol}`,
     text: `${symbol} is ${snapshot.changePercent >= 0 ? "+" : ""}${snapshot.changePercent.toFixed(2)}% in the illustrative 1D view.`,
@@ -33,7 +34,7 @@ export function demoIntelligence(request: IntelligenceRequest): MarketBriefIntel
   };
   const catalyst: BulletClaim = {
     id: "demo-catalyst",
-    text: `Monitor verified news, filings and events for ${companyBySymbol[primary].name} before drawing a causal conclusion.`,
+    text: `Monitor verified news, filings and events for ${demoCompanyForSymbol(primary).name} before drawing a causal conclusion.`,
     kind: "catalyst",
     sourceIds: [],
   };

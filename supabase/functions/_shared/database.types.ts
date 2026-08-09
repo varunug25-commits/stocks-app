@@ -18,6 +18,11 @@ export type Database = {
         Insert: { provider: string; window_started_at: string; request_count?: number; blocked_until?: string | null; last_error_code?: string | null; updated_at?: string };
         Update: Partial<Database["public"]["Tables"]["provider_request_windows"]["Insert"]>;
       };
+      intelligence_request_windows: {
+        Row: { scope: "identity" | "global"; identity_hash: string; window_started_at: string; request_count: number; updated_at: string };
+        Insert: { scope: "identity" | "global"; identity_hash: string; window_started_at: string; request_count?: number; updated_at?: string };
+        Update: Partial<Database["public"]["Tables"]["intelligence_request_windows"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -25,8 +30,12 @@ export type Database = {
         Args: { p_provider: string; p_window_seconds: number; p_max_requests: number; p_cooldown_seconds: number };
         Returns: Json;
       };
+      consume_intelligence_request_budget: {
+        Args: { p_identity_hash: string; p_window_seconds: number; p_identity_max: number; p_global_max: number };
+        Returns: Json;
+      };
     };
-    Enums: { marketbrief_resource_type: "quote" | "bars" | "company" | "news" | "filings" | "events" };
+    Enums: { marketbrief_resource_type: "quote" | "bars" | "company" | "news" | "filings" | "events" | "search" };
     CompositeTypes: Record<string, never>;
   };
 };

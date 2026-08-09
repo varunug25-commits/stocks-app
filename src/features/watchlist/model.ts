@@ -3,7 +3,7 @@ import type { ChartRange } from "../../data/stocks/charts.ts";
 import { isStockSymbol } from "../../data/stocks/companies.ts";
 import type { StockSymbol } from "../../data/stocks/companies.ts";
 
-export const WATCHLIST_LIMIT = 5;
+export const WATCHLIST_LIMIT = 15;
 export type WatchlistState = {
   symbols: StockSymbol[];
   recentSearches: StockSymbol[];

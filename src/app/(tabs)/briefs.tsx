@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ScrollView,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -26,6 +25,7 @@ import { ProductHeader } from "@/components/foundation/ProductHeader";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { SkeletonState } from "@/components/system/SkeletonState";
+import { EmptyState } from "@/components/system/EmptyState";
 import { IntelligencePanel } from "@/components/intelligence";
 import type { IntelligenceRequest } from "@/data/intelligence";
 import {
@@ -124,7 +124,7 @@ export default function BriefsScreen() {
           {mode === "REAL" ? (
             <View style={styles.groundedHero}>
               <IntelligencePanel onRetry={() => void retryIntelligence()} resource={intelligenceResource} />
-              <Pressable accessibilityRole="button" onPress={() => router.push(`/brief/${latest.id}` as Href)} style={styles.readLink}><Text style={styles.readLinkText}>Read full grounded edition →</Text></Pressable>
+              <Text style={styles.liveNote}>Generated from currently available provider evidence. Sources and uncertainty appear with the edition.</Text>
             </View>
           ) : <BriefHeroCard brief={latest} onPress={() => router.push(`/brief/${latest.id}` as Href)} status={selectBriefStatus(latest.id, state)} />}
         </Animated.View>
@@ -136,11 +136,10 @@ export default function BriefsScreen() {
             />
           </View>
         ) : null}
-        <View style={styles.historySection}>
+        {mode === "DEMO" ? <View style={styles.historySection}>
           <SectionHeader
             actionLabel="Filter"
             onAction={() => setFilterOpen(true)}
-            eyebrow={mode === "REAL" ? "ILLUSTRATIVE ARCHIVE" : undefined}
             title="Previous briefs"
           />
           <View style={styles.filterSummary}>
@@ -169,9 +168,9 @@ export default function BriefsScreen() {
               }}
             />
           )}
-        </View>
+        </View> : <View style={styles.historySection}><SectionHeader title="Previous briefs" /><EmptyState description="No earlier generated brief yet." title="No brief history" /></View>}
         <Text style={styles.disclosure}>
-          {mode === "REAL" ? "The current edition uses provider-backed evidence through the server intelligence layer. Archived demo editions remain illustrative. No recommendation is presented." : "Brief narratives and price moves are illustrative demo content, separate from provider-backed company data. No recommendation is presented."}
+          {mode === "REAL" ? "The current edition uses provider-backed evidence. No earlier generated brief is stored yet. No recommendation is presented." : "Brief narratives and price moves are illustrative demo content, separate from provider-backed company data. No recommendation is presented."}
         </Text>
       </ScrollView>
       <BriefFilterSheet
@@ -193,6 +192,7 @@ const styles = StyleSheet.create({
   groundedHero: { paddingTop: spacing.xs },
   readLink: { minHeight: 48, justifyContent: "center", paddingVertical: spacing.md },
   readLinkText: { ...typography.label, color: colors.teal },
+  liveNote: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.sm },
   emptyWrap: { marginTop: spacing.md },
   historySection: { gap: spacing.xs, marginTop: spacing.xl },
   filterSummary: { minHeight: 32, flexDirection: "row", alignItems: "center", gap: spacing.xs },

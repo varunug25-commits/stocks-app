@@ -5,11 +5,11 @@ import { colors } from "@/theme/tokens";
 type CompanyLogoProps = {
   name: string;
   symbol: string;
-  color: string;
+  color?: string | null;
   size?: number;
 };
 
-export function CompanyLogo({ name, symbol, color, size = 44 }: CompanyLogoProps) {
+export function CompanyLogo({ name, symbol, color = colors.surfaceElevated, size = 44 }: CompanyLogoProps) {
   return (
     <View
       accessibilityLabel={`${name} logo`}
@@ -19,7 +19,7 @@ export function CompanyLogo({ name, symbol, color, size = 44 }: CompanyLogoProps
           width: size,
           height: size,
           borderRadius: size * 0.34,
-          backgroundColor: color,
+          backgroundColor: color ?? colors.surfaceElevated,
         },
       ]}
     >
@@ -41,4 +41,3 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
 });
-

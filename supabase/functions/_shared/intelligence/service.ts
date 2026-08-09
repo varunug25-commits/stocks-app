@@ -22,6 +22,7 @@ export function createIntelligenceService(dependencies: {
   fallbackProvider?: StructuredAIProvider;
   cache: IntelligenceCacheStore;
   retrieve(request: IntelligenceRequest): Promise<EvidenceBundle>;
+  beforeGenerate?(provider: StructuredAIProvider): Promise<void>;
   now?: () => number;
 }) {
   return async function generate(request: IntelligenceRequest): Promise<MarketBriefIntelligenceResponse> {
@@ -34,6 +35,7 @@ export function createIntelligenceService(dependencies: {
         return { ...cached.value, meta: { ...cached.value.meta, cached: true } };
       }
       return dedupeIntelligenceRequest(key, async () => {
+        await dependencies.beforeGenerate?.(provider);
         const candidate = await provider.generateStructuredResponse({
           request,
           evidence: bundle.evidence,

@@ -34,6 +34,12 @@ export type CompanyIdentity = {
   logoUrl: string | null;
   logoSource: string | null;
 };
+export type StockSearchResult = {
+  symbol: StockSymbol;
+  name: string;
+  exchange: string | null;
+  assetType: string;
+};
 export type MarketQuote = {
   companyId: string;
   symbol: StockSymbol;
@@ -91,8 +97,10 @@ export type MarketEventData = {
   source: string;
   sourceUrl: string | null;
 };
-export type MarketResource = "quote" | "bars" | "company" | "news" | "filings" | "events";
-export type MarketDataRequest = { resource: MarketResource; symbol: StockSymbol; range?: ChartRange };
+export type MarketResource = "quote" | "bars" | "company" | "news" | "filings" | "events" | "search";
+export type MarketDataRequest =
+  | { resource: Exclude<MarketResource, "search">; symbol: StockSymbol; range?: ChartRange }
+  | { resource: "search"; query: string };
 
 export type DataResource<T> =
   | { status: "idle" | "loading" }

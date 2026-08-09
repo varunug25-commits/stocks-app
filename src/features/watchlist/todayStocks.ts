@@ -12,7 +12,7 @@ export function selectTodayWatchlist(symbols: StockSymbol[]) {
       return {
         ...stock,
         trend:
-          stock.changePercent >= 0
+          (stock.changePercent ?? 0) >= 0
             ? [20, 22, 21, 25, 28, 27, 32, 36]
             : [39, 37, 38, 34, 32, 33, 29, 27],
       };

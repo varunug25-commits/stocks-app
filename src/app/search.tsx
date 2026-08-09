@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { DemoDataBadge, OfflineBanner } from "@/components/foundation/Feedback";
 import { Screen } from "@/components/foundation/Screen";
@@ -13,6 +13,7 @@ import {
   findStock,
   searchableStocks,
   searchLocalStocks,
+  searchResultToStock,
   trendingStocks,
 } from "@/data/search";
 import { isStockSymbol } from "@/data/stocks";
@@ -21,19 +22,52 @@ import { WATCHLIST_LIMIT } from "@/features/watchlist/model";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
 import { DataModeBanner } from "@/components/market/DataModeBanner";
+import { requestStockSearch } from "@/data/real";
+import type { SearchStock } from "@/data/search";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 export default function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string; preview?: string }>();
   const [query, setQuery] = useState(params.q ?? "");
+  const [realResults, setRealResults] = useState<SearchStock[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const requestSequence = useRef(0);
   const [limit, setLimit] = useState(false);
   const { state, dispatch } = useWatchlist();
   const { mode, quotes, loadQuotes } = useMarketData();
-  const results = useMemo(() => searchLocalStocks(query), [query]);
-  useEffect(() => {
-    void loadQuotes(searchableStocks.map((stock) => stock.symbol).filter(isStockSymbol));
-  }, [loadQuotes]);
   const offline = params.preview === "offline";
+  const results = useMemo(() => mode === "DEMO" ? searchLocalStocks(query) : realResults, [mode, query, realResults]);
+  useEffect(() => {
+    if (mode === "DEMO") void loadQuotes(searchableStocks.slice(0, 6).map((stock) => stock.symbol).filter(isStockSymbol));
+  }, [loadQuotes, mode]);
+  useEffect(() => {
+    if (mode !== "REAL" || offline) return;
+    const normalized = query.trim();
+    const sequence = ++requestSequence.current;
+    const timer = setTimeout(() => {
+      if (normalized.length < 2) {
+        setRealResults([]);
+        setSearchError(null);
+        setSearching(false);
+        return;
+      }
+      setSearching(true);
+      setSearchError(null);
+      void requestStockSearch(normalized).then((response) => {
+        if (requestSequence.current !== sequence) return;
+        setRealResults(response?.data.map(searchResultToStock) ?? []);
+      }).catch(() => {
+        if (requestSequence.current !== sequence) return;
+        setRealResults([]);
+        setSearchError("Stock search is temporarily unavailable.");
+      }).finally(() => {
+        if (requestSequence.current === sequence) setSearching(false);
+      });
+    }, normalized.length < 2 ? 0 : 400);
+    return () => clearTimeout(timer);
+  }, [mode, offline, query, retryNonce]);
   const open = (symbol: string) => {
     if (!isStockSymbol(symbol)) return;
     dispatch({ type: "recent", symbol });
@@ -87,9 +121,11 @@ export default function SearchScreen() {
           <>
             <View style={s.resultMeta}>
               <Text style={s.sectionTitle}>Results</Text>
-              <Text style={s.count}>{results.length} matches</Text>
+              <Text style={s.count}>{searching ? "Searching…" : `${results.length} matches`}</Text>
             </View>
-            {results.length ? (
+            {searchError ? (
+              <EmptyState actionLabel="Retry" description={searchError} onAction={() => setRetryNonce((value) => value + 1)} title="Search unavailable" />
+            ) : results.length ? (
               <View style={s.results}>
                 {results.map((stock) => (
                   <SearchResultRow
@@ -101,7 +137,7 @@ export default function SearchScreen() {
                     onAdd={() => add(stock.symbol)}
                     onPress={() => open(stock.symbol)}
                     stock={stock}
-                    quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined}
+                    quote={mode === "DEMO" && isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined}
                     watchlistFull={
                       state.symbols.length >= WATCHLIST_LIMIT &&
                       !state.symbols.includes(stock.symbol as StockSymbol)
@@ -112,13 +148,13 @@ export default function SearchScreen() {
             ) : (
               <EmptyState
                 actionLabel="Clear search"
-                description={`No local companies match “${query}”. Try AAPL or Apple.`}
+                description={query.trim().length < 2 ? "Enter at least two letters or a ticker." : `No supported US equities match “${query.trim()}”.`}
                 onAction={() => setQuery("")}
                 title="No results"
               />
             )}
           </>
-        ) : (
+        ) : mode === "DEMO" ? (
           <>
             <View style={s.sectionHead}>
               <Text style={s.sectionTitle}>Recent searches</Text>
@@ -169,6 +205,8 @@ export default function SearchScreen() {
               ))}
             </View>
           </>
+        ) : (
+          <EmptyState description="Search by company name or ticker to add a validated US equity." title="Find your stocks" />
         )}
       </ScrollView>
       <WatchlistLimitSheet onClose={() => setLimit(false)} visible={limit} />

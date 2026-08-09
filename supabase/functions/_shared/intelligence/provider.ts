@@ -45,6 +45,7 @@ function whyCandidate(input: StructuredGenerationInput): ModelCandidate {
   const news = input.evidence.filter((entry) => entry.type === "news").slice(0, 2);
   const filings = latest(input.evidence.filter((entry) => entry.type === "filing"), 1);
   const events = latest(input.evidence.filter((entry) => entry.type === "event"), 2);
+  const priceContext = input.evidence.filter((entry) => entry.type === "price_move").slice(0, 1);
   const confirmed = [
     ...(quote ? [claim("confirmed-quote", quoteText(quote), "confirmed", [quote.id])] : []),
     ...news.map((entry, index) => claim(`confirmed-news-${index}`, `${entry.publisher ?? "A source"} reported: ${entry.title ?? entry.text ?? "Company-related news"}.`, "confirmed", [entry.id])),
@@ -66,6 +67,7 @@ function whyCandidate(input: StructuredGenerationInput): ModelCandidate {
     sections: [
       section("confirmed", "Confirmed", confirmed),
       section("contributing", "Likely contributing factors", contributing),
+      section("price-context", "Price context", priceContext.map((entry) => claim("price-context-1", entry.text ?? "Historical price context is available.", "confirmed", [entry.id]))),
       section("uncertainty", "Uncertainty", uncertainty),
       section("next", "What matters next", catalysts),
     ].filter(Boolean),
@@ -119,7 +121,7 @@ function filingCandidate(input: StructuredGenerationInput): ModelCandidate {
     oneLineSummary: filings.length ? "This summary is limited to verified filing metadata, not the full filing body." : "No supported SEC filing was available.",
     symbols: input.request.symbols,
     sections: [
-      section("key-changes", "Key changes", filings.map((entry, index) => claim(`filing-${index}`, entry.text ?? entry.title ?? "A filing is available.", "confirmed", [entry.id]))),
+      section("filing-record", "Filing record", filings.map((entry, index) => claim(`filing-${index}`, entry.text ?? entry.title ?? "A filing is available.", "confirmed", [entry.id]))),
       section("limits", "Evidence limits", [claim("filing-limit", "Only verified filing metadata was available; no unsupported financial metrics or management commentary were inferred.", "uncertainty")]),
     ].filter(Boolean),
   };

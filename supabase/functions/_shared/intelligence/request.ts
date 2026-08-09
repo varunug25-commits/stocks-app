@@ -2,9 +2,8 @@ import type { IntelligenceRequest, IntelligenceTask } from "./contracts.ts";
 import { IntelligenceError } from "./errors.ts";
 
 const tasks = new Set<IntelligenceTask>(["why_moved", "brief", "ask", "news_summary", "filing_summary"]);
-const symbols = new Set(["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL", "META", "AMD", "PLTR", "NFLX"]);
 const MAX_BODY_BYTES = 8_192;
-const MAX_SYMBOLS = 5;
+const MAX_SYMBOLS = 15;
 const MAX_QUESTION_CHARACTERS = 280;
 
 export function parseIntelligenceRequest(value: unknown): IntelligenceRequest {
@@ -15,10 +14,10 @@ export function parseIntelligenceRequest(value: unknown): IntelligenceRequest {
     throw new IntelligenceError("INVALID_REQUEST", "Unsupported intelligence task.", 400);
   if (!Array.isArray(input.symbols) || input.symbols.length === 0 || input.symbols.length > MAX_SYMBOLS ||
       !input.symbols.every((symbol) => typeof symbol === "string"))
-    throw new IntelligenceError("INVALID_REQUEST", "Provide between one and five supported symbols.", 400);
+    throw new IntelligenceError("INVALID_REQUEST", "Provide between one and fifteen symbols.", 400);
   const normalizedSymbols = [...new Set(input.symbols.map((symbol) => (symbol as string).trim().toUpperCase()))];
-  if (normalizedSymbols.some((symbol) => !symbols.has(symbol)))
-    throw new IntelligenceError("UNSUPPORTED_SYMBOL", "One or more symbols are not supported.", 400);
+  if (normalizedSymbols.some((symbol) => !/^[A-Z][A-Z0-9.-]{0,7}$/.test(symbol)))
+    throw new IntelligenceError("UNSUPPORTED_SYMBOL", "One or more symbols have an invalid format.", 400);
   if (input.task === "brief" && input.edition !== "morning" && input.edition !== "evening")
     throw new IntelligenceError("INVALID_REQUEST", "A morning or evening edition is required.", 400);
   const question = typeof input.question === "string" ? input.question.replace(/\s+/g, " ").trim() : undefined;

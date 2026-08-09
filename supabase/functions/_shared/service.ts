@@ -4,7 +4,7 @@ import type { ChartRange, NormalizedResponse, ResourceName } from "./contracts.t
 import { ProviderError } from "./errors.ts";
 import type { QuotaProvider } from "./rateLimit.ts";
 import type { ProviderRequestLimiter } from "./rateLimit.ts";
-import { companyForSymbol } from "./registry.ts";
+import { requireSymbolSyntax } from "./symbols.ts";
 import type {
   CompanyProvider,
   EventsProvider,
@@ -14,21 +14,21 @@ import type {
 } from "./providers/types.ts";
 
 const ranges = new Set<ChartRange>(["1D", "1W", "1M", "3M", "1Y"]);
-const resources = new Set<ResourceName>(["quote", "bars", "company", "news", "filings", "events"]);
+const resources = new Set<ResourceName>(["quote", "bars", "company", "news", "filings", "events", "search"]);
 const providerForResource: Partial<Record<ResourceName, QuotaProvider>> = {
   quote: "twelve-data",
   bars: "twelve-data",
   news: "finnhub",
   filings: "sec-edgar",
   events: "finnhub",
+  company: "finnhub",
+  search: "finnhub",
 };
 const MAX_PUBLIC_BODY_BYTES = 4096;
 
-export type MarketDataRequest = {
-  resource: ResourceName;
-  symbol: string;
-  range?: ChartRange;
-};
+export type MarketDataRequest =
+  | { resource: Exclude<ResourceName, "search">; symbol: string; range?: ChartRange }
+  | { resource: "search"; query: string };
 
 export function parseMarketDataRequest(value: unknown): MarketDataRequest {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -36,14 +36,19 @@ export function parseMarketDataRequest(value: unknown): MarketDataRequest {
   const input = value as Record<string, unknown>;
   if (typeof input.resource !== "string" || !resources.has(input.resource as ResourceName))
     throw new ProviderError("INVALID_REQUEST", "Unsupported market-data resource.", 400);
-  if (typeof input.symbol !== "string" || !input.symbol.trim())
-    throw new ProviderError("INVALID_REQUEST", "A symbol is required.", 400);
+  if (input.resource === "search") {
+    if (typeof input.query !== "string")
+      throw new ProviderError("INVALID_REQUEST", "A search query is required.", 400);
+    const query = input.query.trim().replace(/\s+/g, " ");
+    if (query.length < 2 || query.length > 64)
+      throw new ProviderError("INVALID_REQUEST", "Search requires between 2 and 64 characters.", 400);
+    return { resource: "search", query };
+  }
   const range = input.range;
   if (input.resource === "bars" && (typeof range !== "string" || !ranges.has(range as ChartRange)))
     throw new ProviderError("INVALID_REQUEST", "A supported chart range is required.", 400);
-  const symbol = input.symbol.trim().toUpperCase();
-  companyForSymbol(symbol);
-  return { resource: input.resource as ResourceName, symbol, range: range as ChartRange | undefined };
+  const symbol = requireSymbolSyntax(input.symbol);
+  return { resource: input.resource as Exclude<ResourceName, "search">, symbol, range: range as ChartRange | undefined };
 }
 
 export function validatePublicRequest(request: Request) {
@@ -79,7 +84,30 @@ export function createMarketDataService(dependencies: {
   assertProviderConfigured?: (provider: QuotaProvider) => void;
 }) {
   return async function getResource(request: MarketDataRequest): Promise<NormalizedResponse<unknown>> {
-    const company = companyForSymbol(request.symbol);
+    if (request.resource === "search") {
+      const normalizedQuery = request.query.toLowerCase();
+      return loadWithCache({
+        cache: dependencies.cache,
+        key: `search:${normalizedQuery}`,
+        resource: "search",
+        loader: async () => {
+          dependencies.assertProviderConfigured?.("finnhub");
+          await dependencies.limiter.assertAllowed("finnhub");
+          return dependencies.company.search(request.query);
+        },
+      });
+    }
+    const loadValidatedCompany = () => loadWithCache({
+      cache: dependencies.cache,
+      key: `company:${request.symbol}`,
+      resource: "company" as const,
+      loader: async () => {
+        dependencies.assertProviderConfigured?.("finnhub");
+        await dependencies.limiter.assertAllowed("finnhub");
+        return dependencies.company.getCompany(request.symbol);
+      },
+    });
+    if (request.resource === "company") return loadValidatedCompany();
     const suffix = request.range ? `:${request.range}` : "";
     const key = `${request.resource}:${request.symbol}${suffix}`;
     return loadWithCache<unknown>({
@@ -87,6 +115,7 @@ export function createMarketDataService(dependencies: {
       key,
       resource: request.resource,
       loader: async (): Promise<NormalizedResponse<unknown>> => {
+        const company = (await loadValidatedCompany()).data;
         const provider = providerForResource[request.resource];
         if (provider) {
           dependencies.assertProviderConfigured?.(provider);
@@ -97,8 +126,6 @@ export function createMarketDataService(dependencies: {
             return dependencies.market.getQuote(request.symbol);
           case "bars":
             return dependencies.market.getBars(request.symbol, request.range!);
-          case "company":
-            return dependencies.company.getCompany(request.symbol);
           case "news":
             return dependencies.news.getCompanyNews(request.symbol);
           case "filings":
@@ -106,6 +133,7 @@ export function createMarketDataService(dependencies: {
           case "events":
             return dependencies.events.getEvents(company);
         }
+        throw new ProviderError("INVALID_REQUEST", "Unsupported market-data resource.", 400);
       },
     });
   };

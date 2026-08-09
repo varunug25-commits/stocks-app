@@ -40,7 +40,7 @@ export function isOnboardingState(value: unknown): value is OnboardingState {
   return allowedExperiences.includes(candidate.experience)
     && isUniqueSubset(candidate.goals, GOAL_OPTIONS)
     && isUniqueSubset(candidate.interests, INTEREST_OPTIONS)
-    && isUniqueSubset(candidate.stocks, MOCK_STOCKS.map((stock) => stock.symbol), 5)
+    && isUniqueSubset(candidate.stocks, MOCK_STOCKS.map((stock) => stock.symbol), 15)
     && typeof candidate.notificationsEnabled === "boolean"
     && typeof candidate.completed === "boolean";
 }
@@ -66,7 +66,7 @@ export function onboardingReducer(state: OnboardingState, action: OnboardingActi
     case "experience": return { ...state, experience: action.value };
     case "toggleGoal": return { ...state, goals: toggleUnique(state.goals, action.value) };
     case "toggleInterest": return { ...state, interests: toggleUnique(state.interests, action.value) };
-    case "toggleStock": return { ...state, stocks: toggleUnique(state.stocks, action.value, 5) };
+    case "toggleStock": return { ...state, stocks: toggleUnique(state.stocks, action.value, 15) };
     case "notifications": return { ...state, notificationsEnabled: action.value };
     case "complete": return { ...state, completed: true };
   }

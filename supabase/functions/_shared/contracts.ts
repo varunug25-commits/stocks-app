@@ -33,6 +33,13 @@ export type CompanyIdentity = {
   logoSource: string | null;
 };
 
+export type StockSearchResult = {
+  symbol: string;
+  name: string;
+  exchange: string | null;
+  assetType: string;
+};
+
 export type MarketQuote = {
   companyId: string;
   symbol: string;
@@ -96,4 +103,4 @@ export type MarketEvent = {
   sourceUrl: string | null;
 };
 
-export type ResourceName = "quote" | "bars" | "company" | "news" | "filings" | "events";
+export type ResourceName = "quote" | "bars" | "company" | "news" | "filings" | "events" | "search";

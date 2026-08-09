@@ -31,11 +31,13 @@ export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
     return <ErrorState description={resource.message} onRetry={onRetry} title="Explanation unavailable" />;
   if (resource.status !== "ready") return null;
   const response = resource.data;
+  const fallback = response.meta.providerMode === "mock";
   return (
     <View style={styles.wrap}>
+      {fallback ? <View style={styles.fallback}><Text style={styles.fallbackTitle}>AI analysis temporarily unavailable</Text><Text style={styles.fallbackCopy}>The evidence summary below uses real provider records without AI interpretation.</Text></View> : null}
       {showHeader ? (
         <View style={styles.header}>
-          <Text style={styles.provider}>{response.meta.providerMode === "mock" ? "GROUNDED PREVIEW" : "GROUNDED INTELLIGENCE"}</Text>
+          <Text style={styles.provider}>{fallback ? "EVIDENCE SUMMARY" : "GROUNDED INTELLIGENCE"}</Text>
           {response.headline ? <Text style={styles.headline}>{response.headline}</Text> : null}
           {response.oneLineSummary ? <Text style={styles.summary}>{response.oneLineSummary}</Text> : null}
         </View>
@@ -70,6 +72,9 @@ export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
 const styles = StyleSheet.create({
   wrap: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   header: { paddingVertical: spacing.md },
+  fallback: { paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSoft },
+  fallbackTitle: { ...typography.label, color: colors.warning },
+  fallbackCopy: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
   provider: { ...typography.caption, color: colors.teal, letterSpacing: 1 },
   headline: { ...typography.heading, color: colors.textPrimary, marginTop: spacing.xs },
   summary: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },

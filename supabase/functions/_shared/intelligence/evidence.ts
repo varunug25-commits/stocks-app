@@ -193,6 +193,58 @@ function normalizeEvents(symbol: string, envelope: MarketDataEnvelope): Evidence
   });
 }
 
+function median(values: number[]) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+}
+
+export function summarizeHistoricalBars(symbol: string, envelope: MarketDataEnvelope, quote?: MarketDataEnvelope): EvidenceItem[] {
+  if (!Array.isArray(envelope.data)) return [];
+  const bars = envelope.data.flatMap((raw) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+    const row = raw as Record<string, unknown>;
+    const timestamp = clean(row.timestamp, 50);
+    const close = numeric(row.close);
+    const high = numeric(row.high);
+    const low = numeric(row.low);
+    return timestamp && close !== null && high !== null && low !== null ? [{ timestamp, close, high, low }] : [];
+  }).sort((left, right) => Date.parse(left.timestamp) - Date.parse(right.timestamp));
+  if (bars.length < 2) return [];
+  const last = bars.at(-1)!;
+  const fiveStart = bars.at(Math.max(0, bars.length - 6))!;
+  const monthStart = bars[0]!;
+  const fiveDayMove = fiveStart.close ? ((last.close / fiveStart.close) - 1) * 100 : null;
+  const monthMove = monthStart.close ? ((last.close / monthStart.close) - 1) * 100 : null;
+  const dailyMoves = bars.slice(1).map((bar, index) => Math.abs(((bar.close / bars[index]!.close) - 1) * 100)).filter(Number.isFinite);
+  const recentMedian = median(dailyMoves.slice(-20));
+  const quoteData = quote?.data && typeof quote.data === "object" && !Array.isArray(quote.data) ? quote.data as Record<string, unknown> : {};
+  const todayMove = numeric(quoteData.changePercent);
+  const unusual = todayMove !== null && recentMedian !== null && recentMedian > 0 ? Math.abs(todayMove) / recentMedian : null;
+  const recentHigh = Math.max(...bars.map((bar) => bar.high));
+  const recentLow = Math.min(...bars.map((bar) => bar.low));
+  const parts = [
+    fiveDayMove === null ? null : `5-day move ${fiveDayMove >= 0 ? "+" : ""}${fiveDayMove.toFixed(2)}%`,
+    monthMove === null ? null : `period move ${monthMove >= 0 ? "+" : ""}${monthMove.toFixed(2)}%`,
+    `recent range ${recentLow.toFixed(2)}–${recentHigh.toFixed(2)}`,
+    recentMedian === null ? null : `median absolute daily move ${recentMedian.toFixed(2)}%`,
+    unusual === null ? null : `today's move is ${unusual.toFixed(1)}× that median`,
+  ].filter(Boolean);
+  const asOf = last.timestamp;
+  return [item({
+    id: sourceId("price_move", symbol, `${asOf}:${last.close}:${recentMedian}`),
+    type: "price_move",
+    symbol,
+    title: `${symbol} historical price context`,
+    text: `${symbol}: ${parts.join("; ")}.`,
+    publisher: envelope.meta.source,
+    publishedAt: asOf,
+    metadata: { fiveDayMove, monthMove, recentHigh, recentLow, medianAbsoluteDailyMove: recentMedian, unusualMoveRatio: unusual, barCount: bars.length, provider: envelope.meta.provider },
+    relevanceScore: 82 + Math.min(18, unusual ?? 0),
+  })];
+}
+
 function dedupe(items: EvidenceItem[]) {
   const seen = new Set<string>();
   return items.filter((candidate) => {
@@ -207,7 +259,17 @@ function dedupe(items: EvidenceItem[]) {
 export function boundEvidence(items: EvidenceItem[], options: { maxItems?: number; maxCharacters?: number } = {}) {
   const maxItems = options.maxItems ?? MAX_EVIDENCE_ITEMS;
   const maxCharacters = options.maxCharacters ?? MAX_CONTEXT_CHARACTERS;
-  const sorted = dedupe(items).sort((left, right) => right.relevanceScore - left.relevanceScore ||
+  const quotas: Record<EvidenceType, number> = { quote: 1, company: 1, news: 3, filing: 1, event: 2, price_move: 1 };
+  const counts = new Map<string, number>();
+  const diverse = dedupe(items).sort((left, right) => right.relevanceScore - left.relevanceScore ||
+    Date.parse(right.publishedAt ?? "") - Date.parse(left.publishedAt ?? "")).filter((candidate) => {
+    const key = `${candidate.symbol ?? "market"}:${candidate.type}`;
+    const count = counts.get(key) ?? 0;
+    if (count >= quotas[candidate.type]) return false;
+    counts.set(key, count + 1);
+    return true;
+  });
+  const sorted = diverse.sort((left, right) => right.relevanceScore - left.relevanceScore ||
     Date.parse(right.publishedAt ?? "") - Date.parse(left.publishedAt ?? ""));
   const bounded: EvidenceItem[] = [];
   let characters = 0;
@@ -239,6 +301,7 @@ export function normalizeEvidence(
     if (resource.news) all.push(...normalizeNews(symbol, resource.news, companyName));
     if (resource.filings) all.push(...normalizeFilings(symbol, resource.filings));
     if (resource.events) all.push(...normalizeEvents(symbol, resource.events));
+    if (resource.bars) all.push(...summarizeHistoricalBars(symbol, resource.bars, resource.quote));
   }
   const taskFocused = request.task === "news_summary" ? all.filter((entry) => entry.type === "news")
     : request.task === "filing_summary" ? all.filter((entry) => entry.type === "filing")

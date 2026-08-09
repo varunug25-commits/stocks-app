@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { BriefStatus, GeneratedBrief } from "@/data/briefs";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
-import { companyBySymbol } from "@/data/stocks";
+import { demoCompanyForSymbol } from "@/data/stocks";
 import { colors, spacing, typography } from "@/theme/tokens";
 import { BriefStatusBadge } from "./BriefStatusBadge";
 import { BriefSummaryPoint } from "./BriefSummaryPoint";
@@ -36,16 +36,17 @@ export function BriefHeroCard({
       </View>
       <View style={styles.metaRow}>
         <View style={styles.logos}>
-          {brief.watchlistImpacts.slice(0, 4).map((impact) => (
-            <View key={impact.symbol} style={styles.logoWrap}>
+          {brief.watchlistImpacts.slice(0, 4).map((impact) => {
+            const company = demoCompanyForSymbol(impact.symbol);
+            return <View key={impact.symbol} style={styles.logoWrap}>
               <CompanyLogo
-                color={companyBySymbol[impact.symbol].logoColor}
-                name={companyBySymbol[impact.symbol].name}
+                color={company.logoColor}
+                name={company.name}
                 size={30}
                 symbol={impact.symbol}
               />
-            </View>
-          ))}
+            </View>;
+          })}
           {!brief.watchlistImpacts.length ? (
             <Text style={styles.emptyMeta}>Add stocks to personalize</Text>
           ) : null}

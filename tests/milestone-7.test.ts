@@ -185,7 +185,8 @@ test("M7 watchlist briefs prioritize the largest ranked moves instead of equal s
 test("M7 Ask requests preserve explicit watchlist and stock context scope", async () => {
   const scoped = parseIntelligenceRequest({ task: "ask", symbols: ["AAPL"], question: "What changed in AMD?" });
   assert.deepEqual(scoped.symbols, ["AAPL"]);
-  assert.throws(() => parseIntelligenceRequest({ task: "ask", symbols: ["UNKNOWN"], question: "What changed?" }), /not supported/);
+  assert.throws(() => parseIntelligenceRequest({ task: "ask", symbols: ["BAD SYMBOL!"], question: "What changed?" }), /invalid format/);
+  assert.deepEqual(parseIntelligenceRequest({ task: "ask", symbols: ["adbe"], question: "What changed?" }).symbols, ["ADBE"]);
   assert.throws(() => parseIntelligenceRequest({ task: "ask", symbols: ["AAPL"], question: "x".repeat(281) }), /280/);
 });
 

@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { BriefStockImpact } from "@/data/briefs";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
-import { companyBySymbol } from "@/data/stocks";
+import { demoCompanyForSymbol } from "@/data/stocks";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export function BriefStockImpactRow({ impact, onPress }: { impact: BriefStockImpact; onPress: () => void }) {
   const positive = impact.direction === "up";
-  const company = companyBySymbol[impact.symbol];
+  const company = demoCompanyForSymbol(impact.symbol);
   return (
     <Pressable
       accessibilityLabel={`Open ${company.name} stock detail, ${positive ? "up" : "down"} ${Math.abs(impact.changePercent).toFixed(2)} percent, ${impact.impact} impact`}

@@ -1,4 +1,6 @@
-export type SearchStock = { symbol: string; name: string; sector: string; price: string; changePercent: number; logoColor: string };
+import type { StockSearchResult } from "./real/contracts";
+
+export type SearchStock = { symbol: string; name: string; sector?: string; exchange?: string | null; assetType?: string; price?: string; changePercent?: number; logoColor?: string };
 
 export const searchableStocks: SearchStock[] = [
   { symbol: "AAPL", name: "Apple", sector: "Technology", price: "$271.06", changePercent: 1.16, logoColor: "#7D8790" },
@@ -24,4 +26,13 @@ export function searchLocalStocks(query: string) {
 
 export function findStock(symbol: string) {
   return searchableStocks.find((stock) => stock.symbol === symbol);
+}
+
+export function searchResultToStock(result: StockSearchResult): SearchStock {
+  return {
+    symbol: result.symbol,
+    name: result.name,
+    exchange: result.exchange,
+    assetType: result.assetType,
+  };
 }

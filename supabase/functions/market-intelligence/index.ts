@@ -12,7 +12,7 @@ import { GeminiStructuredAIProvider } from "../_shared/intelligence/gemini.ts";
 import { MockStructuredAIProvider } from "../_shared/intelligence/provider.ts";
 import { readIntelligenceRequest } from "../_shared/intelligence/request.ts";
 import { retrieveEvidence } from "../_shared/intelligence/retrieval.ts";
-import { createIntelligenceService, InMemoryRateLimiter } from "../_shared/intelligence/service.ts";
+import { createIntelligenceService } from "../_shared/intelligence/service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,8 +41,6 @@ type IntelligenceCacheTable = {
   upsert(value: Record<string, unknown>): PromiseLike<{ error: QueryError }>;
 };
 
-const limiter = new InMemoryRateLimiter(20, 60_000);
-
 function isCachedResponse(value: unknown): value is MarketBriefIntelligenceResponse {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const candidate = value as Record<string, unknown>;
@@ -60,14 +58,6 @@ export default {
         throw new IntelligenceError("UPSTREAM_UNAVAILABLE", "MarketBrief intelligence is not configured.", 503);
 
       const identity = stableHash(`${req.headers.get("x-forwarded-for") ?? "unknown"}:${publishableKey.slice(0, 12)}`);
-      const rate = limiter.check(identity);
-      if (!rate.allowed)
-        return json(
-          { error: { code: "RATE_LIMITED", message: "MarketBrief intelligence is busy. Please retry shortly." } },
-          429,
-          { "Retry-After": String(rate.retryAfterSeconds) },
-        );
-
       const cacheTable = () => (ctx.supabaseAdmin as unknown as {
         from(table: "intelligence_cache"): IntelligenceCacheTable;
       }).from("intelligence_cache");
@@ -104,6 +94,22 @@ export default {
           : mockProvider,
         ...(aiApiKey ? { fallbackProvider: mockProvider } : {}),
         cache,
+        async beforeGenerate(provider) {
+          if (provider.mode !== "live") return;
+          const { data, error } = await (ctx.supabaseAdmin as unknown as {
+            rpc(name: "consume_intelligence_request_budget", args: { p_identity_hash: string; p_window_seconds: number; p_identity_max: number; p_global_max: number }): PromiseLike<{ data: unknown; error: QueryError }>;
+          }).rpc("consume_intelligence_request_budget", {
+            p_identity_hash: identity,
+            p_window_seconds: 3600,
+            p_identity_max: 12,
+            p_global_max: 120,
+          });
+          const decision = data as { allowed?: unknown } | null;
+          if (error || typeof decision?.allowed !== "boolean")
+            throw new IntelligenceError("UPSTREAM_UNAVAILABLE", "The intelligence request budget is unavailable.", 503);
+          if (!decision.allowed)
+            throw new IntelligenceError("RATE_LIMITED", "AI analysis is temporarily unavailable. Real evidence is shown instead.", 429);
+        },
         retrieve: (input) => retrieveEvidence({
           request: input,
           marketDataUrl: `${supabaseUrl}/functions/v1/market-data`,
