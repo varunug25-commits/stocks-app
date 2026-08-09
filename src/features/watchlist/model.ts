@@ -18,6 +18,7 @@ export const initialWatchlistState: WatchlistState = {
 };
 export type WatchlistAction =
   | { type: "hydrate"; value: WatchlistState }
+  | { type: "syncOnboarding"; symbols: StockSymbol[] }
   | { type: "add"; symbol: StockSymbol }
   | { type: "remove"; symbol: StockSymbol }
   | { type: "move"; symbol: StockSymbol; direction: -1 | 1 }
@@ -61,7 +62,7 @@ export function resolveHydratedWatchlist(
 ) {
   const migrated = migrateOnboardingStocks(onboardingSymbols);
   if (!saved) return migrated;
-  if (!onboardingCompleted && saved.symbols.length === 0 && migrated.symbols.length)
+  if (!onboardingCompleted)
     return { ...saved, symbols: migrated.symbols };
   return saved;
 }
@@ -92,6 +93,9 @@ export function watchlistReducer(
   switch (action.type) {
     case "hydrate":
       return action.value;
+    case "syncOnboarding":
+      if (action.symbols.length === state.symbols.length && action.symbols.every((symbol, index) => symbol === state.symbols[index])) return state;
+      return { ...state, symbols: action.symbols.slice(0, WATCHLIST_LIMIT) };
     case "add":
       return { ...state, symbols: addStock(state.symbols, action.symbol) };
     case "remove":
