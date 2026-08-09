@@ -98,7 +98,7 @@ export default function BriefsScreen() {
   if (!hydrated || !watchlistHydrated || retrying || params.preview === "loading")
     return (
       <Screen>
-        <SkeletonState />
+        <SkeletonState variant="brief" />
       </Screen>
     );
   if (params.preview === "error")

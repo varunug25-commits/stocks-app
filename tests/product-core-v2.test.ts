@@ -204,3 +204,26 @@ test("telemetry accepts only allowlisted events and privacy-safe fields", () => 
   assert.throws(() => parseProductEventPayload({ kind: "event", installationId: "123e4567-e89b-42d3-a456-426614174000", eventName: "ask_submitted", properties: { question: "raw text" }, occurredAt: at }, Date.parse(at)), /properties are not allowed/);
   assert.throws(() => parseProductEventPayload({ kind: "feedback", installationId: "123e4567-e89b-42d3-a456-426614174000", responseHash: "hash", task: "ask", symbols: ["AAPL"], helpful: false, reason: "free_text", occurredAt: at }, Date.parse(at)), /Feedback fields are invalid/);
 });
+
+test("primary screens use specific reduced-motion-safe skeletons and customer error copy", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+  const [skeleton, today, pulse, watchlist, briefs, stock, notices] = await Promise.all([
+    read("src/components/system/SkeletonState.tsx"),
+    read("src/app/(tabs)/index.tsx"),
+    read("src/app/(tabs)/markets.tsx"),
+    read("src/app/(tabs)/watchlist.tsx"),
+    read("src/app/(tabs)/briefs.tsx"),
+    read("src/app/stock/[symbol].tsx"),
+    read("src/components/market/ResourceStateNotice.tsx"),
+  ]);
+  assert.match(skeleton, /useReducedMotion/);
+  assert.match(today, /variant="today"/);
+  assert.match(pulse, /variant="pulse"/);
+  assert.match(watchlist, /variant="watchlist"/);
+  assert.match(briefs, /variant="brief"/);
+  assert.match(stock, /variant="stock"/);
+  assert.match(notices, /Network unavailable\./);
+  assert.match(notices, /Source temporarily unavailable\./);
+  assert.doesNotMatch(notices, /Provider rate limit reached|Real data is unavailable/);
+});

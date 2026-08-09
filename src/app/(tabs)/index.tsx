@@ -93,7 +93,7 @@ export default function TodayScreen() {
     router.push(change.kind === "event" || change.kind === "filing" ? `/stock/${change.symbol}` as Href : `/stock/${change.symbol}/why` as Href);
   };
 
-  if (!hydrated || changes.loading || preview === "loading") return <Screen><SkeletonState /></Screen>;
+  if (!hydrated || changes.loading || preview === "loading") return <Screen><SkeletonState variant="today" /></Screen>;
   if (preview === "error") return <Screen><View style={styles.state}><ErrorState description="Your previous baseline is safe. Try the comparison again." onRetry={() => void refresh()} title="Changes could not be checked" /></View></Screen>;
 
   const result = changes.result;

@@ -56,7 +56,7 @@ export default function BriefDetailScreen() {
   }, [brief, dispatch, hydrated, realBrief]);
 
   if (!hydrated || !watchlistHydrated || params.preview === "loading")
-    return <Screen><SkeletonState /></Screen>;
+    return <Screen><SkeletonState variant="brief" /></Screen>;
   if (mode === "REAL") {
     if (!realBrief) return <Screen><View style={styles.center}><EmptyState description="This validated edition is not stored on this device." title="Brief unavailable" /></View></Screen>;
     const realStatus = selectBriefStatus(realBrief.id, state);

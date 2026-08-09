@@ -51,7 +51,7 @@ export default function WatchlistScreen() {
     try { await loadQuotes(state.symbols); } finally { setRefreshing(false); }
   };
 
-  if (!hydrated || retrying || preview === "loading") return <Screen><SkeletonState /></Screen>;
+  if (!hydrated || retrying || preview === "loading") return <Screen><SkeletonState variant="watchlist" /></Screen>;
   if (preview === "error") {
     return <Screen><View style={styles.center}><ErrorState description="Your stored membership and order remain untouched." onRetry={handleRetry} title="Watchlist needs a refresh" /></View></Screen>;
   }

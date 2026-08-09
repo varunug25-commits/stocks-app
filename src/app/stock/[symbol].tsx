@@ -112,7 +112,7 @@ export default function StockDetailScreen() {
   if (params.preview === "loading")
     return (
       <Screen>
-        <SkeletonState />
+        <SkeletonState variant="stock" />
       </Screen>
     );
   const summary = quote && quote.changePercent !== null

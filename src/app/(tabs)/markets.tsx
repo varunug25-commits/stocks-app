@@ -52,7 +52,7 @@ export default function PulseScreen() {
   };
   const openChange = (id: string, symbol: string) => { void changes.markSeen([id]); router.push(`/stock/${symbol}/why` as Href); };
 
-  if (!hydrated || changes.loading) return <Screen><SkeletonState /></Screen>;
+  if (!hydrated || changes.loading) return <Screen><SkeletonState variant="pulse" /></Screen>;
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl onRefresh={() => void refresh()} refreshing={refreshing} tintColor={colors.textPrimary} />} showsVerticalScrollIndicator={false}>

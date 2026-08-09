@@ -1,16 +1,17 @@
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { colors, radii, spacing } from "@/theme/tokens";
 
 export function IntelligenceSkeleton() {
-  const opacity = useSharedValue(0.35);
+  const reduceMotion = useReducedMotion();
+  const opacity = useSharedValue(reduceMotion ? 0.62 : 0.35);
   useEffect(() => {
-    opacity.value = withRepeat(withTiming(0.75, { duration: 850 }), -1, true);
-  }, [opacity]);
+    opacity.value = reduceMotion ? 0.62 : withRepeat(withTiming(0.75, { duration: 850 }), -1, true);
+  }, [opacity, reduceMotion]);
   const animated = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return (
-    <View accessibilityLabel="Loading grounded intelligence" accessibilityRole="progressbar" style={styles.wrap}>
+    <View accessibilityLabel="Loading grounded intelligence" accessibilityLiveRegion="polite" accessibilityRole="progressbar" style={styles.wrap}>
       <Animated.View style={[styles.heading, animated]} />
       <Animated.View style={[styles.line, animated]} />
       <Animated.View style={[styles.lineShort, animated]} />
