@@ -9,6 +9,12 @@ import { WatchlistProvider } from "@/features/watchlist/WatchlistProvider";
 import { BriefsProvider } from "@/features/briefs/BriefsProvider";
 import { MarketDataProvider } from "@/features/market-data/MarketDataProvider";
 import { IntelligenceProvider } from "@/features/intelligence/IntelligenceProvider";
+import { publicDataConfig } from "@/data/real";
+import { ConfigurationUnavailable } from "@/components/system/ConfigurationUnavailable";
+import { ChangeDetectionProvider } from "@/features/materiality";
+import { ThesisProvider } from "@/features/thesis";
+import { GroupProvider } from "@/features/groups";
+import { TelemetryProvider } from "@/features/telemetry";
 
 export const unstable_settings = { initialRouteName: "splash" };
 
@@ -16,7 +22,7 @@ const marketBriefTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: colors.teal,
+    primary: colors.accent,
     background: colors.background,
     card: colors.surface,
     text: colors.textPrimary,
@@ -26,13 +32,22 @@ const marketBriefTheme = {
 };
 
 export default function RootLayout() {
+  if (publicDataConfig.configurationError) return (
+    <SafeAreaProvider>
+      <ConfigurationUnavailable />
+    </SafeAreaProvider>
+  );
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaProvider>
         <ThemeProvider value={marketBriefTheme}>
+          <TelemetryProvider>
           <OnboardingProvider>
           <WatchlistProvider>
           <MarketDataProvider>
+          <ChangeDetectionProvider>
+          <GroupProvider>
+          <ThesisProvider>
           <IntelligenceProvider>
           <BriefsProvider>
           <StatusBar style="light" />
@@ -49,9 +64,13 @@ export default function RootLayout() {
           </Stack>
           </BriefsProvider>
           </IntelligenceProvider>
+          </ThesisProvider>
+          </GroupProvider>
+          </ChangeDetectionProvider>
           </MarketDataProvider>
           </WatchlistProvider>
           </OnboardingProvider>
+          </TelemetryProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

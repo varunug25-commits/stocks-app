@@ -129,6 +129,37 @@ function filingCandidate(input: StructuredGenerationInput): ModelCandidate {
 
 function askCandidate(input: StructuredGenerationInput): ModelCandidate {
   const question = input.request.question?.toLowerCase() ?? "";
+  if (input.request.contextMode === "current_brief" || input.request.contextMode === "since_last_check") {
+    const anchor = input.request.comparisonAnchor;
+    const previous = new Set(anchor?.sourceIds ?? []);
+    const fresh = anchor ? input.evidence.filter((entry) => !previous.has(entry.id)).slice(0, 5) : [];
+    return {
+      headline: input.request.contextMode === "current_brief" ? "Since this brief" : "Since you last checked",
+      oneLineSummary: !anchor ? "A valid comparison point is unavailable." : fresh.length ? `${fresh.length} new evidence ${fresh.length === 1 ? "item" : "items"} is available.` : "No new supported evidence was found after the comparison point.",
+      symbols: input.request.symbols,
+      sections: [
+        section("new-evidence", "New verified evidence", fresh.map((entry, index) => claim(`new-${index}`, entry.text ?? entry.title ?? "New evidence is available.", "confirmed", [entry.id]))),
+        section("comparison-limits", "Comparison limits", [claim("comparison-limit", anchor ? "No change is inferred when current evidence does not provide a verifiable delta." : "The requested comparison cannot be made without a saved anchor.", "uncertainty")]),
+      ].filter(Boolean),
+    };
+  }
+  if (input.request.contextMode === "thesis" || /thesis/.test(question)) {
+    const thesis = input.request.userThesis;
+    const words = thesis?.text.toLowerCase().match(/[a-z0-9]{4,}/g) ?? [];
+    const relevant = input.evidence.filter((entry) => {
+      const haystack = `${entry.title ?? ""} ${entry.text ?? ""}`.toLowerCase();
+      return words.some((word) => haystack.includes(word));
+    }).slice(0, 4);
+    return {
+      headline: thesis ? `${thesis.symbol}: evidence vs your thesis` : "Thesis context unavailable",
+      oneLineSummary: relevant.length ? "New verified evidence overlaps topics in your saved thesis." : "No new evidence directly relevant to your saved thesis was found.",
+      symbols: input.request.symbols,
+      sections: [
+        section("supporting", "New evidence related to your thesis", relevant.map((entry, index) => claim(`thesis-evidence-${index}`, entry.text ?? entry.title ?? "Related evidence is available.", "confirmed", [entry.id]))),
+        section("limits", "Evidence limits", [claim("thesis-limit", relevant.length ? "Topic overlap does not prove that your thesis is correct or incorrect." : "Your saved thesis is context, not evidence, and no verified item matched it directly.", "uncertainty")]),
+      ].filter(Boolean),
+    };
+  }
   if (/filing|10-k|10-q|8-k/.test(question)) return filingCandidate(input);
   if (/news|story|headline/.test(question)) return newsCandidate(input);
   if (/why|move|changed|today|yesterday/.test(question)) return whyCandidate(input);

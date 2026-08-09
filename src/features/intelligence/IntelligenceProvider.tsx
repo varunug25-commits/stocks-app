@@ -12,6 +12,9 @@ export function intelligenceRequestKey(request: IntelligenceRequest) {
     question: request.question?.trim().toLowerCase(),
     focusId: request.focusId,
     timeWindow: request.timeWindow,
+    contextMode: request.contextMode,
+    userThesis: request.userThesis,
+    comparisonAnchor: request.comparisonAnchor,
   });
 }
 

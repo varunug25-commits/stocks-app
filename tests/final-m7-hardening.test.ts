@@ -105,17 +105,22 @@ test("REAL screens gate all static market and brief fixtures behind DEMO mode", 
     readFile(new URL("src/app/stock/[symbol].tsx", root), "utf8"),
     readFile(new URL("src/app/search.tsx", root), "utf8"),
   ]);
-  assert.match(today, /mode === "DEMO" \? <Animated\.View/);
-  assert.match(markets, /Unsupported market-wide indices and sectors are omitted/);
-  assert.match(briefs, /No earlier generated brief yet/);
+  assert.match(today, /mode === "DEMO" \? generateBrief/);
+  assert.match(today, /useChangeDetection/);
+  assert.match(markets, /useChangeDetection/);
+  assert.match(markets, /does not claim sector-wide or market-wide causation/);
+  assert.doesNotMatch(markets, /marketIndices|sectorPerformance|topGainers/);
+  assert.match(briefs, /realHistory/);
+  assert.match(briefs, /remain separate from illustrative demo history/);
   assert.match(detail, /companies\[symbol\]/);
   assert.doesNotMatch(detail, /demo catalog/);
   assert.match(search, /requestSequence\.current !== sequence/);
 });
 
 test("durable intelligence budgets are service-role only and generation-cache aware", async () => {
-  const [migration, service, edge, panel] = await Promise.all([
+  const [migration, telemetryMigration, service, edge, panel] = await Promise.all([
     readFile(new URL("supabase/migrations/20260809115943_final_m7_hardening.sql", root), "utf8"),
+    readFile(new URL("supabase/migrations/20260809181520_product_telemetry.sql", root), "utf8"),
     readFile(new URL("supabase/functions/_shared/intelligence/service.ts", root), "utf8"),
     readFile(new URL("supabase/functions/market-intelligence/index.ts", root), "utf8"),
     readFile(new URL("src/components/intelligence/IntelligencePanel.tsx", root), "utf8"),
@@ -128,4 +133,8 @@ test("durable intelligence budgets are service-role only and generation-cache aw
   assert.match(edge, /consume_intelligence_request_budget/);
   assert.match(panel, /AI analysis temporarily unavailable/);
   assert.match(panel, /EVIDENCE SUMMARY/);
+  assert.match(telemetryMigration, /enable row level security/);
+  assert.match(telemetryMigration, /force row level security/);
+  assert.match(telemetryMigration, /revoke all[\s\S]*anon, authenticated/);
+  assert.match(telemetryMigration, /Raw questions, article bodies, thesis text, credentials/);
 });

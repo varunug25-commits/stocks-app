@@ -1,23 +1,26 @@
 export const colors = {
-  background: "#050708",
-  surface: "#0D1113",
-  surfaceElevated: "#13191C",
-  surfaceSoft: "#182024",
-  border: "#293236",
-  borderSoft: "#1B2326",
-  teal: "#42E8C6",
-  tealMuted: "#12372F",
-  tealPressed: "#2CC9AA",
-  focus: "#7BF4DC",
-  disabled: "#263034",
-  disabledText: "#6E797C",
+  background: "#070809",
+  surface: "#0E1012",
+  surfaceElevated: "#141619",
+  surfaceSoft: "#191C20",
+  border: "#25292E",
+  borderSoft: "#FFFFFF14",
+  accent: "#F5F5F2",
+  accentPressed: "#D7D7D2",
+  info: "#6698FF",
+  teal: "#F5F5F2",
+  tealMuted: "#191C20",
+  tealPressed: "#D7D7D2",
+  focus: "#F5F5F2",
+  disabled: "#25282C",
+  disabledText: "#666A70",
   overlay: "#000000B8",
-  positive: "#49D98A",
-  negative: "#FF6B74",
-  warning: "#F2B84B",
-  textPrimary: "#F4F1E8",
-  textSecondary: "#9AA5A8",
-  textTertiary: "#6F7B7F",
+  positive: "#2FD17B",
+  negative: "#F05252",
+  warning: "#E8A93A",
+  textPrimary: "#F5F5F2",
+  textSecondary: "#A3A6AA",
+  textTertiary: "#6C7075",
   white: "#FFFFFF",
   black: "#000000",
 } as const;
@@ -29,8 +32,8 @@ export const spacing = {
   md: 16,
   lg: 20,
   xl: 24,
-  xxl: 24,
-  xxxl: 28,
+  xxl: 32,
+  xxxl: 40,
 } as const;
 
 export const radii = {
@@ -55,8 +58,8 @@ export const numerals = {
 } as const;
 
 export const glass = {
-  fallback: "#101719E8",
-  fallbackStrong: "#11191CF2",
+  fallback: "#141618B8",
+  fallbackStrong: "#141618DB",
   border: "#FFFFFF1A",
 } as const;
 

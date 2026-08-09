@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import type { BriefStatus, GeneratedBrief } from "@/data/briefs";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { demoCompanyForSymbol } from "@/data/stocks";
@@ -16,6 +16,10 @@ export function BriefHeroCard({
   status: BriefStatus;
   onPress: () => void;
 }) {
+  const artwork = brief.type === "morning"
+    ? require("../../../assets/editorial/morning-brief-original.jpg")
+    : require("../../../assets/editorial/evening-brief-original.jpg");
+
   return (
     <View style={styles.publication}>
       <View style={styles.topRow}>
@@ -27,6 +31,16 @@ export function BriefHeroCard({
         </View>
         <BriefStatusBadge status={status} />
       </View>
+      <ImageBackground
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        imageStyle={styles.artworkImage}
+        resizeMode="cover"
+        source={artwork}
+        style={styles.artwork}
+      >
+        <View style={styles.artworkShade} />
+      </ImageBackground>
       <Text style={styles.title}>{brief.headline}</Text>
       <Text style={styles.summary}>{brief.summary}</Text>
       <View style={styles.points}>
@@ -68,6 +82,9 @@ export function BriefHeroCard({
 
 const styles = StyleSheet.create({
   publication: { paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  artwork: { height: 124, marginTop: spacing.sm, overflow: "hidden", borderRadius: 8, backgroundColor: colors.surfaceElevated },
+  artworkImage: { borderRadius: 8 },
+  artworkShade: { position: "absolute", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.12)" },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   eyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 1 },

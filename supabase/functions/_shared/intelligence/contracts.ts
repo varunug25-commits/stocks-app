@@ -6,6 +6,7 @@ export type IntelligenceTask =
   | "ask"
   | "news_summary"
   | "filing_summary";
+export type IntelligenceContextMode = "watchlist" | "stock" | "thesis" | "current_brief" | "since_last_check" | "catalysts";
 
 export type EvidenceType =
   | "quote"
@@ -79,6 +80,9 @@ export type IntelligenceRequest = {
   question?: string;
   focusId?: string;
   timeWindow?: "1D" | "1W" | "1M";
+  contextMode?: IntelligenceContextMode;
+  userThesis?: { symbol: string; text: string };
+  comparisonAnchor?: { generatedAt: string; sourceIds: string[] };
 };
 
 export type ModelCandidate = {

@@ -5,10 +5,14 @@ import { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { IntelligencePanel } from "@/components/intelligence";
 import { Screen } from "@/components/foundation/Screen";
-import type { IntelligenceRequest, IntelligenceTask } from "@/data/intelligence";
+import type { IntelligenceContextMode, IntelligenceRequest, IntelligenceTask } from "@/data/intelligence";
 import { isStockSymbol } from "@/data/stocks";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useTheses } from "@/features/thesis";
+import { useChangeDetection } from "@/features/materiality";
+import { useBriefs } from "@/features/briefs/BriefsProvider";
+import { useTelemetry } from "@/features/telemetry";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 const suggestions = [
@@ -21,14 +25,33 @@ const suggestions = [
 function taskFromParam(value: string | undefined): IntelligenceTask {
   return value === "news_summary" || value === "filing_summary" ? value : "ask";
 }
+function modeFromParam(value: string | undefined, stockScoped: boolean): IntelligenceContextMode {
+  if (value === "thesis" || value === "current_brief" || value === "since_last_check" || value === "catalysts") return value;
+  return stockScoped ? "stock" : "watchlist";
+}
 
 export default function AskMarketBriefScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ symbol?: string; task?: string; prompt?: string; focusId?: string }>();
+  const params = useLocalSearchParams<{ symbol?: string; symbols?: string; task?: string; prompt?: string; focusId?: string; mode?: string; briefId?: string }>();
   const { state, hydrated } = useWatchlist();
+  const theses = useTheses();
+  const changes = useChangeDetection();
+  const briefs = useBriefs();
+  const telemetry = useTelemetry();
   const scopedSymbol = isStockSymbol(params.symbol) ? params.symbol : null;
-  const symbols = useMemo(() => scopedSymbol ? [scopedSymbol] : state.symbols, [scopedSymbol, state.symbols]);
+  const routeSymbols = useMemo(() => typeof params.symbols === "string" ? params.symbols.split(",").map((symbol) => symbol.trim().toUpperCase()).filter(isStockSymbol).slice(0, 15) : [], [params.symbols]);
+  const symbols = useMemo(() => scopedSymbol ? [scopedSymbol] : routeSymbols.length ? routeSymbols.filter((symbol) => state.symbols.includes(symbol)) : state.symbols, [routeSymbols, scopedSymbol, state.symbols]);
   const presetTask = taskFromParam(params.task);
+  const contextMode = modeFromParam(params.mode, !!scopedSymbol);
+  const savedThesis = scopedSymbol ? theses.state.bySymbol[scopedSymbol] : undefined;
+  const comparisonAnchor = useMemo(() => {
+    if (contextMode === "current_brief" && typeof params.briefId === "string") {
+      const record = briefs.realHistory.find((item) => item.id === params.briefId);
+      return record ? { generatedAt: record.generatedAt, sourceIds: record.response.sourceIds } : undefined;
+    }
+    if (contextMode === "since_last_check" && changes.result?.previousCapturedAt) return { generatedAt: changes.result.previousCapturedAt, sourceIds: [...new Set(changes.result.materialChanges.flatMap((change) => change.evidenceIds))] };
+    return undefined;
+  }, [briefs.realHistory, changes.result, contextMode, params.briefId]);
   const presetQuestion = typeof params.prompt === "string" ? params.prompt : "";
   const [question, setQuestion] = useState(presetQuestion);
   const [submitted, setSubmitted] = useState(presetTask !== "ask" || !!presetQuestion);
@@ -38,14 +61,18 @@ export default function AskMarketBriefScreen() {
     ...(presetTask === "ask" ? { question: question.trim() || "What changed in my watchlist?" } : {}),
     ...(params.focusId ? { focusId: params.focusId } : {}),
     timeWindow: "1D",
-  }), [params.focusId, presetTask, question, symbols]);
-  const { resource, retry } = useIntelligenceRequest(request, hydrated && submitted && symbols.length > 0);
+    contextMode,
+    ...(contextMode === "thesis" && scopedSymbol && savedThesis ? { userThesis: { symbol: scopedSymbol, text: savedThesis } } : {}),
+    ...(comparisonAnchor ? { comparisonAnchor } : {}),
+  }), [comparisonAnchor, contextMode, params.focusId, presetTask, question, savedThesis, scopedSymbol, symbols]);
+  const { resource, retry } = useIntelligenceRequest(request, hydrated && theses.hydrated && submitted && symbols.length > 0 && (contextMode !== "thesis" || !!savedThesis));
 
   const submit = (nextQuestion = question) => {
     const clean = nextQuestion.trim();
     if (!clean || !symbols.length) return;
     setQuestion(clean);
     setSubmitted(true);
+    telemetry.track("ask_submitted", { task: presetTask, symbolsCount: symbols.length, mode: contextMode });
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
@@ -60,7 +87,7 @@ export default function AskMarketBriefScreen() {
             <Text style={styles.navTitle}>Ask MarketBrief</Text>
             <View style={styles.navSpacer} />
           </View>
-          <Text style={styles.eyebrow}>{scopedSymbol ? `${scopedSymbol} CONTEXT` : `WATCHLIST · ${symbols.length} STOCKS`}</Text>
+          <Text style={styles.eyebrow}>{contextMode === "thesis" && scopedSymbol ? `${scopedSymbol} · USER THESIS CONTEXT` : scopedSymbol ? `${scopedSymbol} CONTEXT` : `WATCHLIST · ${symbols.length} STOCKS`}</Text>
           <Text style={styles.title}>{presetTask === "news_summary" ? "Quick read" : presetTask === "filing_summary" ? "Filing intelligence" : "Ask from available evidence"}</Text>
           <Text style={styles.intro}>Answers are limited to quotes, relevant news, filings, events and company records already available to MarketBrief.</Text>
 
@@ -85,7 +112,7 @@ export default function AskMarketBriefScreen() {
               {!submitted ? (
                 <View style={styles.suggestions}>
                   <Text style={styles.suggestionLabel}>SUGGESTED QUESTIONS</Text>
-                  {suggestions.map((suggestion) => (
+                  {(contextMode === "thesis" ? ["What new evidence relates to my thesis?", "What may clarify my thesis next?"] : contextMode === "since_last_check" ? ["Which changes were material?", "Which stocks had no meaningful developments?"] : contextMode === "current_brief" ? ["What evidence is newer than this brief?", "What known catalysts are next?"] : contextMode === "catalysts" ? ["What are my next known events?", "Which events are within seven days?"] : suggestions).map((suggestion) => (
                     <Pressable accessibilityRole="button" key={suggestion} onPress={() => submit(suggestion)} style={styles.suggestion}>
                       <Text style={styles.suggestionText}>{suggestion}</Text>
                       <Ionicons color={colors.teal} name="arrow-forward" size={16} />
@@ -97,6 +124,7 @@ export default function AskMarketBriefScreen() {
           ) : null}
 
           {!symbols.length ? <Text style={styles.empty}>Add a stock to your watchlist before asking a watchlist question.</Text> : null}
+          {contextMode === "thesis" && !savedThesis ? <Text style={styles.empty}>Save a thesis on this stock before comparing it with new evidence.</Text> : null}
           {submitted && symbols.length ? <View style={styles.result}><IntelligencePanel onRetry={() => void retry()} resource={resource} /></View> : null}
           <Text style={styles.disclosure}>Informational only. Confirmed facts remain source-linked; interpretation and uncertainty are labelled separately. No buy, sell or price-target guidance.</Text>
         </ScrollView>

@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
@@ -29,26 +30,32 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
   const { state: onboarding, hydrated: onboardingHydrated } = useOnboarding();
   const [state, dispatch] = useReducer(watchlistReducer, initialWatchlistState);
   const [hydrated, setHydrated] = useState(false);
+  const onboardingRef = useRef(onboarding);
+  useEffect(() => {
+    onboardingRef.current = onboarding;
+  }, [onboarding]);
   useEffect(() => {
     if (!onboardingHydrated) return;
     let active = true;
     void loadWatchlist()
       .then((saved) => {
+        const current = onboardingRef.current;
         if (active)
           dispatch({
             type: "hydrate",
             value: resolveHydratedWatchlist(
               saved,
-              onboarding.stocks,
-              onboarding.completed,
+              current.stocks,
+              current.completed,
             ),
           });
       })
       .catch(() => {
+        const current = onboardingRef.current;
         if (active)
           dispatch({
             type: "hydrate",
-            value: migrateOnboardingStocks(onboarding.stocks),
+            value: migrateOnboardingStocks(current.stocks),
           });
       })
       .finally(() => {
@@ -57,7 +64,11 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     return () => {
       active = false;
     };
-  }, [onboarding.completed, onboarding.stocks, onboardingHydrated]);
+  }, [onboardingHydrated]);
+  useEffect(() => {
+    if (!hydrated || onboarding.completed) return;
+    dispatch({ type: "syncOnboarding", symbols: migrateOnboardingStocks(onboarding.stocks).symbols });
+  }, [hydrated, onboarding.completed, onboarding.stocks]);
   useEffect(() => {
     if (hydrated) void saveWatchlist(state).catch(() => undefined);
   }, [hydrated, state]);

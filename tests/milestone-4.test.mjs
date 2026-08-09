@@ -29,12 +29,12 @@ test("Briefs and Today personalize from the persistent shared watchlist", async 
   ]);
   for (const source of [today, home, detail]) {
     assert.match(source, /useWatchlist/);
-    assert.match(source, /watchlistState\.symbols/);
+    assert.match(source, /(?:watchlistState|watchlist)\.symbols/);
     assert.doesNotMatch(source, /onboardingState\.stocks/);
   }
   assert.match(today, /latestBriefSeed\("morning"\)/);
   assert.match(today, /mode === "REAL" \? "\/briefs"/);
-  assert.match(today, /`\/brief\/\$\{morningBrief!\.id\}`/);
+  assert.match(today, /`\/brief\/\$\{demoBrief!\.id\}`/);
   assert.doesNotMatch(today, /briefingOpen|briefingPoints/);
   assert.match(detail, /router\.push\(`\/stock\/\$\{impact\.symbol\}`/);
 });

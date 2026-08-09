@@ -3,14 +3,19 @@ import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ProductHeader } from "@/components/foundation/ProductHeader";
+import { GroupManager } from "@/components/profile/GroupManager";
 import { Screen } from "@/components/foundation/Screen";
 import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
+import { useGroups } from "@/features/groups";
+import { useTelemetry } from "@/features/telemetry";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 export default function ProfileScreen() {
   const { state: onboardingState } = useOnboarding();
   const { state: watchlistState } = useWatchlist();
+  const groups = useGroups();
+  const telemetry = useTelemetry();
   const preferenceSummary = [
     onboardingState.experience || "Experience not selected",
     `${onboardingState.goals.length} goals`,
@@ -25,6 +30,10 @@ export default function ProfileScreen() {
         <SettingsSection title="Personalization">
           <SettingRow icon="analytics-outline" label="Investor preferences" value={preferenceSummary} />
           <SettingRow icon="bookmark-outline" label="Watchlist" value={`${watchlistState.symbols.length} companies · ${watchlistState.symbols.join(" · ") || "None yet"}`} />
+        </SettingsSection>
+
+        <SettingsSection title="Watchlist groups">
+          <GroupManager groups={groups.state.groups} onCreate={(name) => { groups.create(name); telemetry.track("group_created"); }} onRemove={groups.remove} />
         </SettingsSection>
 
         <SettingsSection title="Utility">

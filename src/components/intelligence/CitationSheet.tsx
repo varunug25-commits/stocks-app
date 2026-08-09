@@ -4,7 +4,7 @@ import { AppBottomSheet } from "@/components/system/AppBottomSheet";
 import type { IntelligenceSource } from "@/data/intelligence";
 import { colors, spacing, typography } from "@/theme/tokens";
 
-export function CitationSheet({ sources, visible, onClose }: { sources: IntelligenceSource[]; visible: boolean; onClose: () => void }) {
+export function CitationSheet({ sources, visible, onClose, onSourceOpen }: { sources: IntelligenceSource[]; visible: boolean; onClose: () => void; onSourceOpen?: (source: IntelligenceSource) => void }) {
   return (
     <AppBottomSheet onClose={onClose} title={`Sources · ${sources.length}`} visible={visible}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -14,7 +14,7 @@ export function CitationSheet({ sources, visible, onClose }: { sources: Intellig
             accessibilityRole={source.sourceUrl ? "link" : "text"}
             disabled={!source.sourceUrl}
             key={source.id}
-            onPress={() => source.sourceUrl ? void Linking.openURL(source.sourceUrl) : undefined}
+            onPress={() => { if (source.sourceUrl) { onSourceOpen?.(source); void Linking.openURL(source.sourceUrl); } }}
             style={styles.row}
           >
             <View style={styles.copy}>

@@ -20,7 +20,7 @@ import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { EmptyState } from "@/components/system/EmptyState";
 import { SkeletonState } from "@/components/system/SkeletonState";
-import { AskMarketBriefEntry } from "@/components/intelligence";
+import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
 import {
   buildBriefShareText,
   findBriefSeed,
@@ -36,7 +36,7 @@ import { colors, radii, spacing, typography } from "@/theme/tokens";
 export default function BriefDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ briefId?: string; preview?: string }>();
-  const { state, dispatch, hydrated } = useBriefs();
+  const { state, dispatch, hydrated, realHistory } = useBriefs();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
   const { mode } = useMarketData();
   const [shareMessage, setShareMessage] = useState("");
@@ -49,14 +49,24 @@ export default function BriefDetailScreen() {
     () => mode === "DEMO" && seed ? generateBrief(seed, symbols, { insufficientEvidence: params.preview === "insufficient" }) : null,
     [mode, params.preview, seed, symbols],
   );
+  const realBrief = mode === "REAL" && typeof params.briefId === "string" ? realHistory.find((record) => record.id === params.briefId) : undefined;
   useEffect(() => {
     if (brief && hydrated) dispatch({ type: "markRead", id: brief.id });
-  }, [brief, dispatch, hydrated]);
+    if (realBrief && hydrated) dispatch({ type: "markRead", id: realBrief.id });
+  }, [brief, dispatch, hydrated, realBrief]);
 
   if (!hydrated || !watchlistHydrated || params.preview === "loading")
-    return <Screen><SkeletonState /></Screen>;
-  if (mode === "REAL")
-    return <Screen><View style={styles.center}><EmptyState description="No earlier generated brief yet. Open Briefs to generate the current grounded edition." title="Brief unavailable" /></View></Screen>;
+    return <Screen><SkeletonState variant="brief" /></Screen>;
+  if (mode === "REAL") {
+    if (!realBrief) return <Screen><View style={styles.center}><EmptyState description="This validated edition is not stored on this device." title="Brief unavailable" /></View></Screen>;
+    const realStatus = selectBriefStatus(realBrief.id, state);
+    const realSaved = state.savedIds.includes(realBrief.id);
+    const shareReal = async () => {
+      const body = realBrief.response.sections.flatMap((section) => section.bullets.slice(0, 3).map((bullet) => `• ${bullet.text}`)).slice(0, 8).join("\n");
+      try { const result = await Share.share({ title: "MarketBrief", message: `${realBrief.headline}\n\n${body}\n\nInformational only. Source-linked evidence is available in MarketBrief.` }); setShareMessage(getBriefShareResultMessage(result.action, Share.sharedAction, Share.dismissedAction)); } catch { setShareMessage("Sharing is unavailable. Your brief is unchanged."); }
+    };
+    return <Screen><ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}><View style={styles.nav}><Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.back}><Ionicons color={colors.textPrimary} name="arrow-back" size={23} /></Pressable><BriefStatusBadge status={realStatus} /></View><Text style={styles.eyebrow}>{realBrief.edition === "morning" ? "MORNING BRIEF" : "EVENING RECAP"} · VALIDATED</Text><Text style={styles.date}>{new Date(realBrief.generatedAt).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</Text><Text style={styles.meta}>{new Date(realBrief.generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · {realBrief.providerMode === "live" ? "Live intelligence" : "Deterministic evidence summary"}</Text><Text style={styles.title}>{realBrief.headline}</Text><View style={styles.actions}><SaveBriefButton onPress={() => dispatch({ type: "toggleSaved", id: realBrief.id })} saved={realSaved} /><ShareBriefButton onPress={() => void shareReal()} /></View>{shareMessage ? <Text accessibilityLiveRegion="polite" style={styles.shareMessage}>{shareMessage}</Text> : null}<View style={styles.groundedDetail}><IntelligencePanel onRetry={() => router.replace(`/brief/${encodeURIComponent(realBrief.id)}` as Href)} resource={{ status: "ready", data: realBrief.response }} /></View><View style={styles.askEntry}><AskMarketBriefEntry detail="Ask within this edition’s current watchlist scope" label="Ask about this brief" onPress={() => router.push(`/ask?symbols=${realBrief.symbols.join(",")}&mode=current_brief&briefId=${encodeURIComponent(realBrief.id)}&prompt=${encodeURIComponent("What changed since this brief?")}` as Href)} /></View><View style={styles.disclaimer}><Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={19} /><Text style={styles.disclaimerText}>This saved edition preserves the validated, source-linked response generated at the time shown. Provider data may be delayed or incomplete. Not investment advice.</Text></View></ScrollView></Screen>;
+  }
   if (!brief)
     return (
       <Screen>

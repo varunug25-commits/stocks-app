@@ -232,7 +232,7 @@ test("M7 Gemini provider keeps its server secret out of URLs and sends it only i
   assert.doesNotMatch(String(calls[0]!.init?.body), /"responseSchema"/);
   assert.match(String(calls[0]!.init?.body), /Output JSON schema/);
   assert.match(String(calls[0]!.init?.body), /thinkingLevel\":\"minimal/);
-  assert.match(String(calls[0]!.init?.body), /"maxOutputTokens":8192/);
+  assert.match(String(calls[0]!.init?.body), /"maxOutputTokens":4096/);
   assert.doesNotMatch(String(calls[0]!.init?.body), /maxLength/);
   assert.match(calls[0]!.url, /\/v1beta\/models\/gemini-3\.5-flash:generateContent$/);
   assert.doesNotMatch(JSON.stringify(candidate), new RegExp(secret));

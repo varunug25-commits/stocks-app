@@ -11,10 +11,12 @@ test("premium foundation stays dark, restrained, and semantically colored", asyn
     read("src/components/foundation/Screen.tsx"),
     read("src/components/navigation/BottomTabBar.tsx"),
   ]);
-  assert.match(tokens, /background: "#050708"/);
-  assert.match(tokens, /textPrimary: "#F4F1E8"/);
-  assert.match(tokens, /positive: "#49D98A"/);
-  assert.match(tokens, /negative: "#FF6B74"/);
+  assert.match(tokens, /background: "#070809"/);
+  assert.match(tokens, /accent: "#F5F5F2"/);
+  assert.match(tokens, /positive: "#2FD17B"/);
+  assert.match(tokens, /negative: "#F05252"/);
+  assert.doesNotMatch(tokens, /#42E8C6/);
+  assert.match(tokens, /textPrimary: "#F5F5F2"/);
   assert.match(screen, /backgroundColor: colors\.background/);
   assert.match(tabs, /activeIndicator/);
   assert.doesNotMatch(tabs, /sparkles/);
@@ -23,25 +25,26 @@ test("premium foundation stays dark, restrained, and semantically colored", asyn
 
 test("Today uses the approved finance-first information order", async () => {
   const today = await read("src/app/(tabs)/index.tsx");
-  const sections = ["Watchlist summary", "What changed", "Next up", "MORNING BRIEF", "Market context"];
+  const sections = ["SINCE YOU LAST CHECKED", "Your other stocks", "What matters next", "Morning brief", 'label="Ask MarketBrief"'];
   let previous = -1;
   for (const section of sections) {
     const next = today.indexOf(section);
     assert.ok(next > previous, `${section} should follow the previous Today section`);
     previous = next;
   }
-  assert.match(today, /ResourceStateNotice/);
-  assert.match(today, /1D moves/);
-  assert.match(today, /ILLUSTRATIVE PREVIEW/);
+  assert.match(today, /MaterialChangeRow/);
+  assert.match(today, /Nothing material changed/);
+  assert.match(today, /Your baseline is ready/);
   assert.doesNotMatch(today, /DataModeBanner|EditorialHero|AIBriefingCard/);
 });
 
-test("Markets removes unsupported mood scoring and reports unavailable coverage", async () => {
+test("Pulse derives truthful watchlist intelligence without market-wide fixtures", async () => {
   const markets = await read("src/app/(tabs)/markets.tsx");
   assert.doesNotMatch(markets, /MarketMoodCard|marketMood/);
-  assert.match(markets, /Commodities & currencies/);
-  assert.match(markets, /does not display invented values/);
-  assert.match(markets, /Top movers/);
+  assert.match(markets, /calculateWatchlistBreadth/);
+  assert.match(markets, /deriveWatchlistPatterns/);
+  assert.match(markets, /within your watchlist/);
+  assert.doesNotMatch(markets, /marketIndices|sectorPerformance|topGainers/);
 });
 
 test("Watchlist management is explicit and default rows stay compact", async () => {
@@ -80,8 +83,8 @@ test("final product polish keeps debug and implementation language out of custom
     read("src/data/real/demo.ts"),
     read("src/components/navigation/BottomTabBar.tsx"),
   ]);
-  assert.match(today, /Personalized for your watchlist/);
-  assert.match(today, /summaryStocks[\s\S]*slice\(0, 3\)/);
+  assert.match(today, /SINCE YOU LAST CHECKED/);
+  assert.match(today, /baselineMovers[\s\S]*slice\(0, 3\)/);
   assert.doesNotMatch(today, /investor view|settings|bug-outline/);
   assert.doesNotMatch(watchlist, /Watchlist limit reached/);
   assert.doesNotMatch(profile, /Subscription|Not connected|M7 AI/);
@@ -89,11 +92,10 @@ test("final product polish keeps debug and implementation language out of custom
   assert.match(tabs, /GlassBackdrop/);
 });
 
-test("REAL Markets uses supported equity resources and omits illustrative market-wide values", async () => {
+test("Pulse uses supported watchlist resources and avoids market-wide claims", async () => {
   const markets = await read("src/app/(tabs)/markets.tsx");
-  const realMovers = markets.indexOf('mode === "REAL" ? moversSection');
-  assert.ok(realMovers >= 0);
-  assert.match(markets, /Provider-backed equity prices lead/);
-  assert.match(markets, /mode === "DEMO" \? <View style=\{styles\.section\}>/);
-  assert.match(markets, /Unsupported market-wide indices and sectors are omitted/);
+  assert.match(markets, /useChangeDetection/);
+  assert.match(markets, /quotes\[symbol\]/);
+  assert.match(markets, /events\[symbol\]/);
+  assert.match(markets, /does not claim sector-wide or market-wide causation/);
 });

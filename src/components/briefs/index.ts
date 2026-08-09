@@ -10,3 +10,4 @@ export * from "./BriefStatusBadge";
 export * from "./BriefStockImpactRow";
 export * from "./BriefSummaryPoint";
 export * from "./BriefTypeSelector";
+export * from "./RealBriefHistoryRow";
