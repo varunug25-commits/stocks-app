@@ -54,18 +54,18 @@ test("market resources use the same symbol and range keys read by screens", asyn
 });
 
 test("provider news and SEC filings retain external-source UI treatment", async () => {
-  const [stock, storyRow, filingRow] = await Promise.all([
+  const [stock, timelineRow, timeline] = await Promise.all([
     read("src/app/stock/[symbol].tsx"),
-    read("src/components/stock/StoryRow.tsx"),
-    read("src/components/stock/FilingRow.tsx"),
+    read("src/components/stock/TimelineRow.tsx"),
+    read("src/features/timeline/stockTimeline.ts"),
   ]);
-  assert.match(stock, /<StoryRow item=\{item\}/);
-  assert.match(stock, /<FilingRow item=\{item\}/);
-  assert.match(storyRow, /story\.publisher/);
-  assert.match(storyRow, /Linking\.openURL\(story\.sourceUrl/);
-  assert.doesNotMatch(storyRow, /MarketBrief Editorial/);
-  assert.match(filingRow, /filing\.source/);
-  assert.match(filingRow, /Linking\.openURL\(filing\.canonicalUrl/);
+  assert.match(stock, /<TimelineRow item=\{item\}/);
+  assert.match(timeline, /source: article\.publisher/);
+  assert.match(timeline, /sourceUrl: article\.sourceUrl/);
+  assert.match(timeline, /source: filing\.source/);
+  assert.match(timeline, /sourceUrl: filing\.canonicalUrl/);
+  assert.match(timelineRow, /Linking\.openURL\(item\.sourceUrl/);
+  assert.doesNotMatch(timeline, /MarketBrief Editorial/);
 });
 
 test("provider credentials stay out of request URLs and logs", async () => {

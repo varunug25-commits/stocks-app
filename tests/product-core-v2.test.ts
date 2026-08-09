@@ -6,6 +6,7 @@ import { detectMaterialChanges } from "../src/features/materiality/engine.ts";
 import { createSeenChangeStore, createSnapshotStore } from "../src/features/materiality/storage.ts";
 import type { WatchlistSnapshot } from "../src/features/materiality/types.ts";
 import { calculateWatchlistBreadth, deriveWatchlistPatterns } from "../src/features/materiality/patterns.ts";
+import { buildStockTimeline, groupStockTimeline } from "../src/features/timeline/stockTimeline.ts";
 import type { StorageAdapter } from "../src/storage/preferencesCore.ts";
 
 const at = "2026-08-09T12:00:00.000Z";
@@ -87,4 +88,22 @@ test("watchlist patterns describe only supported within-watchlist relationships"
   });
   assert.ok(patterns.some((pattern) => pattern.title === "Technology holdings moved lower"));
   assert.ok(patterns.every((pattern) => !pattern.detail.includes("entire sector")));
+});
+
+test("stock timeline preserves provider timestamps and never invents price crossing times", () => {
+  const timeline = buildStockTimeline({
+    symbol: "AAPL",
+    quote: { symbol: "AAPL", companyId: "apple", price: 220, change: 4, changePercent: 1.85, previousClose: 216, open: 217, high: 221, low: 215, volume: 10, exchange: "NASDAQ", currency: "USD", marketStatus: "open", providerTimestamp: "2026-08-09T10:31:00.000Z" },
+    quoteMeta: { provider: "twelve-data", source: "Twelve Data", fetchedAt: "2026-08-09T10:32:00.000Z", asOf: "2026-08-09T10:31:00.000Z", isStale: false },
+    news: [{ id: "n1", headline: "Apple publishes an update", summary: null, publisher: "Publisher", publishedAt: "2026-08-09T10:04:00.000Z", sourceUrl: "https://example.com/n1", relatedSymbols: ["AAPL"], provider: "finnhub" }],
+    filings: [{ accessionNumber: "f1", formType: "8-K", filingDate: "2026-08-08", reportDate: null, companyId: "apple", company: "Apple Inc.", cik: "1", primaryDocument: "x.htm", canonicalUrl: "https://sec.gov/f1", source: "SEC" }],
+    events: [],
+    now: Date.parse("2026-08-09T12:00:00.000Z"),
+  });
+  assert.deepEqual(timeline.map((item) => item.kind), ["price", "news", "filing"]);
+  assert.equal(timeline[0]?.occurredAt, "2026-08-09T10:31:00.000Z");
+  assert.match(timeline[0]?.detail ?? "", /quote update, not an inferred intraday threshold crossing/);
+  assert.equal(timeline[2]?.precision, "date");
+  assert.match(timeline[2]?.detail ?? "", /has not analyzed the filing body/);
+  assert.deepEqual(groupStockTimeline(timeline, Date.parse("2026-08-09T12:00:00.000Z")).map((group) => group.label), ["TODAY", "YESTERDAY"]);
 });

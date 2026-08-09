@@ -6,13 +6,12 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { CatalystCard } from "@/components/stock/CatalystCard";
 import { ChartRangeSelector } from "@/components/stock/ChartRangeSelector";
 import { DataFreshnessBadge } from "@/components/stock/DataFreshnessBadge";
-import { FilingRow } from "@/components/stock/FilingRow";
 import { MarketStatsGrid } from "@/components/stock/MarketStatsGrid";
 import { PriceChart } from "@/components/stock/PriceChart";
 import { PriceMovement } from "@/components/stock/PriceMovement";
 import { SourceList } from "@/components/stock/SourceList";
 import { StockHeader } from "@/components/stock/StockHeader";
-import { StoryRow } from "@/components/stock/StoryRow";
+import { TimelineRow } from "@/components/stock/TimelineRow";
 import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
 import { WatchlistLimitSheet } from "@/components/stock/WatchlistLimitSheet";
 import { OfflineBanner } from "@/components/foundation/Feedback";
@@ -34,6 +33,7 @@ import { barKey, useMarketData } from "@/features/market-data/MarketDataProvider
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 import type { IntelligenceRequest } from "@/data/intelligence";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
+import { buildStockTimeline, groupStockTimeline } from "@/features/timeline";
 
 export default function StockDetailScreen() {
   const router = useRouter();
@@ -83,6 +83,8 @@ export default function StockDetailScreen() {
   const latestNews = newsData ? latestNewsForPresentation(newsData) : null;
   const eventResource = events[symbol];
   const eventData = eventResource?.status === "ready" || eventResource?.status === "stale" ? eventResource.data : null;
+  const timeline = buildStockTimeline({ symbol, quote, quoteMeta: quoteResource?.status === "ready" || quoteResource?.status === "stale" ? quoteResource.meta : undefined, news: latestNews ?? [], filings: latestFilings ?? [], events: eventData ?? [] });
+  const timelineGroups = groupStockTimeline(timeline);
   const statistics = quote ? [
     { label: "Previous close", value: quote.previousClose === null ? "Unknown" : formatPrice(quote.previousClose) },
     { label: "Open", value: quote.open === null ? "Unknown" : formatPrice(quote.open) },
@@ -146,6 +148,15 @@ export default function StockDetailScreen() {
           />
         </View>
         <View style={styles.section}>
+          <SectionHeader eyebrow="REAL PROVIDER EVIDENCE" title="What changed" />
+          <ResourceStateNotice onRetry={() => void loadNews(symbol)} resource={newsResource} />
+          <ResourceStateNotice onRetry={() => void loadFilings(symbol)} resource={filingResource} />
+          <View style={styles.list}>
+            {timelineGroups.map((group) => <View key={group.key}><Text style={styles.timelineDate}>{group.label}</Text>{group.entries.map((item) => <TimelineRow item={item} key={item.id} />)}</View>)}
+          </View>
+          {!timeline.length && newsResource?.status !== "loading" && filingResource?.status !== "loading" ? <EmptyState description="No timestamped provider evidence is currently available for this company." title="No recent timeline entries" /> : null}
+        </View>
+        <View style={styles.section}>
           <SectionHeader actionLabel="See evidence" eyebrow="GROUNDED" onAction={() => router.push(`/stock/${symbol}/why` as Href)} title="Why it moved" />
           <IntelligencePanel onRetry={() => void retryWhy()} resource={whyResource} showHeader={false} />
           <AskMarketBriefEntry detail="Use this company’s available evidence" label={`Ask about ${symbol}`} onPress={() => router.push(`/ask?symbol=${symbol}` as Href)} />
@@ -163,22 +174,6 @@ export default function StockDetailScreen() {
         <View style={styles.section}>
           <SectionHeader eyebrow="PROVIDER FIELDS" title="Session statistics" />
           {statistics.length ? <MarketStatsGrid items={statistics} /> : <EmptyState description="The quote provider did not return session statistics." title="Statistics unavailable" />}
-        </View>
-        <View style={styles.section}>
-          <SectionHeader title="Latest filings" />
-          <ResourceStateNotice onRetry={() => void loadFilings(symbol)} resource={filingResource} />
-          <View style={styles.list}>
-            {latestFilings?.map((item) => <FilingRow item={item} key={item.accessionNumber} />)}
-          </View>
-          {filingData?.length === 0 ? <EmptyState description="SEC returned no supported 10-K, 10-Q or 8-K filings." title="No filing results" /> : null}
-        </View>
-        <View style={styles.section}>
-          <SectionHeader actionLabel={latestNews?.length ? "Quick read" : undefined} onAction={() => latestNews?.[0] ? router.push(`/ask?symbol=${symbol}&task=news_summary&focusId=${encodeURIComponent(latestNews[0].id)}` as Href) : undefined} title="Latest stories" />
-          <ResourceStateNotice onRetry={() => void loadNews(symbol)} resource={newsResource} />
-          <View style={styles.list}>
-            {latestNews?.map((item) => <StoryRow item={item} key={item.id} />)}
-          </View>
-          {newsData?.length === 0 ? <EmptyState description="The news provider returned no permitted article metadata." title="No news results" /> : null}
         </View>
         <View style={styles.section}>
           <SectionHeader title="Sources" />
@@ -252,6 +247,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     overflow: "hidden",
   },
+  timelineDate: { ...typography.caption, color: colors.textSecondary, paddingTop: spacing.md, paddingBottom: spacing.xs, letterSpacing: 0.8 },
   disclaimer: {
     flexDirection: "row",
     gap: spacing.xs,
