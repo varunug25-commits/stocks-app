@@ -5,6 +5,7 @@ import { calculatePriceContext } from "../src/features/materiality/unusualMove.t
 import { detectMaterialChanges } from "../src/features/materiality/engine.ts";
 import { createSeenChangeStore, createSnapshotStore } from "../src/features/materiality/storage.ts";
 import type { WatchlistSnapshot } from "../src/features/materiality/types.ts";
+import { calculateWatchlistBreadth, deriveWatchlistPatterns } from "../src/features/materiality/patterns.ts";
 import type { StorageAdapter } from "../src/storage/preferencesCore.ts";
 
 const at = "2026-08-09T12:00:00.000Z";
@@ -72,4 +73,18 @@ test("snapshot and seen-state stores validate, persist and recover safely", asyn
   const seen = createSeenChangeStore(adapter);
   await seen.markSeen(["change-1", "change-2"]);
   assert.deepEqual([...await seen.load()], ["change-1", "change-2"]);
+});
+
+test("watchlist patterns describe only supported within-watchlist relationships", () => {
+  const quote = (changePercent: number) => ({ changePercent }) as never;
+  const quotes = { AMD: quote(-4), NVDA: quote(-3), AAPL: quote(0.2), UBER: quote(0.1) };
+  assert.deepEqual(calculateWatchlistBreadth(["AMD", "NVDA", "AAPL", "UBER", "CRM"], quotes), { higher: 2, lower: 2, unchanged: 0, unavailable: 1 });
+  const patterns = deriveWatchlistPatterns({
+    symbols: ["AMD", "NVDA", "AAPL", "UBER"],
+    quotes,
+    companies: { AMD: { sector: "Technology" } as never, NVDA: { sector: "Technology" } as never, AAPL: { sector: "Technology" } as never, UBER: { sector: "Industrials" } as never },
+    changes: [], events: [], now: Date.parse(at),
+  });
+  assert.ok(patterns.some((pattern) => pattern.title === "Technology holdings moved lower"));
+  assert.ok(patterns.every((pattern) => !pattern.detail.includes("entire sector")));
 });

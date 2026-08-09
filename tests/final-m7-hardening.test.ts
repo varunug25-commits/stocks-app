@@ -107,7 +107,9 @@ test("REAL screens gate all static market and brief fixtures behind DEMO mode", 
   ]);
   assert.match(today, /mode === "DEMO" \? generateBrief/);
   assert.match(today, /useChangeDetection/);
-  assert.match(markets, /Unsupported market-wide indices and sectors are omitted/);
+  assert.match(markets, /useChangeDetection/);
+  assert.match(markets, /does not claim sector-wide or market-wide causation/);
+  assert.doesNotMatch(markets, /marketIndices|sectorPerformance|topGainers/);
   assert.match(briefs, /No earlier generated brief yet/);
   assert.match(detail, /companies\[symbol\]/);
   assert.doesNotMatch(detail, /demo catalog/);

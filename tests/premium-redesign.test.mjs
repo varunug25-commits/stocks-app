@@ -38,12 +38,13 @@ test("Today uses the approved finance-first information order", async () => {
   assert.doesNotMatch(today, /DataModeBanner|EditorialHero|AIBriefingCard/);
 });
 
-test("Markets removes unsupported mood scoring and reports unavailable coverage", async () => {
+test("Pulse derives truthful watchlist intelligence without market-wide fixtures", async () => {
   const markets = await read("src/app/(tabs)/markets.tsx");
   assert.doesNotMatch(markets, /MarketMoodCard|marketMood/);
-  assert.match(markets, /Commodities & currencies/);
-  assert.match(markets, /does not display invented values/);
-  assert.match(markets, /Top movers/);
+  assert.match(markets, /calculateWatchlistBreadth/);
+  assert.match(markets, /deriveWatchlistPatterns/);
+  assert.match(markets, /within your watchlist/);
+  assert.doesNotMatch(markets, /marketIndices|sectorPerformance|topGainers/);
 });
 
 test("Watchlist management is explicit and default rows stay compact", async () => {
@@ -91,11 +92,10 @@ test("final product polish keeps debug and implementation language out of custom
   assert.match(tabs, /GlassBackdrop/);
 });
 
-test("REAL Markets uses supported equity resources and omits illustrative market-wide values", async () => {
+test("Pulse uses supported watchlist resources and avoids market-wide claims", async () => {
   const markets = await read("src/app/(tabs)/markets.tsx");
-  const realMovers = markets.indexOf('mode === "REAL" ? moversSection');
-  assert.ok(realMovers >= 0);
-  assert.match(markets, /Provider-backed equity prices lead/);
-  assert.match(markets, /mode === "DEMO" \? <View style=\{styles\.section\}>/);
-  assert.match(markets, /Unsupported market-wide indices and sectors are omitted/);
+  assert.match(markets, /useChangeDetection/);
+  assert.match(markets, /quotes\[symbol\]/);
+  assert.match(markets, /events\[symbol\]/);
+  assert.match(markets, /does not claim sector-wide or market-wide causation/);
 });

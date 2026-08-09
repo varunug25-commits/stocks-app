@@ -21,7 +21,7 @@ test("Milestone 2 exposes five mobile tabs and global search", async () => {
     read("src/app/_layout.tsx"),
   ]);
   assert.match(tabs, /accessibilityRole="tab"/);
-  for (const label of ["Today", "Markets", "Watchlist", "Briefs", "Profile"]) assert.match(layout, new RegExp(`title: "${label}"`));
+  for (const label of ["Today", "Pulse", "Watchlist", "Briefs", "Profile"]) assert.match(layout, new RegExp(`title: "${label}"`));
   for (const route of ["index", "markets", "watchlist", "briefs", "profile"]) assert.match(layout, new RegExp(`name="${route}"`));
   assert.match(rootLayout, /name="search"/);
 });
@@ -43,9 +43,10 @@ test("Milestone 2 screens provide required local and failure states", async () =
   assert.match(today, /Intl\.DateTimeFormat/);
   assert.doesNotMatch(today, /MONDAY, AUGUST 3/);
   assert.match(today, /useReducedMotion/);
-  assert.match(markets, /marketIndices\.map/);
-  assert.match(markets, /sectors\.map/);
-  assert.match(markets, /topGainers/);
+  assert.match(markets, /calculateWatchlistBreadth/);
+  assert.match(markets, /deriveWatchlistPatterns/);
+  assert.match(markets, /MaterialChangeRow/);
+  assert.doesNotMatch(markets, /marketIndices|sectors\.map|topGainers/);
   assert.match(search, /searchLocalStocks/);
   assert.match(search, /No results/);
   assert.match(watchlist, /state\.symbols/);
