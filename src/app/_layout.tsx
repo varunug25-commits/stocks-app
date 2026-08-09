@@ -19,7 +19,7 @@ const marketBriefTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: colors.teal,
+    primary: colors.accent,
     background: colors.background,
     card: colors.surface,
     text: colors.textPrimary,

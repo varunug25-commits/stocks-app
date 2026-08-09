@@ -11,10 +11,12 @@ test("premium foundation stays dark, restrained, and semantically colored", asyn
     read("src/components/foundation/Screen.tsx"),
     read("src/components/navigation/BottomTabBar.tsx"),
   ]);
-  assert.match(tokens, /background: "#050708"/);
-  assert.match(tokens, /textPrimary: "#F4F1E8"/);
-  assert.match(tokens, /positive: "#49D98A"/);
-  assert.match(tokens, /negative: "#FF6B74"/);
+  assert.match(tokens, /background: "#070809"/);
+  assert.match(tokens, /accent: "#F5F5F2"/);
+  assert.match(tokens, /positive: "#2FD17B"/);
+  assert.match(tokens, /negative: "#F05252"/);
+  assert.doesNotMatch(tokens, /#42E8C6/);
+  assert.match(tokens, /textPrimary: "#F5F5F2"/);
   assert.match(screen, /backgroundColor: colors\.background/);
   assert.match(tabs, /activeIndicator/);
   assert.doesNotMatch(tabs, /sparkles/);
