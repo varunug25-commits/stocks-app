@@ -1,6 +1,7 @@
 import type { StockSymbol } from "@/data/stocks";
 
 export type IntelligenceTask = "why_moved" | "brief" | "ask" | "news_summary" | "filing_summary";
+export type IntelligenceContextMode = "watchlist" | "stock" | "thesis" | "current_brief" | "since_last_check" | "catalysts";
 export type ClaimKind = "confirmed" | "interpretation" | "uncertainty" | "catalyst";
 export type IntelligenceRequest = {
   task: IntelligenceTask;
@@ -9,6 +10,8 @@ export type IntelligenceRequest = {
   question?: string;
   focusId?: string;
   timeWindow?: "1D" | "1W" | "1M";
+  contextMode?: IntelligenceContextMode;
+  userThesis?: { symbol: StockSymbol; text: string };
 };
 export type BulletClaim = { id: string; text: string; kind: ClaimKind; sourceIds: string[] };
 export type IntelligenceSection = { id: string; title: string; bullets: BulletClaim[] };

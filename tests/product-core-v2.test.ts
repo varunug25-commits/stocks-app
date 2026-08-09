@@ -7,7 +7,10 @@ import { createSeenChangeStore, createSnapshotStore } from "../src/features/mate
 import type { WatchlistSnapshot } from "../src/features/materiality/types.ts";
 import { calculateWatchlistBreadth, deriveWatchlistPatterns } from "../src/features/materiality/patterns.ts";
 import { buildStockTimeline, groupStockTimeline } from "../src/features/timeline/stockTimeline.ts";
+import { createThesisStore, MAX_THESIS_LENGTH } from "../src/features/thesis/storage.ts";
 import type { StorageAdapter } from "../src/storage/preferencesCore.ts";
+import { MockStructuredAIProvider } from "../supabase/functions/_shared/intelligence/provider.ts";
+import { parseIntelligenceRequest } from "../supabase/functions/_shared/intelligence/request.ts";
 
 const at = "2026-08-09T12:00:00.000Z";
 const ref = (id: string, title = id, sourceUrl: string | null = `https://example.com/${id}`) => ({ id, title, sourceUrl, occurredAt: at });
@@ -106,4 +109,29 @@ test("stock timeline preserves provider timestamps and never invents price cross
   assert.equal(timeline[2]?.precision, "date");
   assert.match(timeline[2]?.detail ?? "", /has not analyzed the filing body/);
   assert.deepEqual(groupStockTimeline(timeline, Date.parse("2026-08-09T12:00:00.000Z")).map((group) => group.label), ["TODAY", "YESTERDAY"]);
+});
+
+test("thesis storage validates local user context and enforces the length bound", async () => {
+  const values = new Map<string, string>();
+  const adapter: StorageAdapter = { getItem: async (key) => values.get(key) ?? null, setItem: async (key, value) => { values.set(key, value); }, removeItem: async (key) => { values.delete(key); } };
+  const store = createThesisStore(adapter);
+  await store.save({ version: 1, bySymbol: { AMD: `  ${"data center ".repeat(70)}  ` } });
+  const stored = await store.load();
+  assert.equal(stored.bySymbol.AMD?.length, MAX_THESIS_LENGTH);
+  values.set("marketbrief.theses.v1", JSON.stringify({ version: 1, bySymbol: { "BAD SYMBOL": "ignored", AAPL: 42 } }));
+  assert.deepEqual(await store.load(), { version: 1, bySymbol: {} });
+  values.set("marketbrief.theses.v1", "{corrupt");
+  assert.deepEqual(await store.load(), { version: 1, bySymbol: {} });
+});
+
+test("thesis remains user context rather than evidence", async () => {
+  const request = parseIntelligenceRequest({ task: "ask", symbols: ["AMD"], question: "What changed vs my thesis?", contextMode: "thesis", userThesis: { symbol: "AMD", text: "I follow data center margins." } });
+  assert.equal(request.userThesis?.text, "I follow data center margins.");
+  assert.throws(() => parseIntelligenceRequest({ task: "ask", symbols: ["AMD"], question: "Thesis?", contextMode: "thesis", userThesis: { symbol: "AAPL", text: "Mismatch" } }), /match a requested symbol/);
+  const provider = new MockStructuredAIProvider();
+  const response = await provider.generateStructuredResponse({ request, evidence: [], untrustedContext: "<untrusted_evidence>[]</untrusted_evidence>" });
+  const text = JSON.stringify(response);
+  assert.match(text, /No new evidence directly relevant/);
+  assert.match(text, /context, not evidence/);
+  assert.doesNotMatch(text, /thesis is correct|thesis is incorrect/i);
 });

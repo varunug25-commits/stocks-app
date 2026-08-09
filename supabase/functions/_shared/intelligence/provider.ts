@@ -129,6 +129,23 @@ function filingCandidate(input: StructuredGenerationInput): ModelCandidate {
 
 function askCandidate(input: StructuredGenerationInput): ModelCandidate {
   const question = input.request.question?.toLowerCase() ?? "";
+  if (input.request.contextMode === "thesis" || /thesis/.test(question)) {
+    const thesis = input.request.userThesis;
+    const words = thesis?.text.toLowerCase().match(/[a-z0-9]{4,}/g) ?? [];
+    const relevant = input.evidence.filter((entry) => {
+      const haystack = `${entry.title ?? ""} ${entry.text ?? ""}`.toLowerCase();
+      return words.some((word) => haystack.includes(word));
+    }).slice(0, 4);
+    return {
+      headline: thesis ? `${thesis.symbol}: evidence vs your thesis` : "Thesis context unavailable",
+      oneLineSummary: relevant.length ? "New verified evidence overlaps topics in your saved thesis." : "No new evidence directly relevant to your saved thesis was found.",
+      symbols: input.request.symbols,
+      sections: [
+        section("supporting", "New evidence related to your thesis", relevant.map((entry, index) => claim(`thesis-evidence-${index}`, entry.text ?? entry.title ?? "Related evidence is available.", "confirmed", [entry.id]))),
+        section("limits", "Evidence limits", [claim("thesis-limit", relevant.length ? "Topic overlap does not prove that your thesis is correct or incorrect." : "Your saved thesis is context, not evidence, and no verified item matched it directly.", "uncertainty")]),
+      ].filter(Boolean),
+    };
+  }
   if (/filing|10-k|10-q|8-k/.test(question)) return filingCandidate(input);
   if (/news|story|headline/.test(question)) return newsCandidate(input);
   if (/why|move|changed|today|yesterday/.test(question)) return whyCandidate(input);

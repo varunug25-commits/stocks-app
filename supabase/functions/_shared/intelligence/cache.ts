@@ -32,6 +32,8 @@ export function intelligenceCacheKey(request: IntelligenceRequest, evidence: Evi
     question: request.question?.toLowerCase().replace(/\s+/g, " ").trim(),
     focusId: request.focusId,
     timeWindow: request.timeWindow,
+    contextMode: request.contextMode,
+    userThesisHash: request.userThesis ? stableHash(`${request.userThesis.symbol}:${request.userThesis.text}`) : undefined,
     provider,
     schema: INTELLIGENCE_SCHEMA_VERSION,
   }));

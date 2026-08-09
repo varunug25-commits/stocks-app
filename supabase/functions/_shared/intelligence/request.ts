@@ -5,6 +5,7 @@ const tasks = new Set<IntelligenceTask>(["why_moved", "brief", "ask", "news_summ
 const MAX_BODY_BYTES = 8_192;
 const MAX_SYMBOLS = 15;
 const MAX_QUESTION_CHARACTERS = 280;
+const contextModes = new Set(["watchlist", "stock", "thesis", "current_brief", "since_last_check", "catalysts"]);
 
 export function parseIntelligenceRequest(value: unknown): IntelligenceRequest {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -28,6 +29,19 @@ export function parseIntelligenceRequest(value: unknown): IntelligenceRequest {
   const timeWindow = input.timeWindow === undefined ? "1D" : input.timeWindow;
   if (!new Set(["1D", "1W", "1M"]).has(timeWindow as string))
     throw new IntelligenceError("INVALID_REQUEST", "Unsupported time window.", 400);
+  if (input.contextMode !== undefined && (typeof input.contextMode !== "string" || !contextModes.has(input.contextMode)))
+    throw new IntelligenceError("INVALID_REQUEST", "Unsupported intelligence context.", 400);
+  let userThesis: IntelligenceRequest["userThesis"];
+  if (input.userThesis !== undefined) {
+    if (!input.userThesis || typeof input.userThesis !== "object" || Array.isArray(input.userThesis))
+      throw new IntelligenceError("INVALID_REQUEST", "User thesis must be structured text.", 400);
+    const thesis = input.userThesis as Record<string, unknown>;
+    const symbol = typeof thesis.symbol === "string" ? thesis.symbol.trim().toUpperCase() : "";
+    const text = typeof thesis.text === "string" ? thesis.text.replace(/\s+/g, " ").trim() : "";
+    if (!normalizedSymbols.includes(symbol) || !text || text.length > 500)
+      throw new IntelligenceError("INVALID_REQUEST", "User thesis must match a requested symbol and be 500 characters or fewer.", 400);
+    userThesis = { symbol, text };
+  }
   return {
     task: input.task as IntelligenceTask,
     symbols: normalizedSymbols,
@@ -35,6 +49,8 @@ export function parseIntelligenceRequest(value: unknown): IntelligenceRequest {
     ...(question ? { question } : {}),
     ...(typeof input.focusId === "string" && input.focusId.trim() ? { focusId: input.focusId.trim().slice(0, 160) } : {}),
     timeWindow: timeWindow as IntelligenceRequest["timeWindow"],
+    ...(typeof input.contextMode === "string" ? { contextMode: input.contextMode as IntelligenceRequest["contextMode"] } : {}),
+    ...(userThesis ? { userThesis } : {}),
   };
 }
 

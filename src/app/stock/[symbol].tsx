@@ -12,6 +12,7 @@ import { PriceMovement } from "@/components/stock/PriceMovement";
 import { SourceList } from "@/components/stock/SourceList";
 import { StockHeader } from "@/components/stock/StockHeader";
 import { TimelineRow } from "@/components/stock/TimelineRow";
+import { ThesisEditor } from "@/components/stock/ThesisEditor";
 import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
 import { WatchlistLimitSheet } from "@/components/stock/WatchlistLimitSheet";
 import { OfflineBanner } from "@/components/foundation/Feedback";
@@ -34,11 +35,13 @@ import { colors, radii, spacing, typography } from "@/theme/tokens";
 import type { IntelligenceRequest } from "@/data/intelligence";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { buildStockTimeline, groupStockTimeline } from "@/features/timeline";
+import { useTheses } from "@/features/thesis";
 
 export default function StockDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; preview?: string }>();
   const { state, dispatch } = useWatchlist();
+  const theses = useTheses();
   const {
     mode, quotes, companies, bars, filings: filingResources, news, events,
     loadStock, loadQuote, loadBars, loadNews, loadFilings, loadEvents,
@@ -160,6 +163,10 @@ export default function StockDetailScreen() {
           <SectionHeader actionLabel="See evidence" eyebrow="GROUNDED" onAction={() => router.push(`/stock/${symbol}/why` as Href)} title="Why it moved" />
           <IntelligencePanel onRetry={() => void retryWhy()} resource={whyResource} showHeader={false} />
           <AskMarketBriefEntry detail="Use this company’s available evidence" label={`Ask about ${symbol}`} onPress={() => router.push(`/ask?symbol=${symbol}` as Href)} />
+        </View>
+        <View style={styles.section}>
+          <SectionHeader eyebrow="OPTIONAL · SAVED ON THIS DEVICE" title="My thesis" />
+          <ThesisEditor onAsk={() => router.push(`/ask?symbol=${symbol}&mode=thesis&prompt=${encodeURIComponent("What changed vs my thesis?")}` as Href)} onSave={(value) => theses.save(symbol, value)} value={theses.state.bySymbol[symbol] ?? ""} />
         </View>
         <View style={styles.section}>
           <SectionHeader
