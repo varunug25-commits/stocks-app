@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -15,6 +15,7 @@ import {
   BriefHeroCard,
   BriefHistoryRow,
   BriefTypeSelector,
+  RealBriefHistoryRow,
 } from "@/components/briefs";
 import {
   DemoDataBadge,
@@ -42,6 +43,8 @@ import {
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
+import { useChangeDetection } from "@/features/materiality";
+import { compareRealBriefs } from "@/features/briefs/realStore";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 export default function BriefsScreen() {
@@ -50,7 +53,7 @@ export default function BriefsScreen() {
     view?: string;
     preview?: string;
   }>();
-  const { state, dispatch, hydrated } = useBriefs();
+  const { state, dispatch, hydrated, realHistory, saveRealBrief } = useBriefs();
   const { state: watchlistState, hydrated: watchlistHydrated } = useWatchlist();
   const { mode } = useMarketData();
   const reduceMotion = useReducedMotion();
@@ -80,6 +83,12 @@ export default function BriefsScreen() {
     timeWindow: "1D",
   }), [selectedType, symbols]);
   const { resource: intelligenceResource, retry: retryIntelligence } = useIntelligenceRequest(intelligenceRequest, mode === "REAL" && watchlistHydrated && symbols.length > 0);
+  const changes = useChangeDetection();
+  useEffect(() => {
+    if (mode === "REAL" && intelligenceResource.status === "ready") void saveRealBrief(intelligenceResource.data, selectedType, changes.result?.comparedAt ?? null).catch(() => undefined);
+  }, [changes.result?.comparedAt, intelligenceResource, mode, saveRealBrief, selectedType]);
+  const realForEdition = realHistory.filter((record) => record.edition === selectedType);
+  const briefDelta = realForEdition[0] ? compareRealBriefs(realForEdition[0], realForEdition[1]) : null;
 
   const retry = () => {
     setRetrying(true);
@@ -125,6 +134,7 @@ export default function BriefsScreen() {
             <View style={styles.groundedHero}>
               <IntelligencePanel onRetry={() => void retryIntelligence()} resource={intelligenceResource} />
               <Text style={styles.liveNote}>Generated from currently available provider evidence. Sources and uncertainty appear with the edition.</Text>
+              {briefDelta ? <View style={styles.delta}><Text style={styles.deltaLabel}>SINCE PREVIOUS {selectedType === "morning" ? "MORNING BRIEF" : "EVENING RECAP"}</Text><Text style={styles.deltaText}>{briefDelta.newDevelopments} new {briefDelta.newDevelopments === 1 ? "development" : "developments"} · {briefDelta.newCatalysts} new {briefDelta.newCatalysts === 1 ? "catalyst" : "catalysts"} · {briefDelta.uncertaintiesResolved} {briefDelta.uncertaintiesResolved === 1 ? "uncertainty" : "uncertainties"} resolved</Text></View> : null}
             </View>
           ) : <BriefHeroCard brief={latest!} onPress={() => router.push(`/brief/${latest!.id}` as Href)} status={selectBriefStatus(latest!.id, state)} />}
         </Animated.View>
@@ -168,9 +178,9 @@ export default function BriefsScreen() {
               }}
             />
           )}
-        </View> : <View style={styles.historySection}><SectionHeader title="Previous briefs" /><EmptyState description="No earlier generated brief yet." title="No brief history" /></View>}
+        </View> : <View style={styles.historySection}><SectionHeader title="Previous briefs" />{realHistory.length ? <View style={styles.historyList}>{realHistory.map((record) => <RealBriefHistoryRow key={record.id} onPress={() => router.push(`/brief/${encodeURIComponent(record.id)}` as Href)} record={record} />)}</View> : <EmptyState description="A validated edition will appear here after it is generated." title="No brief history" />}</View>}
         <Text style={styles.disclosure}>
-          {mode === "REAL" ? "The current edition uses provider-backed evidence. No earlier generated brief is stored yet. No recommendation is presented." : "Brief narratives and price moves are illustrative demo content, separate from provider-backed company data. No recommendation is presented."}
+          {mode === "REAL" ? "Validated editions are saved on this device and remain separate from illustrative demo history. No recommendation is presented." : "Brief narratives and price moves are illustrative demo content, separate from provider-backed company data. No recommendation is presented."}
         </Text>
       </ScrollView>
       <BriefFilterSheet
@@ -193,6 +203,9 @@ const styles = StyleSheet.create({
   readLink: { minHeight: 48, justifyContent: "center", paddingVertical: spacing.md },
   readLinkText: { ...typography.label, color: colors.teal },
   liveNote: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.sm },
+  delta: { marginTop: spacing.md, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  deltaLabel: { ...typography.caption, color: colors.textSecondary, letterSpacing: .7 },
+  deltaText: { ...typography.body, color: colors.textPrimary, marginTop: 3 },
   emptyWrap: { marginTop: spacing.md },
   historySection: { gap: spacing.xs, marginTop: spacing.xl },
   filterSummary: { minHeight: 32, flexDirection: "row", alignItems: "center", gap: spacing.xs },

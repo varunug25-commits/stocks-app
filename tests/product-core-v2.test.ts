@@ -13,6 +13,7 @@ import { MockStructuredAIProvider } from "../supabase/functions/_shared/intellig
 import { parseIntelligenceRequest } from "../supabase/functions/_shared/intelligence/request.ts";
 import { groupsReducer, initialGroupState } from "../src/features/groups/model.ts";
 import { createGroupStore } from "../src/features/groups/storage.ts";
+import { compareRealBriefs, createRealBriefStore, makeRealBriefRecord } from "../src/features/briefs/realStore.ts";
 
 const at = "2026-08-09T12:00:00.000Z";
 const ref = (id: string, title = id, sourceUrl: string | null = `https://example.com/${id}`) => ({ id, title, sourceUrl, occurredAt: at });
@@ -152,4 +153,23 @@ test("watchlist groups support overlapping membership and validated persistence"
   assert.deepEqual(await store.load(), state);
   values.set("marketbrief.groups.v1", "{bad json");
   assert.deepEqual(await store.load(), initialGroupState);
+});
+
+test("validated REAL brief history persists separately and computes honest deltas", async () => {
+  const response = (generatedAt: string, sourceIds: string[], kinds: ("confirmed" | "uncertainty" | "catalyst")[]) => ({
+    headline: "Evidence brief", oneLineSummary: "Summary", generatedAt, symbols: ["AAPL"], sourceIds,
+    sources: sourceIds.map((id) => ({ id, type: "news" as const })),
+    sections: [{ id: "s", title: "Things worth knowing", bullets: kinds.map((kind, index) => ({ id: `b${index}`, text: `${kind} claim`, kind, sourceIds: kind === "uncertainty" ? [] : [sourceIds[Math.min(index, sourceIds.length - 1)]!] })) }],
+    meta: { task: "brief" as const, provider: "test", providerMode: "live" as const, cached: false, evidenceCount: sourceIds.length, schemaVersion: "test" },
+  });
+  const previous = makeRealBriefRecord(response("2026-08-08T12:00:00.000Z", ["old"], ["confirmed", "uncertainty"]), "morning", "2026-08-08T11:59:00.000Z");
+  const current = makeRealBriefRecord(response("2026-08-09T12:00:00.000Z", ["old", "new"], ["confirmed", "catalyst"]), "morning", "2026-08-09T11:59:00.000Z");
+  assert.deepEqual(compareRealBriefs(current, previous), { newDevelopments: 1, newCatalysts: 1, uncertaintiesResolved: 1 });
+  const values = new Map<string, string>();
+  const adapter: StorageAdapter = { getItem: async (key) => values.get(key) ?? null, setItem: async (key, value) => { values.set(key, value); }, removeItem: async (key) => { values.delete(key); } };
+  const store = createRealBriefStore(adapter);
+  await store.save([previous, current]);
+  assert.deepEqual((await store.load()).map((record) => record.id), [current.id, previous.id]);
+  values.set("marketbrief.real-briefs.v1", "{corrupt");
+  assert.deepEqual(await store.load(), []);
 });
