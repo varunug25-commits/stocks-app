@@ -25,3 +25,9 @@
 
 - Independent penetration test, dependency audit, production incident response, backup/restore exercise, log retention, and legal/provider licensing review.
 - Production telemetry migration and Edge Function are branch changes and remain undeployed until reviewed.
+
+## Final branch audit notes — 2026-08-10
+
+- `npm audit --omit=dev` reports 22 transitive/direct advisories (8 moderate, 14 high, 0 critical) in the Expo 57 / React Native 0.86 / Metro toolchain. npm's proposed automatic fix downgrades to incompatible older major versions, so no force fix was applied. Expo Doctor passes 20/20. Dependency advisories remain a release-review item.
+- Supabase security advisors report five INFO-level `rls_enabled_no_policy` notices for service-only tables whose direct mobile-role access is intentionally revoked. Review again after branch migrations are deployed. [Supabase lint guidance](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+- Supabase performance advisors report two INFO-level unused cache-expiry indexes. Low development traffic can produce this signal; retain until query plans are measured after beta load. [Supabase lint guidance](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)
