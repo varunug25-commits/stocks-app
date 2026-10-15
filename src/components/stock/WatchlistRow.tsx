@@ -33,7 +33,7 @@ export function WatchlistRow({
   const up = (changePercent ?? 0) >= 0;
   const displayPrice = resolved ? formatPrice(resolved.price) : quote?.status === "loading" || !quote ? "Loading…" : "Unavailable";
   const freshness = quote?.status === "ready" || quote?.status === "stale"
-    ? `${quote.meta.source} · ${formatFreshness(quote.meta)}`
+    ? quote.meta.provider === "demo" ? formatFreshness(quote.meta) : `${quote.meta.source} · ${formatFreshness(quote.meta).replace(/^Updated /, "")}`
     : quote?.status === "loading" || !quote
       ? "Loading quote"
       : "Quote unavailable";
@@ -47,13 +47,13 @@ export function WatchlistRow({
         onPress={onOpen}
         style={({ pressed }) => [styles.main, pressed && !editing && styles.pressed]}
       >
-        <CompanyLogo color={company.logoColor} name={company.name} size={36} symbol={company.symbol} />
+        <CompanyLogo color={company.logoColor} name={company.name} size={42} symbol={company.symbol} />
         <View style={styles.identity}>
           <Text style={styles.symbol}>{company.symbol}</Text>
-          <Text numberOfLines={1} style={styles.company}>{company.name}</Text>
-          <Text numberOfLines={1} style={styles.freshness}>{freshness}</Text>
+          <Text numberOfLines={2} style={styles.company}>{company.name}</Text>
+          <Text numberOfLines={2} style={styles.freshness}>{freshness}</Text>
         </View>
-        {!editing && resolved && trend?.length ? <Sparkline height={28} points={trend} positive={up} width={54} /> : null}
+        {!editing && resolved && trend?.length ? <Sparkline height={26} points={trend} positive={up} width={42} /> : null}
         {!editing ? (
           <View style={styles.value}>
             <Text style={styles.price}>{displayPrice}</Text>
@@ -91,15 +91,15 @@ function Action({ label, icon, onPress, negative = false }: { label: string; ico
 }
 
 const styles = StyleSheet.create({
-  row: { minHeight: 76, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  main: { minHeight: 76, flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  row: { minHeight: 88, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  main: { minHeight: 88, paddingVertical: spacing.sm, flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   pressed: { opacity: 0.62 },
-  identity: { flex: 1, minWidth: 78 },
-  symbol: { ...typography.label, color: colors.textPrimary },
+  identity: { flex: 1, minWidth: 0 },
+  symbol: { ...typography.label, fontSize: 17, color: colors.textPrimary },
   company: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
-  freshness: { ...typography.caption, color: colors.textTertiary, fontSize: 10, lineHeight: 13, marginTop: 1 },
+  freshness: { ...typography.caption, color: colors.textTertiary, fontSize: 11, lineHeight: 16, marginTop: 2 },
   value: { minWidth: 78, alignItems: "flex-end" },
-  price: { ...numerals, ...typography.label, color: colors.textPrimary },
+  price: { ...numerals, ...typography.label, fontSize: 17, color: colors.textPrimary },
   changeRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   change: { ...numerals, ...typography.caption },
   actions: { flexDirection: "row", alignItems: "center" },

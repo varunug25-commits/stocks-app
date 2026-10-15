@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, spacing, typography } from "@/theme/tokens";
+import { LogoMark } from "./LogoMark";
 
 export function ProductHeader({
   eyebrow,
@@ -18,7 +19,7 @@ export function ProductHeader({
     <View style={styles.header}>
       <View style={styles.copy}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>{title === "MarketBrief" ? <LogoMark compact /> : null}<Text style={[styles.title, title === "MarketBrief" && styles.brandTitle]}>{title}</Text></View>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {actions ? <View style={styles.actions}>{actions}</View> : null}
@@ -28,30 +29,33 @@ export function ProductHeader({
 
 const styles = StyleSheet.create({
   header: {
-    minHeight: 82,
+    minHeight: 92,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.md,
-    paddingTop: spacing.sm,
+    gap: spacing.xs,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
   },
-  copy: { flex: 1 },
+  copy: { flex: 1, minWidth: 0 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  brandTitle: { fontSize: 23, lineHeight: 32, letterSpacing: -0.7 },
   eyebrow: {
     ...typography.caption,
     color: colors.textTertiary,
-    letterSpacing: 0.8,
+    letterSpacing: 1,
     textTransform: "uppercase",
   },
   title: {
     ...typography.title,
     color: colors.textPrimary,
-    letterSpacing: -0.55,
-    marginTop: 2,
+    letterSpacing: -1,
+    marginTop: 3,
   },
   subtitle: {
     ...typography.caption,
     color: colors.textSecondary,
-    marginTop: 3,
+    marginTop: 5,
   },
   actions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
 });

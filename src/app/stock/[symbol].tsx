@@ -32,7 +32,7 @@ import { formatFreshness, latestFilingsForPresentation, latestNewsForPresentatio
 import { WATCHLIST_LIMIT } from "@/features/watchlist/model";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { barKey, useMarketData } from "@/features/market-data/MarketDataProvider";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 import type { IntelligenceRequest } from "@/data/intelligence";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { buildStockTimeline, groupStockTimeline } from "@/features/timeline";
@@ -82,7 +82,7 @@ export default function StockDetailScreen() {
   const quote = quoteResource?.status === "ready" || quoteResource?.status === "stale" ? quoteResource.data : null;
   const barResource = bars[barKey(symbol, range)];
   const barData = barResource?.status === "ready" || barResource?.status === "stale" ? barResource.data : [];
-  const chartPoints = barData.map((bar) => ({ label: new Date(bar.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }), value: bar.close }));
+  const chartPoints = barData.map((bar) => ({ label: range === "1D" ? new Date(bar.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : new Date(bar.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }), value: bar.close }));
   const filingResource = filingResources[symbol];
   const filingData = filingResource?.status === "ready" || filingResource?.status === "stale" ? filingResource.data : null;
   const latestFilings = filingData ? latestFilingsForPresentation(filingData) : null;
@@ -147,6 +147,7 @@ export default function StockDetailScreen() {
             points={chartPoints}
             positive={(quote?.change ?? 0) >= 0}
             summary={summary}
+            timeLabel={range === "1D" ? "INTRADAY · LOCAL TIME" : "PRICE HISTORY"}
             unavailable={params.preview === "chart-unavailable" || !chartPoints.length}
           />
           <ChartRangeSelector
@@ -157,7 +158,7 @@ export default function StockDetailScreen() {
           />
         </View>
         <View style={styles.section}>
-          <SectionHeader eyebrow="REAL PROVIDER EVIDENCE" title="What changed" />
+          <SectionHeader eyebrow={mode === "REAL" ? "COMPANY TIMELINE" : "ILLUSTRATIVE TIMELINE"} title="What changed" />
           <ResourceStateNotice onRetry={() => void loadNews(symbol)} resource={newsResource} />
           <ResourceStateNotice onRetry={() => void loadFilings(symbol)} resource={filingResource} />
           <View style={styles.list}>
@@ -171,11 +172,11 @@ export default function StockDetailScreen() {
           <AskMarketBriefEntry detail="Use this company’s available evidence" label={`Ask about ${symbol}`} onPress={() => router.push(`/ask?symbol=${symbol}` as Href)} />
         </View>
         <View style={styles.section}>
-          <SectionHeader eyebrow="OPTIONAL · SAVED ON THIS DEVICE" title="My thesis" />
+          <SectionHeader eyebrow="YOUR PERSPECTIVE" title="My thesis" />
           <ThesisEditor onAsk={() => router.push(`/ask?symbol=${symbol}&mode=thesis&prompt=${encodeURIComponent("What changed vs my thesis?")}` as Href)} onSave={async (value) => { await theses.save(symbol, value); telemetry.track("thesis_saved", { symbol, outcome: value.trim() ? "saved" : "removed" }); }} value={theses.state.bySymbol[symbol] ?? ""} />
         </View>
         <View style={styles.section}>
-          <SectionHeader eyebrow="LOCAL ORGANIZATION" title="Groups" />
+          <SectionHeader title="Groups" />
           <StockGroupEditor groups={groups.state.groups} onToggle={(id) => groups.toggleSymbol(id, symbol)} symbol={symbol} />
         </View>
         <View style={styles.section}>
@@ -189,7 +190,7 @@ export default function StockDetailScreen() {
           </View>
         </View>
         <View style={styles.section}>
-          <SectionHeader eyebrow="PROVIDER FIELDS" title="Session statistics" />
+          <SectionHeader eyebrow="DAILY SNAPSHOT" title="Session statistics" />
           {statistics.length ? <MarketStatsGrid items={statistics} /> : <EmptyState description="The quote provider did not return session statistics." title="Statistics unavailable" />}
         </View>
         <View style={styles.section}>
@@ -222,11 +223,11 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     alignSelf: "center",
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 48,
     backgroundColor: colors.background,
   },
   center: { flex: 1, justifyContent: "center", padding: spacing.lg },
-  priceBlock: { marginTop: spacing.md },
+  priceBlock: { marginTop: spacing.xl, gap: 4 },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -250,12 +251,10 @@ const styles = StyleSheet.create({
   updated: { ...typography.caption, color: colors.textTertiary },
   standalonePrice: { ...typography.display, color: colors.textPrimary },
   chartCard: {
-    padding: spacing.md,
     marginTop: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   section: { gap: spacing.xs, marginTop: spacing.xl },
   stack: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },

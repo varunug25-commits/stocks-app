@@ -23,10 +23,11 @@ const kindColor: Record<ClaimKind, string> = {
   catalyst: colors.warning,
 };
 
-export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
+export function IntelligencePanel({ resource, onRetry, showHeader = true, compact = false }: {
   resource: IntelligenceResource;
   onRetry: () => void;
   showHeader?: boolean;
+  compact?: boolean;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const telemetry = useTelemetry();
@@ -47,10 +48,10 @@ export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
         </View>
       ) : null}
       {response.meta.task === "why_moved" ? <WhyEvidenceState response={response} /> : null}
-      {response.sections.map((section) => (
+      {(compact ? response.sections.slice(0, 1) : response.sections).map((section) => (
         <View key={section.id} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.title.toUpperCase()}</Text>
-          {section.bullets.map((bullet) => (
+          {(compact ? section.bullets.slice(0, 2) : section.bullets).map((bullet) => (
             <View key={bullet.id} style={styles.bulletRow}>
               <View style={[styles.marker, { backgroundColor: kindColor[bullet.kind] }]} />
               <View style={styles.bulletCopy}>
@@ -69,7 +70,7 @@ export function IntelligencePanel({ resource, onRetry, showHeader = true }: {
           <Ionicons color={response.sources.length ? colors.teal : colors.textTertiary} name="chevron-forward" size={16} />
         </Pressable>
       </View>
-      <IntelligenceFeedback response={response} />
+      {compact ? null : <IntelligenceFeedback response={response} />}
       <CitationSheet onClose={() => setSourcesOpen(false)} onSourceOpen={(source) => telemetry.track("source_opened", { task: response.meta.task, symbol: source.symbol })} sources={response.sources} visible={sourcesOpen} />
     </View>
   );

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import type { BriefStatus, GeneratedBrief } from "@/data/briefs";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { demoCompanyForSymbol } from "@/data/stocks";
@@ -31,20 +31,18 @@ export function BriefHeroCard({
         </View>
         <BriefStatusBadge status={status} />
       </View>
-      <ImageBackground
+      <View
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
-        imageStyle={styles.artworkImage}
-        resizeMode="cover"
-        source={artwork}
         style={styles.artwork}
       >
+        <Image resizeMode="cover" source={artwork} style={styles.artworkImage} />
         <View style={styles.artworkShade} />
-      </ImageBackground>
+      </View>
       <Text style={styles.title}>{brief.headline}</Text>
       <Text style={styles.summary}>{brief.summary}</Text>
       <View style={styles.points}>
-        {brief.developments.map((point, index) => (
+        {brief.developments.slice(0, 2).map((point, index) => (
           <BriefSummaryPoint index={index} key={point} point={point} />
         ))}
       </View>
@@ -81,19 +79,19 @@ export function BriefHeroCard({
 }
 
 const styles = StyleSheet.create({
-  publication: { paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  artwork: { height: 124, marginTop: spacing.sm, overflow: "hidden", borderRadius: 8, backgroundColor: colors.surfaceElevated },
-  artworkImage: { borderRadius: 8 },
+  publication: { paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  artwork: { height: 132, marginTop: spacing.md, overflow: "hidden", borderRadius: 12, backgroundColor: colors.surfaceElevated },
+  artworkImage: { width: "100%", height: "100%", borderRadius: 12 },
   artworkShade: { position: "absolute", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.12)" },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   eyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 1 },
-  title: { ...typography.heading, color: colors.textPrimary, marginTop: spacing.md },
+  title: { ...typography.title, fontSize: 27, lineHeight: 33, letterSpacing: -0.7, color: colors.textPrimary, marginTop: spacing.lg },
   summary: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
   points: { gap: spacing.sm, marginTop: spacing.md },
   metaRow: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, marginTop: spacing.md },
   logos: { flexDirection: "row", alignItems: "center" },
-  logoWrap: { marginRight: -6, borderRadius: 18, borderWidth: 2, borderColor: "#10201E" },
+  logoWrap: { marginRight: -6, borderRadius: 12, borderWidth: 2, borderColor: colors.background },
   emptyMeta: { ...typography.caption, color: colors.warning },
   meta: { ...typography.caption, color: colors.textTertiary },
   action: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderSoft },

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { MaterialChange } from "@/features/materiality";
@@ -16,7 +17,7 @@ export function MaterialChangeRow({ change, index, onPress }: { change: Material
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <Text style={styles.index}>{String(index + 1).padStart(2, "0")}</Text>
+      <View style={styles.rank}><CompanyLogo name={change.symbol} size={34} symbol={change.symbol} /><Text style={styles.index}>{String(index + 1).padStart(2, "0")}</Text></View>
       <View style={styles.content}>
         <View style={styles.topLine}>
           <View style={styles.identity}>
@@ -41,7 +42,8 @@ export function MaterialChangeRow({ change, index, onPress }: { change: Material
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   pressed: { opacity: 0.68 },
-  index: { ...numerals, ...typography.label, width: 26, color: colors.textTertiary },
+  rank: { alignItems: "center", gap: spacing.xs },
+  index: { ...numerals, ...typography.caption, color: colors.textTertiary },
   content: { flex: 1 },
   topLine: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },
   identity: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs, flex: 1 },

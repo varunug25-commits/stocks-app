@@ -23,7 +23,7 @@ export function SkeletonState({ variant = "today" }: { variant?: SkeletonVariant
   }, [opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  const rowCount = variant === "brief" ? 4 : 3;
+  const rowCount = variant === "watchlist" ? 5 : variant === "brief" ? 4 : 3;
 
   return (
     <View accessibilityLabel={labels[variant]} accessibilityLiveRegion="polite" accessibilityRole="progressbar" style={styles.container}>
@@ -36,7 +36,7 @@ export function SkeletonState({ variant = "today" }: { variant?: SkeletonVariant
       {variant === "today" ? <Animated.View style={[styles.snapshot, animatedStyle]} /> : null}
       {variant === "brief" ? <Animated.View style={[styles.artwork, animatedStyle]} /> : null}
       {variant === "pulse" ? <Animated.View style={[styles.breadth, animatedStyle]} /> : null}
-      {Array.from({ length: rowCount }, (_, index) => <Animated.View key={index} style={[styles.listRow, animatedStyle]} />)}
+      {Array.from({ length: rowCount }, (_, index) => <Animated.View key={index} style={[styles.listRow, variant === "watchlist" && styles.watchlistRow, animatedStyle]}><View style={styles.avatar} /><View style={styles.copy}><View style={styles.symbol} /><View style={styles.company} /></View><View style={styles.number} /></Animated.View>)}
       {variant === "today" ? <Animated.View style={[styles.nextUp, animatedStyle]} /> : null}
     </View>
   );
@@ -51,6 +51,12 @@ const styles = StyleSheet.create({
   chart: { height: 188, borderRadius: radii.md, backgroundColor: colors.surface },
   artwork: { height: 124, marginTop: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface },
   breadth: { height: 76, marginTop: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface },
-  listRow: { height: 64, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.surface },
+  listRow: { height: 76, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  watchlistRow: { height: 88 },
+  avatar: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.surfaceSoft },
+  copy: { flex: 1, gap: spacing.xs },
+  symbol: { width: 58, height: 14, borderRadius: 4, backgroundColor: colors.surfaceSoft },
+  company: { width: "70%", height: 11, borderRadius: 4, backgroundColor: colors.surface },
+  number: { width: 70, height: 18, borderRadius: 4, backgroundColor: colors.surfaceSoft },
   nextUp: { height: 72, marginTop: spacing.sm, borderRadius: radii.sm, backgroundColor: colors.surface },
 });

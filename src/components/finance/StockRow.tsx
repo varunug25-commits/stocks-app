@@ -5,6 +5,7 @@ import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { Sparkline } from "@/components/finance/Sparkline";
 import type { Stock } from "@/data/today";
 import type { DataResource, MarketQuote } from "@/data/real";
+import { formatFreshness } from "@/data/real";
 import { formatPrice } from "@/data/stocks";
 import { colors, numerals, spacing, typography } from "@/theme/tokens";
 
@@ -28,12 +29,13 @@ export function StockRow({ stock, quote, onPress }: StockRowProps) {
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
-      <CompanyLogo color={stock.logoColor} name={stock.name} size={36} symbol={stock.symbol} />
+      <CompanyLogo color={stock.logoColor} name={stock.name} size={38} symbol={stock.symbol} />
       <View style={styles.identity}>
         <Text style={styles.symbol}>{stock.symbol}</Text>
-        <Text numberOfLines={1} style={styles.name}>{stock.name}</Text>
+        <Text numberOfLines={2} style={styles.name}>{stock.name}</Text>
+        {quote?.status === "ready" || quote?.status === "stale" ? <Text numberOfLines={2} style={styles.freshness}>{quote.meta.provider === "demo" ? formatFreshness(quote.meta) : `${quote.meta.source} · ${formatFreshness(quote.meta).replace(/^Updated /, "")}`}</Text> : null}
       </View>
-      {resolved ? <Sparkline points={stock.trend} positive={positive} /> : <View style={styles.sparkPlaceholder} />}
+      {resolved && stock.trend.length >= 2 ? <Sparkline height={24} points={stock.trend} positive={positive} width={44} /> : null}
       <View style={styles.valueWrap}>
         <Text style={styles.price}>{price}</Text>
         <View style={styles.changeRow}>
@@ -47,10 +49,10 @@ export function StockRow({ stock, quote, onPress }: StockRowProps) {
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 64,
+    minHeight: 76,
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     gap: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
@@ -60,19 +62,20 @@ const styles = StyleSheet.create({
   },
   identity: {
     flex: 1,
-    minWidth: 62,
+    minWidth: 0,
   },
   symbol: {
     ...typography.label,
+    fontSize: 16,
     color: colors.textPrimary,
   },
   name: {
     ...typography.caption,
-    color: colors.textTertiary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   valueWrap: {
-    minWidth: 72,
+    minWidth: 78,
     alignItems: "flex-end",
   },
   price: {
@@ -89,5 +92,5 @@ const styles = StyleSheet.create({
     ...numerals,
     ...typography.caption,
   },
-  sparkPlaceholder: { width: 68 },
+  freshness: { ...typography.caption, fontSize: 11, lineHeight: 15, color: colors.textTertiary },
 });

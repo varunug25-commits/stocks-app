@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
 import type { BriefType } from "@/data/briefs";
@@ -28,6 +29,7 @@ export function BriefTypeSelector({
             }}
             style={[styles.option, selected && styles.selected]}
           >
+            <Ionicons color={selected ? colors.teal : colors.textTertiary} name={type === "morning" ? "sunny-outline" : "moon-outline"} size={17} />
             <Text style={[styles.text, selected && styles.selectedText]}>
               {type === "morning" ? "Morning" : "Evening"}
             </Text>
@@ -51,11 +53,13 @@ const styles = StyleSheet.create({
   option: {
     flex: 1,
     minHeight: 46,
+    flexDirection: "row",
+    gap: 7,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.sm,
   },
-  selected: { backgroundColor: colors.tealMuted },
+  selected: { backgroundColor: colors.surfaceSoft },
   text: { ...typography.label, color: colors.textTertiary },
   selectedText: { color: colors.teal },
 });

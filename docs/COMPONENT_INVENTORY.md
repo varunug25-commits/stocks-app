@@ -1,5 +1,19 @@
 # MarketBrief Mobile Component Inventory
 
+## Current mobile UI refresh
+
+- `LogoMark`: original local SVG mark; no gradient or remote artwork.
+- `ProductHeader`: consistent date/eyebrow, optional brand mark, screen title, and 44-point actions.
+- `CompanyLogo`: bundled Font Awesome 6 brand glyphs for supported companies; explicit full-ticker fallback for others.
+- `StockRow` / `WatchlistRow`: aligned numbers, wrapping company names, source/freshness, signed movement, and optional data-supported trend.
+- `GlassBackdrop`: restrained iOS blur; Android/web use the parent solid fallback.
+- `IntelligencePanel`: optional compact presentation for Today; complete evidence remains available through the existing Briefs screen and sources sheet.
+- `SearchField`: consistent focus treatment surrounding the entire input; `SearchResultRow` treats unavailable values neutrally.
+- `PriceChart`: hydrated data defaults to its latest point; touch exploration preserves selection clamping and its accessible summary.
+- `ChartRangeSelector` / `BriefTypeSelector`: readable segmented controls with 44-point targets and explicit selected states.
+
+All data contracts, provider adapters, watchlist persistence, and existing intelligence behavior remain outside this presentation refresh.
+
 ## Phase 2 Milestone 1 additions
 
 - `AppScreen`: safe-area, scrolling, padding, and keyboard-aware screen frame.

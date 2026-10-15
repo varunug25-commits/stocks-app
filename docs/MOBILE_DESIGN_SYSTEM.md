@@ -2,6 +2,8 @@
 
 ## Product identity
 
+The direct mobile UI refresh restores restrained teal actions, warmer neutral surfaces, larger financial values, recognizable bundled brand glyphs, and a watchlist-first Today. The palette and screen rules below supersede the earlier monochrome Product Core V2 treatment.
+
 MarketBrief is a serious, fast, evidence-first mobile product. It should feel financial, minimal, editorial, calm, and trustworthy—not like a crypto app, neon AI concept, generic SaaS dashboard, or glassmorphism showcase.
 
 The product should reveal what materially changed first, then progressively disclose calculations, evidence, and original sources. A useful screen may contain one important change or no material changes at all; the interface never adds filler to satisfy a layout.
@@ -19,26 +21,26 @@ The product should reveal what materially changed first, then progressively disc
 
 | Role | Token | Value |
 | --- | --- | --- |
-| App background | `background` | `#070809` |
-| Financial surface | `surface` | `#0E1012` |
-| Elevated surface | `surfaceElevated` | `#141619` |
-| Soft surface | `surfaceSoft` | `#191C20` |
-| Border | `border` | `#25292E` |
+| App background | `background` | `#0B0E11` |
+| Financial surface | `surface` | `#12171C` |
+| Elevated surface | `surfaceElevated` | `#1A2128` |
+| Soft surface | `surfaceSoft` | `#202931` |
+| Border | `border` | `#2B353E` |
 | Soft border | `borderSoft` | `rgba(255,255,255,0.08)` |
-| Primary action | `accent` | `#F5F5F2` |
-| Positive market state | `positive` | `#2FD17B` |
-| Negative market state | `negative` | `#F05252` |
+| Primary action / teal | `accent`, `teal` | `#80DCC6` |
+| Positive market state | `positive` | `#57D49B` |
+| Negative market state | `negative` | `#FF858D` |
 | Attention / uncertainty | `warning` | `#E8A93A` |
 | Rare information state | `info` | `#6698FF` |
-| Primary text | `textPrimary` | `#F5F5F2` |
-| Secondary text | `textSecondary` | `#A3A6AA` |
-| Tertiary text | `textTertiary` | `#6C7075` |
+| Primary text | `textPrimary` | `#F3F1EA` |
+| Secondary text | `textSecondary` | `#ACB6BF` |
+| Tertiary text | `textTertiary` | `#8996A2` |
 | Disabled surface | `disabled` | `#25282C` |
 | Disabled text | `disabledText` | `#666A70` |
 
-The interface is approximately 85–90% monochrome. Green and red are reserved for financial movement or matching semantic success/error states. Amber indicates uncertainty, upcoming events, or attention. Blue is rare informational context. Primary actions and selected navigation use near-white—not green. Color is always paired with a sign, arrow, icon, or label.
+Most of the interface remains neutral. Green/red describe signed financial movement; amber describes uncertainty or attention. Teal identifies links, primary actions, and selected navigation. Brand glyphs may retain their brand treatment. Color is paired with a sign, arrow, icon, or label. Foreground and financial semantic tokens meet 4.5:1 contrast on all four primary opaque surfaces.
 
-Legacy `teal` token names remain temporary compatibility aliases to the monochrome action system while components migrate; they no longer render teal.
+`accent` and `teal` intentionally share the same action color.
 
 ## Typography
 
@@ -46,12 +48,12 @@ Use platform system fonts for native rendering and accessibility. All prices and
 
 | Style | Size / line height | Weight |
 | --- | --- | --- |
-| Display | 30 / 35 | 700 |
-| Screen title | 27 / 32 | 700 |
-| Section heading | 19 / 24 | 700 |
-| Body | 15 / 21 | 400 |
-| Label | 15 / 19 | 600 |
-| Caption | 12 / 16 | 500 |
+| Display | 32 / 38 | 700 |
+| Screen title | 30 / 36 | 700 |
+| Section heading | 20 / 26 | 600 |
+| Body | 15 / 23 | 400 |
+| Label | 15 / 21 | 600 |
+| Caption | 12 / 18 | 500 |
 
 Avoid all caps except short section eyebrows, evidence states, and status micro-labels. Important text must remain usable with large accessibility font sizes.
 
@@ -60,7 +62,7 @@ Avoid all caps except short section eyebrows, evidence states, and status micro-
 - Base scale: 4, 8, 12, 16, 20, 24, 32, 40.
 - Screen horizontal gutter: 20.
 - Section separation: 24–32.
-- Financial row: 60–68, never below a 44-point interaction target.
+- Today mover row: 76; Watchlist row: 88 with room for company identity and readable source metadata. All interaction targets remain at least 44 points.
 - Card padding: 16–20.
 - Radii: 8 small, 12 medium, 16 large, 20 hero, 999 pill.
 - A section is not automatically a card. Prefer full-width rows and hairline separators for dense financial information.
@@ -81,7 +83,7 @@ Normal financial information uses solid dark surfaces. Glass is limited to botto
 
 ## Core screen application
 
-Today is a change report. It leads with “Since you last checked,” ranks material developments, acknowledges quiet holdings, shows known upcoming events, links the current grounded brief, and keeps Ask contextual.
+Today leads with three important shared-watchlist movers, directional counts, prices, and freshness. “Since you last checked” follows with genuine material developments or a compact first-baseline/quiet state. Upcoming events, the current brief, and contextual Ask follow. Quiet states do not repeat a second redundant quiet-stock panel.
 
 Pulse summarizes the watchlist: breadth, unusual moves, concentration, shared evidence, and upcoming events. It does not display invented indices, sectors, or macro values.
 

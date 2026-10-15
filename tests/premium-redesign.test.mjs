@@ -1,22 +1,32 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { colors } from "../src/theme/tokens.ts";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
+function luminance(hex) {
+  const channels = [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16) / 255)
+    .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+const contrast = (left, right) => (Math.max(luminance(left), luminance(right)) + 0.05) / (Math.min(luminance(left), luminance(right)) + 0.05);
+
 test("premium foundation stays dark, restrained, and semantically colored", async () => {
-  const [tokens, screen, tabs] = await Promise.all([
-    read("src/theme/tokens.ts"),
+  const [screen, tabs] = await Promise.all([
     read("src/components/foundation/Screen.tsx"),
     read("src/components/navigation/BottomTabBar.tsx"),
   ]);
-  assert.match(tokens, /background: "#070809"/);
-  assert.match(tokens, /accent: "#F5F5F2"/);
-  assert.match(tokens, /positive: "#2FD17B"/);
-  assert.match(tokens, /negative: "#F05252"/);
-  assert.doesNotMatch(tokens, /#42E8C6/);
-  assert.match(tokens, /textPrimary: "#F5F5F2"/);
+  assert.ok(luminance(colors.background) < 0.02, "The app canvas must remain near-black");
+  for (const surface of [colors.background, colors.surface, colors.surfaceElevated, colors.surfaceSoft]) {
+    for (const foreground of [colors.textPrimary, colors.textSecondary, colors.textTertiary, colors.teal, colors.positive, colors.negative]) {
+      assert.ok(contrast(foreground, surface) >= 4.5, `${foreground} must have readable small-text contrast on ${surface}`);
+    }
+  }
+  assert.notEqual(colors.teal, colors.positive, "Brand actions must be distinguishable from market gains");
+  assert.notEqual(colors.teal, colors.negative);
   assert.match(screen, /backgroundColor: colors\.background/);
   assert.match(tabs, /activeIndicator/);
   assert.doesNotMatch(tabs, /sparkles/);
@@ -54,7 +64,7 @@ test("Watchlist management is explicit and default rows stay compact", async () 
   ]);
   assert.match(screen, /setEditing/);
   assert.match(screen, /editing \? "Done" : "Edit"/);
-  assert.match(screen, /trend=\{localWatchlistRows/);
+  assert.match(screen, /trend=\{mode === "DEMO" \? localWatchlistRows/);
   assert.match(row, /editing \?/);
   assert.match(row, /Sparkline/);
   assert.match(row, /formatFreshness/);

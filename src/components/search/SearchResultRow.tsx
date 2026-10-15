@@ -5,7 +5,7 @@ import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import type { SearchStock } from "@/data/search";
 import type { DataResource, MarketQuote } from "@/data/real";
 import { formatPrice } from "@/data/stocks";
-import { colors, spacing, typography } from "@/theme/tokens";
+import { colors, numerals, spacing, typography } from "@/theme/tokens";
 
 export function SearchResultRow({
   stock,
@@ -37,23 +37,23 @@ export function SearchResultRow({
         <CompanyLogo
           color={stock.logoColor}
           name={stock.name}
+          size={40}
           symbol={stock.symbol}
         />
         <View style={styles.copy}>
           <Text style={styles.symbol}>{stock.symbol}</Text>
-          <Text numberOfLines={1} style={styles.meta}>
-            {[stock.name, stock.exchange ?? stock.sector, stock.assetType].filter(Boolean).join(" · ")}
-          </Text>
+          <Text numberOfLines={2} style={styles.meta}>{stock.name}</Text>
+          <Text numberOfLines={1} style={styles.exchange}>{stock.exchange ?? stock.sector}</Text>
         </View>
         <View style={styles.value}>
           <Text style={styles.price}>{price}</Text>
           <Text
             style={[
               styles.change,
-              { color: positive ? colors.positive : colors.negative },
+              { color: changePercent === null ? colors.textTertiary : positive ? colors.positive : colors.negative },
             ]}
           >
-            {changePercent === null ? "Provider validated" : `${positive ? "+" : ""}${changePercent.toFixed(2)}%`}
+            {changePercent === null ? "View company" : `${positive ? "+" : ""}${changePercent.toFixed(2)}%`}
           </Text>
         </View>
       </Pressable>
@@ -74,7 +74,7 @@ export function SearchResultRow({
         >
           <Ionicons
             color={
-              added ? colors.positive : watchlistFull ? colors.warning : colors.teal
+              added ? colors.teal : watchlistFull ? colors.warning : colors.teal
             }
             name={added ? "checkmark-circle" : "add-circle-outline"}
             size={23}
@@ -113,10 +113,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pressed: { opacity: 0.68 },
-  copy: { flex: 1 },
-  symbol: { ...typography.label, color: colors.textPrimary },
-  meta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
-  value: { alignItems: "flex-end" },
-  price: { ...typography.label, color: colors.textPrimary },
+  copy: { flex: 1, minWidth: 0, paddingVertical: spacing.sm },
+  symbol: { ...typography.label, fontSize: 16, color: colors.textPrimary },
+  meta: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
+  exchange: { ...typography.caption, fontSize: 11, color: colors.textTertiary },
+  value: { alignItems: "flex-end", maxWidth: 100 },
+  price: { ...numerals, ...typography.label, color: colors.textPrimary },
   change: { ...typography.caption, marginTop: 2 },
 });

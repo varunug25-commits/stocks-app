@@ -8,21 +8,24 @@ import {
 } from "react-native";
 import Svg, { Circle, Line, Path } from "react-native-svg";
 import type { ChartPoint } from "@/data/stocks";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, numerals, spacing, typography } from "@/theme/tokens";
 const H = 190;
 export function PriceChart({
   points,
   positive,
   summary,
   unavailable = false,
+  timeLabel = "PRICE HISTORY",
 }: {
   points: ChartPoint[];
   positive: boolean;
   summary: string;
   unavailable?: boolean;
+  timeLabel?: string;
 }) {
   const [width, setWidth] = useState(340);
-  const [selected, setSelected] = useState(points.length - 1);
+  const [selection, setSelected] = useState<number | null>(null);
+  const [scrubbing, setScrubbing] = useState(false);
   const coordinates = useMemo(() => {
     const values = points.map((p) => p.value),
       min = Math.min(...values),
@@ -30,7 +33,7 @@ export function PriceChart({
       range = Math.max(max - min, 1);
     return points
       .map((p, i) => ({
-        x: (i / Math.max(points.length - 1, 1)) * width,
+        x: 8 + (i / Math.max(points.length - 1, 1)) * Math.max(width - 16, 1),
         y: H - 18 - ((p.value - min) / range) * (H - 42),
       }));
   }, [points, width]);
@@ -43,23 +46,26 @@ export function PriceChart({
         0,
         Math.min(
           points.length - 1,
-          Math.round((x / width) * (points.length - 1)),
+          Math.round(((x - 8) / Math.max(width - 16, 1)) * (points.length - 1)),
         ),
       ),
     );
   const pan = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (e) => update(e.nativeEvent.locationX),
+    onPanResponderGrant: (e) => { setScrubbing(true); update(e.nativeEvent.locationX); },
     onPanResponderMove: (e) => update(e.nativeEvent.locationX),
+    onPanResponderRelease: () => setScrubbing(false),
+    onPanResponderTerminate: () => setScrubbing(false),
   });
   if (unavailable)
     return (
       <View style={s.unavailable}>
         <Text style={s.unavailableTitle}>Chart unavailable</Text>
-        <Text style={s.summary}>The local series could not be prepared.</Text>
+        <Text style={s.summary}>Price history is currently unavailable.</Text>
       </View>
     );
+  const selected = selection ?? points.length - 1;
   const safeSelected = Math.max(0, Math.min(selected, points.length - 1));
   const point = points[safeSelected]!;
   const coordinate = coordinates[safeSelected] ?? { x: width, y: H / 2 };
@@ -72,10 +78,11 @@ export function PriceChart({
       {...pan.panHandlers}
     >
       <View style={s.tooltip}>
-        <Text style={s.tooltipValue}>${point.value.toFixed(2)}</Text>
-        <Text style={s.tooltipLabel}>{point.label}</Text>
+        <Text style={s.tooltipLabel}>{scrubbing ? point.label : timeLabel}</Text>
+        <Text style={s.tooltipValue}>{scrubbing ? `$${point.value.toFixed(2)}` : "Touch chart to explore"}</Text>
       </View>
       <Svg height={H} width="100%">
+        {[0.25, 0.6, 0.95].map((fraction) => <Line key={fraction} stroke={colors.borderSoft} strokeDasharray="3 5" x1={0} x2={width} y1={H * fraction} y2={H * fraction} />)}
         <Path
           d={path}
           fill="none"
@@ -84,14 +91,14 @@ export function PriceChart({
           strokeLinejoin="round"
           strokeWidth={3}
         />
-        <Line
+        {scrubbing ? <Line
           stroke={colors.border}
           strokeDasharray="4 5"
           x1={coordinate.x}
           x2={coordinate.x}
           y1={24}
           y2={H - 10}
-        />
+        /> : null}
         <Circle
           cx={coordinate.x}
           cy={coordinate.y}
@@ -101,22 +108,21 @@ export function PriceChart({
           strokeWidth={3}
         />
       </Svg>
-      <Text style={s.summary}>{summary}</Text>
+      <View style={s.axis}><Text style={s.tooltipLabel}>{points[0]?.label}</Text><Text style={s.tooltipLabel}>{points[points.length - 1]?.label}</Text></View>
     </View>
   );
 }
 const s = StyleSheet.create({
   wrap: { paddingTop: spacing.sm },
   tooltip: {
-    alignSelf: "center",
+    flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radii.sm,
-    backgroundColor: colors.surfaceElevated,
+    justifyContent: "space-between",
+    minHeight: 30,
   },
-  tooltipValue: { ...typography.label, color: colors.textPrimary },
+  tooltipValue: { ...numerals, ...typography.caption, color: colors.textSecondary },
   tooltipLabel: { ...typography.caption, color: colors.textTertiary },
+  axis: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md },
   summary: {
     ...typography.caption,
     color: colors.textSecondary,
@@ -127,7 +133,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.lg,
-    borderRadius: radii.lg,
     backgroundColor: colors.surface,
   },
   unavailableTitle: { ...typography.heading, color: colors.textPrimary },

@@ -9,6 +9,7 @@ import { useOnboarding } from "@/features/onboarding/OnboardingProvider";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
 import { useGroups } from "@/features/groups";
 import { useTelemetry } from "@/features/telemetry";
+import { LogoMark } from "@/components/foundation/LogoMark";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 export default function ProfileScreen() {
@@ -18,14 +19,15 @@ export default function ProfileScreen() {
   const telemetry = useTelemetry();
   const preferenceSummary = [
     onboardingState.experience || "Experience not selected",
-    `${onboardingState.goals.length} goals`,
-    `${onboardingState.interests.length} interests`,
+    `${onboardingState.goals.length} ${onboardingState.goals.length === 1 ? "goal" : "goals"}`,
+    `${onboardingState.interests.length} ${onboardingState.interests.length === 1 ? "interest" : "interests"}`,
   ].join(" · ");
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <ProductHeader eyebrow="PROFILE" subtitle="Your saved preferences and data disclosures." title="Profile" />
+        <ProductHeader eyebrow="MAKE IT YOURS" title="Profile" />
+        <View style={styles.identity}><LogoMark compact /><View style={styles.copy}><Text style={styles.identityTitle}>Your MarketBrief</Text><Text style={styles.value}>{watchlistState.symbols.length} companies · Saved on this device</Text></View></View>
 
         <SettingsSection title="Personalization">
           <SettingRow icon="analytics-outline" label="Investor preferences" value={preferenceSummary} />
@@ -37,12 +39,12 @@ export default function ProfileScreen() {
         </SettingsSection>
 
         <SettingsSection title="Utility">
-          <SettingRow icon="server-outline" label="Data & sources" value="Provider-backed company data when available · demo data clearly labeled" />
-          <SettingRow icon="moon-outline" label="Appearance" value="Dark theme · system typography" />
+          <SettingRow icon="server-outline" label="Data & sources" value="Source and update time shown with each resource" />
+          <SettingRow icon="moon-outline" label="Appearance" value="Dark" />
         </SettingsSection>
 
         <SettingsSection title="Legal & product">
-          <SettingRow icon="shield-checkmark-outline" label="Privacy" value="Local preferences; provider credentials remain server-side" />
+          <SettingRow icon="shield-checkmark-outline" label="Privacy" value="Your preferences and lists are saved on this device" />
           <SettingRow icon="information-circle-outline" label="Disclosures" value="Educational information only · not investment advice" />
           <SettingRow icon="information-outline" label="About" value="MarketBrief mobile app · version 0.1.0" />
         </SettingsSection>
@@ -73,9 +75,11 @@ function SettingRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphM
 }
 
 const styles = StyleSheet.create({
-  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 104, backgroundColor: colors.background },
+  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 36, backgroundColor: colors.background },
+  identity: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 16 },
+  identityTitle: { ...typography.heading, color: colors.textPrimary },
   section: { marginTop: spacing.xl },
-  sectionTitle: { ...typography.caption, color: colors.textTertiary, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: spacing.xs },
+  sectionTitle: { ...typography.caption, color: colors.textSecondary, letterSpacing: 1, textTransform: "uppercase", marginBottom: spacing.xs },
   list: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   row: { minHeight: 68, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   icon: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 8, backgroundColor: colors.surface },

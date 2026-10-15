@@ -156,7 +156,7 @@ export default function SearchScreen() {
           </>
         ) : mode === "DEMO" ? (
           <>
-            <View style={s.sectionHead}>
+            {state.recentSearches.length ? <><View style={s.sectionHead}>
               <Text style={s.sectionTitle}>Recent searches</Text>
               {state.recentSearches.length ? (
                 <Pressable
@@ -171,19 +171,17 @@ export default function SearchScreen() {
             {state.recentSearches.length ? (
               <ChipSection onPress={open} symbols={state.recentSearches} />
             ) : (
-              <Text style={s.emptyRecent}>
-                Stocks you open will appear here.
-              </Text>
-            )}
-            <Text style={[s.sectionTitle, { marginTop: spacing.xxl }]}>
-              Trending now
+              null
+            )}</> : null}
+            <Text style={[s.sectionTitle, { marginTop: spacing.md }]}>
+              Explore a few favorites
             </Text>
             <ChipSection
               onPress={open}
               symbols={trendingStocks.filter(isStockSymbol)}
             />
             <Text style={[s.sectionTitle, { marginTop: spacing.xxl }]}>
-              Explore companies
+              Companies
             </Text>
             <View style={s.results}>
               {searchableStocks.slice(0, 6).map((stock) => (
@@ -206,7 +204,7 @@ export default function SearchScreen() {
             </View>
           </>
         ) : (
-          <EmptyState description="Search by company name or ticker to add a validated US equity." title="Find your stocks" />
+          <EmptyState description="Enter a company name or ticker. Choose a stock to see its price, news and filings." title="Find your next company" />
         )}
       </ScrollView>
       <WatchlistLimitSheet onClose={() => setLimit(false)} visible={limit} />
@@ -289,13 +287,9 @@ const s = StyleSheet.create({
     marginTop: spacing.sm,
   },
   results: {
-    paddingHorizontal: spacing.md,
     marginTop: spacing.sm,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   chips: {
     flexDirection: "row",
@@ -312,6 +306,6 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  chipSymbol: { ...typography.label, color: colors.teal },
+  chipSymbol: { ...typography.label, color: colors.textPrimary },
   chipName: { ...typography.caption, color: colors.textTertiary },
 });

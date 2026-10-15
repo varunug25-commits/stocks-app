@@ -54,5 +54,5 @@ test("Milestone 2 screens provide required local and failure states", async () =
   assert.match(briefs, /useBriefs/);
   assert.match(briefs, /useWatchlist/);
   assert.match(briefs, /BriefHeroCard/);
-  assert.match(profile, /Local preferences/);
+  assert.match(profile, /preferences and lists are saved on this device/);
 });

@@ -1,26 +1,26 @@
 export const colors = {
-  background: "#070809",
-  surface: "#0E1012",
-  surfaceElevated: "#141619",
-  surfaceSoft: "#191C20",
-  border: "#25292E",
+  background: "#0B0E11",
+  surface: "#12171C",
+  surfaceElevated: "#1A2128",
+  surfaceSoft: "#202931",
+  border: "#2B353E",
   borderSoft: "#FFFFFF14",
-  accent: "#F5F5F2",
-  accentPressed: "#D7D7D2",
+  accent: "#80DCC6",
+  accentPressed: "#60C5AD",
   info: "#6698FF",
-  teal: "#F5F5F2",
-  tealMuted: "#191C20",
-  tealPressed: "#D7D7D2",
-  focus: "#F5F5F2",
+  teal: "#80DCC6",
+  tealMuted: "#193830",
+  tealPressed: "#60C5AD",
+  focus: "#A8EBD9",
   disabled: "#25282C",
   disabledText: "#666A70",
   overlay: "#000000B8",
-  positive: "#2FD17B",
-  negative: "#F05252",
+  positive: "#57D49B",
+  negative: "#FF858D",
   warning: "#E8A93A",
-  textPrimary: "#F5F5F2",
-  textSecondary: "#A3A6AA",
-  textTertiary: "#6C7075",
+  textPrimary: "#F3F1EA",
+  textSecondary: "#ACB6BF",
+  textTertiary: "#8996A2",
   white: "#FFFFFF",
   black: "#000000",
 } as const;
@@ -45,12 +45,12 @@ export const radii = {
 } as const;
 
 export const typography = {
-  display: { fontSize: 30, lineHeight: 35, fontWeight: "700" as const },
-  title: { fontSize: 27, lineHeight: 32, fontWeight: "700" as const },
-  heading: { fontSize: 19, lineHeight: 24, fontWeight: "700" as const },
-  body: { fontSize: 15, lineHeight: 21, fontWeight: "400" as const },
-  label: { fontSize: 15, lineHeight: 19, fontWeight: "600" as const },
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: "500" as const },
+  display: { fontSize: 32, lineHeight: 38, fontWeight: "700" as const },
+  title: { fontSize: 30, lineHeight: 36, fontWeight: "700" as const },
+  heading: { fontSize: 20, lineHeight: 26, fontWeight: "600" as const },
+  body: { fontSize: 15, lineHeight: 23, fontWeight: "400" as const },
+  label: { fontSize: 15, lineHeight: 21, fontWeight: "600" as const },
+  caption: { fontSize: 12, lineHeight: 18, fontWeight: "500" as const },
 } as const;
 
 export const numerals = {
@@ -58,8 +58,8 @@ export const numerals = {
 } as const;
 
 export const glass = {
-  fallback: "#141618B8",
-  fallbackStrong: "#141618DB",
+  fallback: "#1A2128E8",
+  fallbackStrong: "#12171CF5",
   border: "#FFFFFF1A",
 } as const;
 

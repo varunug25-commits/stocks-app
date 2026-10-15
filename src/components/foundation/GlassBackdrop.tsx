@@ -1,7 +1,9 @@
 import { BlurView } from "expo-blur";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 export function GlassBackdrop({ intensity = 20 }: { intensity?: number }) {
+  // Android/web retain the parent surface's opaque, inexpensive fallback.
+  if (Platform.OS !== "ios") return null;
   return (
     <BlurView
       blurMethod="dimezisBlurViewSdk31Plus"

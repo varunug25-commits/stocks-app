@@ -121,7 +121,7 @@ export default function BriefsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <ProductHeader actions={mode === "DEMO" ? <DemoDataBadge /> : undefined} eyebrow="PUBLICATION ARCHIVE" subtitle={mode === "REAL" ? "Source-linked watchlist context, compressed into a concise edition." : "Morning context and evening recap, clearly marked as illustrative content."} title="Briefs" />
+        <ProductHeader actions={mode === "DEMO" ? <DemoDataBadge /> : undefined} eyebrow="A LITTLE PERSPECTIVE" subtitle="Your companies. The bigger picture." title="Briefs" />
         <BriefTypeSelector
           onChange={(value) => dispatch({ type: "selectType", value })}
           value={selectedType}
@@ -196,7 +196,7 @@ export default function BriefsScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 104, backgroundColor: colors.background },
+  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 36, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: "center", padding: spacing.lg },
   heroWrap: { marginTop: spacing.md },
   groundedHero: { paddingTop: spacing.xs },

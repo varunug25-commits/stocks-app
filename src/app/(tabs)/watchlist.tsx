@@ -70,8 +70,8 @@ export default function WatchlistScreen() {
       >
         <ProductHeader
           actions={<><Pressable accessibilityLabel="Add stock" accessibilityRole="button" onPress={add} style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}><Ionicons color={colors.teal} name="add" size={20} /><Text style={styles.headerActionText}>Add</Text></Pressable>{symbols.length ? <Pressable accessibilityLabel={editing ? "Finish editing watchlist" : "Edit watchlist"} accessibilityRole="button" onPress={() => setEditing((value) => !value)} style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}><Text style={styles.headerActionText}>{editing ? "Done" : "Edit"}</Text></Pressable> : null}</>}
-          eyebrow={`${symbols.length} ${symbols.length === 1 ? "COMPANY" : "COMPANIES"} · SAVED ORDER`}
-          subtitle={editing ? "Reorder or remove companies. Changes save automatically." : "Compact prices, daily movement, trend, and source freshness."}
+          eyebrow="YOUR COMPANIES"
+          subtitle={editing ? "Reorder or remove. Changes save automatically." : `${symbols.length} ${symbols.length === 1 ? "company" : "companies"} · Daily moves in USD`}
           title="Watchlist"
         />
 
@@ -94,7 +94,7 @@ export default function WatchlistScreen() {
                 onOpen={() => router.push(`/stock/${symbol}` as Href)}
                 onRemove={() => setRemove(symbol)}
                 quote={quotes[symbol]}
-                trend={localWatchlistRows.find((row) => row.symbol === symbol)?.trend}
+                trend={mode === "DEMO" ? localWatchlistRows.find((row) => row.symbol === symbol)?.trend : undefined}
               />;
             })}
           </View>
@@ -102,7 +102,7 @@ export default function WatchlistScreen() {
           <EmptyState actionLabel="Search stocks" description="Add companies to build a focused daily signal list." onAction={() => router.push("/search" as Href)} title="Your watchlist is clear" />
         )}
 
-        <Text style={styles.note}>Membership and ordering are stored on this device. {mode === "REAL" ? "Provider-backed quotes remain unavailable when a source cannot respond." : "Prices and trends are illustrative demo data."}</Text>
+        <Text style={styles.note}>{mode === "REAL" ? "Sources and update times appear with each quote. Data may be delayed." : "Demo data · Prices and trends are illustrative."}{"\n"}Your list is saved on this device.</Text>
       </ScrollView>
 
       <ConfirmationModal
@@ -118,9 +118,9 @@ export default function WatchlistScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 104, backgroundColor: colors.background },
+  scroll: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg, paddingBottom: 36, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: "center", padding: spacing.lg },
-  headerAction: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 2, paddingHorizontal: spacing.xs },
+  headerAction: { minHeight: 44, minWidth: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 2, paddingHorizontal: 4 },
   headerActionText: { ...typography.label, color: colors.teal },
   pressed: { opacity: 0.62 },
   list: { marginTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },

@@ -1,5 +1,13 @@
 # MarketBrief Mobile Screen Architecture
 
+## Current mobile UI refresh
+
+The historical milestone descriptions below record earlier implementations. Current routes remain Today (`/`), Pulse (`/markets`), Watchlist (`/watchlist`), Briefs (`/briefs`), and Profile (`/profile`), with Search, Stock Detail, Brief Detail, and contextual Ask on the root stack. No new route is introduced.
+
+Today order: compact product/date header → top three shared-watchlist movers with real resource states → change report → known upcoming events → current brief preview → contextual Ask → disclosure. First-baseline, quiet, empty, loading, offline, and retry states preserve the current data architecture. Watchlist remains in saved order and retains Edit/Done, reorder, removal, groups, and capacity recovery. Stock Detail keeps separate chart-range and resource retry requests.
+
+Native safe areas remain owned by `Screen` and the tab bar. Normal tab content ends with scroll padding instead of an additional empty navigation-sized block. The UI refresh is implemented directly in the repository, without an external design service.
+
 ## Phase 2 Milestone 1 route map
 
 - Root stack: Splash, Auth group, Onboarding group, existing Tabs group.

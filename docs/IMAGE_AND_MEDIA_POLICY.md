@@ -27,6 +27,8 @@ Do not imply that placeholder art is publisher photography.
 
 ## Company logos
 
+The direct mobile UI refresh uses the Font Awesome 6 brand glyphs already bundled in `@expo/vector-icons` for Apple, Microsoft, Google, Amazon, and Meta. These are local identity assets; no logo API, image scraping, invented brand artwork, or remote image request is introduced. Package license notices remain distributed in the installed packages; brand names and marks remain their respective owners' trademarks. Other companies display a clearly labelled ticker monogram on a neutral surface, not a fabricated logo. Original MarketBrief branding is local SVG code.
+
 Company logos appear in search, watchlists, stock pages, and alerts. Until a permitted logo provider is selected, use a branded local fallback made from the ticker initial and a distinct background color.
 
 Future logo records must include:

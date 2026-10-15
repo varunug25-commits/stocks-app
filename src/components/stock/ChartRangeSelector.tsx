@@ -32,15 +32,16 @@ export function ChartRangeSelector({
   );
 }
 const s = StyleSheet.create({
-  row: { flexDirection: "row", justifyContent: "space-between" },
+  row: { flexDirection: "row", justifyContent: "space-between", padding: 3, borderRadius: 12, backgroundColor: colors.surfaceElevated },
   item: {
-    minWidth: 48,
+    flex: 1,
+    minWidth: 0,
     minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radii.pill,
+    borderRadius: radii.sm,
   },
-  selected: { backgroundColor: colors.teal },
+  selected: { backgroundColor: colors.tealMuted },
   text: { ...typography.label, color: colors.textTertiary },
-  selectedText: { color: colors.background },
+  selectedText: { color: colors.teal },
 });

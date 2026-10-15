@@ -11,6 +11,7 @@ import { StockRow } from "@/components/finance/StockRow";
 import { ErrorState, OfflineBanner } from "@/components/foundation/Feedback";
 import { IconButton } from "@/components/foundation/IconButton";
 import { ProductHeader } from "@/components/foundation/ProductHeader";
+import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
@@ -22,7 +23,7 @@ import type { IntelligenceRequest } from "@/data/intelligence";
 import { isStockSymbol } from "@/data/stocks";
 import { useIntelligenceRequest } from "@/features/intelligence/useIntelligenceRequest";
 import { useMarketData } from "@/features/market-data/MarketDataProvider";
-import { useChangeDetection } from "@/features/materiality";
+import { calculateWatchlistBreadth, useChangeDetection } from "@/features/materiality";
 import { useTelemetry } from "@/features/telemetry";
 import { selectTodayWatchlist } from "@/features/watchlist/todayStocks";
 import { useWatchlist } from "@/features/watchlist/WatchlistProvider";
@@ -56,6 +57,10 @@ export default function TodayScreen() {
   }, [hydrated, loadCompany, watchlist.symbols]);
 
   const demoStocks = useMemo(() => selectTodayWatchlist(watchlist.symbols), [watchlist.symbols]);
+  const breadth = useMemo(() => calculateWatchlistBreadth(watchlist.symbols, Object.fromEntries(watchlist.symbols.map((symbol) => {
+    const quote = quotes[symbol];
+    return [symbol, quote?.status === "ready" || quote?.status === "stale" ? quote.data : null];
+  }))), [quotes, watchlist.symbols]);
   const baselineMovers = useMemo(() => (mode === "REAL" ? watchlist.symbols.map((symbol) => {
     const companyResource = companies[symbol];
     const company = companyResource?.status === "ready" || companyResource?.status === "stale" ? companyResource.data : null;
@@ -72,7 +77,7 @@ export default function TodayScreen() {
     const resource = events[symbol];
     return resource?.status === "ready" || resource?.status === "stale" ? resource.data : [];
   }).filter((event) => event.scheduledAt && Date.parse(event.scheduledAt) >= referenceNow - 86_400_000)
-    .sort((left, right) => Date.parse(left.scheduledAt!) - Date.parse(right.scheduledAt!)).slice(0, 4), [events, referenceNow, watchlist.symbols]);
+    .sort((left, right) => Date.parse(left.scheduledAt!) - Date.parse(right.scheduledAt!)).slice(0, 2), [events, referenceNow, watchlist.symbols]);
 
   const demoBrief = useMemo(() => mode === "DEMO" ? generateBrief(latestBriefSeed("morning"), watchlist.symbols) : null, [mode, watchlist.symbols]);
   const briefRequest = useMemo<IntelligenceRequest>(() => ({ task: "brief", symbols: watchlist.symbols.length ? watchlist.symbols : ["AAPL"], edition: "morning", timeWindow: "1D" }), [watchlist.symbols]);
@@ -113,41 +118,48 @@ export default function TodayScreen() {
             <ProductHeader actions={<IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} />} eyebrow={date} title="MarketBrief" />
           </Animated.View>
 
+          {watchlist.symbols.length ? <Animated.View entering={animation(15)} style={styles.watchlistSurface}>
+            <GlassBackdrop intensity={16} />
+            <View style={styles.watchlistHeading}><Text style={styles.watchlistLabel}>YOUR WATCHLIST</Text><Pressable accessibilityLabel="View all watchlist stocks" accessibilityRole="button" onPress={() => router.push("/watchlist" as Href)} style={styles.inlineAction}><Text style={styles.inlineActionText}>View all</Text><Ionicons color={colors.teal} name="arrow-forward" size={15} /></Pressable></View>
+            <View style={styles.breadthRow}><Text style={styles.breadthText}><Text style={styles.up}>↑ {breadth.higher} up</Text>{"   "}<Text style={styles.down}>↓ {breadth.lower} down</Text></Text><Text style={styles.watchlistMeta}>{mode === "DEMO" ? "Demo · " : ""}Daily moves · USD</Text></View>
+            <View style={styles.baselineList}>{baselineMovers.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}</View>
+            {breadth.unavailable ? <Text style={styles.unavailable}>{breadth.unavailable} {breadth.unavailable === 1 ? "quote" : "quotes"} currently unavailable</Text> : null}
+          </Animated.View> : null}
+
           {!watchlist.symbols.length ? <Animated.View entering={animation(25)} style={styles.section}>
             <EmptyState actionLabel="Search stocks" description="MarketBrief will track what changes and filter out the noise." onAction={() => router.push("/search" as Href)} title="Follow a few companies" />
           </Animated.View> : result?.baselineReady ? <Animated.View entering={animation(25)} style={styles.section}>
             <Text style={styles.eyebrow}>SINCE YOU LAST CHECKED</Text>
-            <Text style={styles.heroTitle}>Your baseline is ready</Text>
-            <Text style={styles.heroBody}>MarketBrief will compare future developments against this point. Current watchlist movers are shown below.</Text>
-            <View style={styles.baselineList}>{baselineMovers.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}</View>
+            <View style={styles.reportTitleRow}><Text style={styles.heroTitle}>You’re all caught up.</Text><Ionicons color={colors.teal} name="checkmark-circle-outline" size={23} /></View>
+            <Text style={styles.heroBody}>Your baseline is ready. New developments will appear here after your next check.</Text>
           </Animated.View> : <Animated.View entering={animation(25)} style={styles.section}>
             <Text style={styles.eyebrow}>SINCE YOU LAST CHECKED</Text>
-            <Text style={styles.heroTitle}>{material.length ? `${material.length} ${material.length === 1 ? "thing matters" : "things matter"}` : "Nothing material changed"}</Text>
+            <View style={styles.reportTitleRow}><Text style={styles.heroTitle}>{material.length ? `${material.length} ${material.length === 1 ? "update worth a look" : "updates worth a look"}` : "Nothing material changed"}</Text><Ionicons color={colors.teal} name={material.length ? "layers-outline" : "checkmark-circle-outline"} size={23} /></View>
             <Text style={styles.heroMeta}>{relativeCheck(changes.lastCheckedAt, referenceNow)}</Text>
-            {material.length ? <View style={styles.changeList}>{material.map((change, index) => <MaterialChangeRow change={change} index={index} key={change.id} onPress={() => openChange(change)} />)}</View> : <Text style={styles.heroBody}>No new watchlist development passed your attention threshold.</Text>}
+            {material.length ? <View style={styles.changeList}>{material.map((change, index) => <MaterialChangeRow change={change} index={index} key={change.id} onPress={() => openChange(change)} />)}</View> : <Text style={styles.heroBody}>No significant new developments in your followed companies.</Text>}
           </Animated.View>}
 
-          {watchlist.symbols.length && !result?.baselineReady ? <Animated.View entering={animation(50)} style={styles.quietRow}>
-            <View style={styles.quietCopy}><Text style={styles.quietTitle}>Your other stocks</Text><Text style={styles.quietMeta}>{quietCount ? `Nothing material changed in ${quietCount} of ${watchlist.symbols.length} stocks.` : "Every watched stock with supported data is included above."}</Text></View>
+          {watchlist.symbols.length && material.length > 0 && !result?.baselineReady ? <Animated.View entering={animation(50)} style={styles.quietRow}>
+            <View style={styles.quietCopy}><Text style={styles.quietTitle}>Your other stocks</Text><Text style={styles.quietMeta}>{quietCount ? `${quietCount} of ${watchlist.symbols.length} companies have no significant new updates.` : "All available company updates are included above."}</Text></View>
             <Pressable accessibilityRole="button" onPress={() => router.push("/watchlist" as Href)} style={styles.inlineAction}><Text style={styles.inlineActionText}>View all</Text></Pressable>
           </Animated.View> : null}
 
           <Animated.View entering={animation(70)} style={styles.section}>
-            <SectionHeader eyebrow="KNOWN DATES · NEXT 7 DAYS" title="What matters next" />
-            {upcoming.length ? upcoming.map((event) => { const scheduled = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: scheduled.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(scheduled.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <EmptyState description="No provider-backed events are scheduled for the next seven days." title="No known catalysts" />}
+            <SectionHeader eyebrow="ON YOUR RADAR" title="What matters next" />
+            {upcoming.length ? upcoming.map((event) => { const scheduled = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: scheduled.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(scheduled.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <View style={styles.quietEvent}><Ionicons color={colors.textTertiary} name="calendar-outline" size={20} /><Text style={styles.quietMeta}>No confirmed events on your calendar yet.</Text></View>}
           </Animated.View>
 
           <Animated.View entering={animation(90)} style={[styles.section, styles.brief]}>
             <SectionHeader eyebrow="CURRENT EDITION" title="Morning brief" />
-            {mode === "REAL" ? watchlist.symbols.length ? <IntelligencePanel onRetry={() => void retryBrief()} resource={briefResource} /> : null : <><Text style={styles.briefTitle}>{demoBrief!.headline}</Text>{demoBrief!.developments.slice(0, 4).map((point, index) => <View key={point} style={styles.briefPoint}><Text style={styles.number}>{String(index + 1).padStart(2, "0")}</Text><Text style={styles.briefText}>{point}</Text></View>)}</>}
+            {mode === "REAL" ? watchlist.symbols.length ? <IntelligencePanel onRetry={() => void retryBrief()} resource={briefResource} compact /> : null : <><Text style={styles.briefTitle}>{demoBrief!.headline}</Text>{demoBrief!.developments.slice(0, 2).map((point, index) => <View key={point} style={styles.briefPoint}><Text style={styles.number}>{String(index + 1).padStart(2, "0")}</Text><Text numberOfLines={3} style={styles.briefText}>{point}</Text></View>)}</>}
             <Pressable accessibilityRole="button" onPress={() => router.push(mode === "REAL" ? "/briefs" as Href : `/brief/${demoBrief!.id}` as Href)} style={styles.link}><Text style={styles.linkText}>Open current brief</Text><Ionicons color={colors.textPrimary} name="arrow-forward" size={17} /></Pressable>
           </Animated.View>
 
           <Animated.View entering={animation(110)} style={styles.ask}>
-            <AskMarketBriefEntry detail="Ask from your watchlist changes and available evidence" label="Ask MarketBrief" onPress={() => router.push("/ask?mode=since_last_check&prompt=What%20changed%20since%20I%20last%20checked%3F" as Href)} />
+            <AskMarketBriefEntry detail="A closer look, with sources." label="Ask MarketBrief" onPress={() => router.push("/ask?mode=since_last_check&prompt=What%20changed%20since%20I%20last%20checked%3F" as Href)} />
           </Animated.View>
 
-          <View style={styles.disclosure}><Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={16} /><Text style={styles.disclosureText}>{mode === "REAL" ? "Changes use available provider evidence and your saved comparison baseline. Missing resources remain unavailable." : "Deliberate demo mode with illustrative market content. Informational only."}</Text></View>
+          <View style={styles.disclosure}><Ionicons color={colors.textTertiary} name="shield-checkmark-outline" size={16} /><Text style={styles.disclosureText}>{mode === "REAL" ? "Source-linked updates. Data may be delayed or unavailable. For information only." : "Demo data · Prices, stories and briefs are illustrative. For information only."}</Text></View>
         </View>
       </ScrollView>
     </Screen>
@@ -155,29 +167,40 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: 112, backgroundColor: colors.background },
+  scroll: { paddingBottom: 36, backgroundColor: colors.background },
   column: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg },
   state: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.lg },
-  section: { marginTop: spacing.xl },
+  section: { marginTop: spacing.xxl },
+  watchlistSurface: { paddingHorizontal: spacing.md, paddingBottom: 4, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: "hidden" },
+  watchlistHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },
+  watchlistLabel: { ...typography.caption, color: colors.textSecondary, letterSpacing: 1.2, fontWeight: "600" },
+  breadthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs, paddingBottom: spacing.xs },
+  breadthText: { ...typography.caption },
+  up: { color: colors.positive },
+  down: { color: colors.negative },
+  watchlistMeta: { ...typography.caption, color: colors.textTertiary },
+  unavailable: { ...typography.caption, color: colors.textTertiary, paddingVertical: spacing.xs },
+  reportTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   eyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 0.9 },
-  heroTitle: { ...typography.display, color: colors.textPrimary, marginTop: spacing.xs },
+  heroTitle: { ...typography.title, fontSize: 26, lineHeight: 33, letterSpacing: -0.8, flex: 1, color: colors.textPrimary, marginTop: spacing.xs },
   heroMeta: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xs },
   heroBody: { ...typography.body, color: colors.textSecondary, maxWidth: 520, marginTop: spacing.sm },
   changeList: { marginTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  baselineList: { marginTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  baselineList: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   quietRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   quietCopy: { flex: 1 },
   quietTitle: { ...typography.label, color: colors.textPrimary },
   quietMeta: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  inlineAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.xs },
-  inlineActionText: { ...typography.label, color: colors.textPrimary },
-  brief: { paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  inlineAction: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.xs, paddingHorizontal: 2 },
+  inlineActionText: { ...typography.caption, fontWeight: "600", color: colors.teal },
+  quietEvent: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  brief: { padding: spacing.md, borderWidth: 1, borderRadius: 16, borderColor: colors.border, backgroundColor: colors.surface },
   briefTitle: { ...typography.heading, color: colors.textPrimary, marginTop: spacing.sm },
   briefPoint: { minHeight: 52, flexDirection: "row", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSoft },
   number: { ...typography.label, width: 26, color: colors.textTertiary },
   briefText: { ...typography.body, flex: 1, color: colors.textSecondary },
   link: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  linkText: { ...typography.label, color: colors.textPrimary },
+  linkText: { ...typography.label, color: colors.teal },
   ask: { marginTop: spacing.lg },
   disclosure: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, marginTop: spacing.xxl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   disclosureText: { ...typography.caption, flex: 1, color: colors.textTertiary },

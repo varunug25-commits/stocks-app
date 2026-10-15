@@ -28,10 +28,10 @@ const s = StyleSheet.create({
   price: {
     ...numerals,
     ...typography.display,
-    fontSize: 36,
-    lineHeight: 42,
+    fontSize: 46,
+    lineHeight: 54,
     color: colors.textPrimary,
-    letterSpacing: -1,
+    letterSpacing: -1.8,
   },
   change: { ...numerals, ...typography.label, marginTop: spacing.xxs },
 });

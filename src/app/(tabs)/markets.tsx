@@ -20,7 +20,7 @@ import { colors, numerals, spacing, typography } from "@/theme/tokens";
 export default function PulseScreen() {
   const router = useRouter();
   const { state: watchlist, hydrated } = useWatchlist();
-  const { quotes, companies, events, loadCompany } = useMarketData();
+  const { mode, quotes, companies, events, loadCompany } = useMarketData();
   const changes = useChangeDetection();
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -57,10 +57,15 @@ export default function PulseScreen() {
     <Screen>
       <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl onRefresh={() => void refresh()} refreshing={refreshing} tintColor={colors.textPrimary} />} showsVerticalScrollIndicator={false}>
         <View style={styles.column}>
-          <ProductHeader actions={<IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} />} eyebrow="WATCHLIST INTELLIGENCE" subtitle="Patterns and developments within the companies you follow." title="Pulse" />
+          <ProductHeader actions={<IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} />} eyebrow="THE VIEW ACROSS YOUR LIST" subtitle="How your companies are moving together." title="Pulse" />
           {!watchlist.symbols.length ? <View style={styles.section}><EmptyState actionLabel="Search stocks" description="Pulse summarizes unusual moves, shared developments and known events across your list." onAction={() => router.push("/search" as Href)} title="Follow a few companies" /></View> : <>
-            <View style={styles.section}>
-              <SectionHeader eyebrow={`${watchlist.symbols.length} WATCHED STOCKS · 1D`} title="Today’s watchlist" />
+            <View style={styles.summary}>
+              <SectionHeader eyebrow={mode === "DEMO" ? "DEMO DATA · DAILY MOVES" : "DAILY MOVES"} title="Today’s watchlist" />
+              <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.breadthTrack}>
+                {breadth.higher > 0 ? <View style={{ flex: breadth.higher, backgroundColor: colors.positive }} /> : null}
+                {breadth.lower > 0 ? <View style={{ flex: breadth.lower, backgroundColor: colors.negative }} /> : null}
+                {breadth.unchanged + breadth.unavailable > 0 ? <View style={{ flex: breadth.unchanged + breadth.unavailable, backgroundColor: colors.border }} /> : null}
+              </View>
               <View accessibilityLabel={`${breadth.higher} higher, ${breadth.lower} lower, ${breadth.unchanged} unchanged`} style={styles.breadth}>
                 <BreadthStat label="Higher" tone={colors.positive} value={breadth.higher} />
                 <BreadthStat label="Lower" tone={colors.negative} value={breadth.lower} />
@@ -71,17 +76,17 @@ export default function PulseScreen() {
 
             <View style={styles.section}>
               <SectionHeader eyebrow="PRICE CONTEXT" title={`${unusual.length} ${unusual.length === 1 ? "unusual move" : "unusual moves"}`} />
-              {unusual.length ? <View style={styles.list}>{unusual.map((change, index) => <MaterialChangeRow change={change} index={index} key={change.id} onPress={() => openChange(change.id, change.symbol)} />)}</View> : <EmptyState description="No supported watchlist move is elevated versus its recent typical daily range." title="Moves remain within range" />}
+              {unusual.length ? <View style={styles.list}>{unusual.map((change, index) => <MaterialChangeRow change={change} index={index} key={change.id} onPress={() => openChange(change.id, change.symbol)} />)}</View> : <View style={styles.quiet}><Ionicons color={colors.teal} name="pulse-outline" size={22} /><View style={styles.patternCopy}><Text style={styles.patternTitle}>Moves remain within range</Text><Text style={styles.patternDetail}>No elevated move in the available price history.</Text></View></View>}
             </View>
 
             <View style={styles.section}>
-              <SectionHeader eyebrow="DETERMINISTIC · WITHIN YOUR WATCHLIST" title="Patterns" />
-              {patterns.length ? <View style={styles.list}>{patterns.map((pattern) => <View key={pattern.id} style={styles.pattern}><View style={[styles.patternIcon, pattern.tone === "attention" && styles.patternAttention]}><Ionicons color={pattern.tone === "attention" ? colors.warning : colors.textSecondary} name={pattern.tone === "attention" ? "pulse-outline" : "remove-outline"} size={18} /></View><View style={styles.patternCopy}><Text style={styles.patternTitle}>{pattern.title}</Text><Text style={styles.patternDetail}>{pattern.detail}</Text></View></View>)}</View> : <EmptyState description="No supported cross-watchlist pattern is strong enough to surface." title="No clear pattern" />}
+              <SectionHeader eyebrow="WITHIN YOUR WATCHLIST" title="Patterns" />
+              {patterns.length ? <View style={styles.list}>{patterns.map((pattern) => <View key={pattern.id} style={styles.pattern}><View style={[styles.patternIcon, pattern.tone === "attention" && styles.patternAttention]}><Ionicons color={pattern.tone === "attention" ? colors.warning : colors.textSecondary} name={pattern.tone === "attention" ? "pulse-outline" : "remove-outline"} size={18} /></View><View style={styles.patternCopy}><Text style={styles.patternTitle}>{pattern.title}</Text><Text style={styles.patternDetail}>{pattern.detail}</Text></View></View>)}</View> : <Text style={styles.quietText}>No clear pattern in your companies right now.</Text>}
             </View>
 
             <View style={styles.section}>
               <SectionHeader eyebrow="KNOWN DATES" title="Next seven days" />
-              {upcoming.length ? upcoming.map((event) => { const date = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(date.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <EmptyState description="No provider-backed company events are currently available for this period." title="No known events" />}
+              {upcoming.length ? upcoming.map((event) => { const date = new Date(event.scheduledAt!); return <EventCard event={{ id: event.id, day: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(), date: String(date.getDate()), time: event.timing === "unknown" ? "Time unavailable" : event.timing.replace("-", " "), title: event.title, detail: event.source, symbol: event.symbol ?? undefined, tone: "earnings" }} key={event.id} />; }) : <Text style={styles.quietText}>No confirmed company events in the next seven days.</Text>}
             </View>
           </>}
           <View style={styles.disclosure}><Ionicons color={colors.textTertiary} name="information-circle-outline" size={17} /><Text style={styles.disclosureText}>Pulse describes only supported evidence within your watchlist. It does not claim sector-wide or market-wide causation.</Text></View>
@@ -96,12 +101,14 @@ function BreadthStat({ label, value, tone }: { label: string; value: number; ton
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: 112, backgroundColor: colors.background },
+  scroll: { paddingBottom: 36, backgroundColor: colors.background },
   column: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg },
   section: { marginTop: spacing.xl },
-  breadth: { flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  summary: { padding: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 16 },
+  breadthTrack: { height: 5, borderRadius: 3, overflow: "hidden", flexDirection: "row", gap: 3, marginTop: spacing.md },
+  breadth: { flexDirection: "row", gap: spacing.sm },
   stat: { flex: 1, minHeight: 72, justifyContent: "center", paddingVertical: spacing.sm },
-  statValue: { ...numerals, ...typography.title },
+  statValue: { ...numerals, ...typography.title, fontSize: 32 },
   statLabel: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
   unavailable: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xs },
   list: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
@@ -111,6 +118,8 @@ const styles = StyleSheet.create({
   patternCopy: { flex: 1 },
   patternTitle: { ...typography.label, color: colors.textPrimary },
   patternDetail: { ...typography.caption, color: colors.textSecondary, marginTop: 3 },
+  quiet: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  quietText: { ...typography.body, color: colors.textSecondary, paddingVertical: spacing.md },
   disclosure: { flexDirection: "row", gap: spacing.xs, marginTop: spacing.xxl, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   disclosureText: { ...typography.caption, flex: 1, color: colors.textTertiary },
 });

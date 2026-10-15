@@ -35,7 +35,7 @@ export function StockHeader({
           size={52}
           symbol={company.symbol}
         />
-        <View>
+        <View style={s.copy}>
           <Text style={s.name}>{company.name}</Text>
           <Text style={s.meta}>
             {[company.exchange, company.sector].filter(Boolean).join(" · ")}
@@ -64,8 +64,9 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
-  name: { ...typography.title, color: colors.textPrimary },
+  copy: { flex: 1, minWidth: 0 },
+  name: { ...typography.heading, fontSize: 23, lineHeight: 29, letterSpacing: -0.6, color: colors.textPrimary },
   meta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
 });

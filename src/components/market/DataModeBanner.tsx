@@ -1,23 +1,15 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { DataMode } from "@/data/real";
-import { colors, radii, spacing, typography } from "@/theme/tokens";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 export function DataModeBanner({ mode }: { mode: DataMode }) {
   return (
-    <View accessibilityRole="text" style={[styles.banner, mode === "REAL" ? styles.real : styles.demo]}>
-      <Text style={styles.title}>{mode === "REAL" ? "Real data mode" : "Demo data mode"}</Text>
-      <Text style={styles.body}>
-        {mode === "REAL"
-          ? "Provider failures stay unavailable—MarketBrief never substitutes demo prices."
-          : "Prices and market content on this screen are illustrative demo data."}
-      </Text>
+    <View accessibilityRole="text" style={styles.banner}>
+      <Text style={styles.body}>{mode === "REAL" ? "Company data · Source and update time shown with each resource" : "Demo data · Prices and stories are illustrative"}</Text>
     </View>
   );
 }
 const styles = StyleSheet.create({
-  banner: { padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, marginBottom: spacing.md },
-  real: { backgroundColor: "#102824", borderColor: "#24594F" },
-  demo: { backgroundColor: "#292317", borderColor: "#5A4923" },
-  title: { ...typography.label, color: colors.textPrimary },
-  body: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  banner: { paddingVertical: spacing.xs, marginBottom: spacing.xs },
+  body: { ...typography.caption, color: colors.textTertiary },
 });
