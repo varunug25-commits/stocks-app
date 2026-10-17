@@ -42,6 +42,7 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             accessibilityLabel={`${title} tab`}
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
+            aria-selected={focused}
             key={route.key}
             onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
             onPress={onPress}

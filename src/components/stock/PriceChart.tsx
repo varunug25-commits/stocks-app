@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LayoutChangeEvent,
   PanResponder,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -24,8 +25,27 @@ export function PriceChart({
   timeLabel?: string;
 }) {
   const [width, setWidth] = useState(340);
+  const chartRef = useRef<View>(null);
   const [selection, setSelected] = useState<number | null>(null);
   const [scrubbing, setScrubbing] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== "web" || unavailable) return;
+    const element = chartRef.current as unknown as HTMLElement | null;
+    if (!element?.getBoundingClientRect) return;
+    // Keep web geometry responsive even when RN Web's onLayout is delayed.
+    const measure = () => {
+      const next = element.getBoundingClientRect().width;
+      if (next > 0) setWidth(next);
+    };
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(element);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [unavailable]);
   const coordinates = useMemo(() => {
     const values = points.map((p) => p.value),
       min = Math.min(...values),
@@ -74,6 +94,7 @@ export function PriceChart({
       accessibilityLabel={summary}
       accessible
       onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}
+      ref={chartRef}
       style={s.wrap}
       {...pan.panHandlers}
     >
@@ -81,7 +102,7 @@ export function PriceChart({
         <Text style={s.tooltipLabel}>{scrubbing ? point.label : timeLabel}</Text>
         <Text style={s.tooltipValue}>{scrubbing ? `$${point.value.toFixed(2)}` : "Touch chart to explore"}</Text>
       </View>
-      <Svg height={H} width="100%">
+      <Svg height={H} viewBox={`0 0 ${width} ${H}`} width="100%">
         {[0.25, 0.6, 0.95].map((fraction) => <Line key={fraction} stroke={colors.borderSoft} strokeDasharray="3 5" x1={0} x2={width} y1={H * fraction} y2={H * fraction} />)}
         <Path
           d={path}

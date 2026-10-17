@@ -1,0 +1,39 @@
+{
+  "mode": "DEMO",
+  "nativeDeviceVerification": false,
+  "checks": [
+    {
+      "width": 390,
+      "container": 350,
+      "svg": 350,
+      "viewBoxWidth": 350,
+      "cx": 342,
+      "pointRight": 368,
+      "svgRight": 370,
+      "stroke": 3,
+      "passed": true
+    },
+    {
+      "width": 320,
+      "container": 280,
+      "svg": 280,
+      "viewBoxWidth": 280,
+      "cx": 272,
+      "pointRight": 298,
+      "svgRight": 300,
+      "stroke": 3,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "container": 350,
+      "svg": 350,
+      "viewBoxWidth": 350,
+      "cx": 342,
+      "pointRight": 368,
+      "svgRight": 370,
+      "stroke": 3,
+      "passed": true
+    }
+  ]
+}

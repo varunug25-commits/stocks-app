@@ -11,11 +11,12 @@ export function ChartRangeSelector({
   onChange: (range: ChartRange) => void;
 }) {
   return (
-    <View accessibilityRole="radiogroup" style={s.row}>
+    <View accessibilityLabel="Chart range" accessibilityRole="radiogroup" style={s.row}>
       {chartRanges.map((range) => (
         <Pressable
           accessibilityRole="radio"
           accessibilityState={{ checked: value === range }}
+          aria-checked={value === range}
           key={range}
           onPress={() => {
             void Haptics.selectionAsync();

@@ -1,0 +1,196 @@
+{
+  "reviewedAt": "2026-10-17T08:16:47.778Z",
+  "mode": "DEMO",
+  "nativeDeviceVerification": false,
+  "limitations": [
+    "Review flow uses the supported ten-company DEMO catalogue, not real provider responses.",
+    "Separate exploratory test found a pre-existing illustrative brief error when importing 15 symbols including AVGO outside that DEMO catalogue. Full-capacity browser interaction is not claimed as passing. See MOBILE_UI_REFRESH.md."
+  ],
+  "checks": [
+    {
+      "screen": "today",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "url": "http://127.0.0.1:8091/",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/watchlist",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist",
+      "width": 320,
+      "url": "http://127.0.0.1:8091/watchlist",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "search",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/search",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "search",
+      "width": 320,
+      "url": "http://127.0.0.1:8091/search",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "pulse",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/markets",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "pulse",
+      "width": 320,
+      "url": "http://127.0.0.1:8091/markets",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "briefs",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/briefs",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "briefs",
+      "width": 320,
+      "url": "http://127.0.0.1:8091/briefs",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "profile",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/profile",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "profile",
+      "width": 320,
+      "url": "http://127.0.0.1:8091/profile",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "stock",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/stock/AAPL",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "stock",
+      "width": 320,
+      "url": "http://127.0.0.1:8091/stock/AAPL",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "stock-1m",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/stock/AAPL",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-edit",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/watchlist",
+      "horizontalOverflow": false
+    },
+    {
+      "interaction": "Edit, reorder, confirmed removal, Done",
+      "passed": true
+    },
+    {
+      "screen": "search-added",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/search",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "search-empty",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/search",
+      "horizontalOverflow": false
+    },
+    {
+      "interaction": "Search, add, duplicate protection, empty search, shared Today membership",
+      "passed": true
+    },
+    {
+      "screen": "briefs-evening",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/briefs",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "brief-detail",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/brief/evening-2026-08-07",
+      "horizontalOverflow": false
+    },
+    {
+      "interaction": "Brief edition, detail navigation, save state",
+      "passed": true
+    },
+    {
+      "screen": "profile-group",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/profile",
+      "horizontalOverflow": false
+    },
+    {
+      "interaction": "Create and delete watchlist group",
+      "passed": true
+    },
+    {
+      "screen": "watchlist-empty",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/watchlist?preview=empty",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-error",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/watchlist?preview=error",
+      "horizontalOverflow": false
+    },
+    {
+      "interaction": "Empty state and functional error retry",
+      "passed": true
+    },
+    {
+      "screen": "watchlist-loading",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/watchlist?preview=loading",
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-offline",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/watchlist?preview=offline",
+      "horizontalOverflow": false
+    },
+    {
+      "interaction": "Screen-specific skeleton and offline state",
+      "passed": true
+    },
+    {
+      "screen": "watchlist-limit",
+      "width": 390,
+      "url": "http://127.0.0.1:8091/watchlist?preview=limit",
+      "horizontalOverflow": false
+    },
+    {
+      "interaction": "Watchlist limit sheet visual state via explicit preview; full-capacity interaction not claimed in DEMO",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

@@ -22,6 +22,7 @@ export function BriefTypeSelector({
             accessibilityLabel={type === "morning" ? "Morning Brief" : "Evening Recap"}
             accessibilityRole="radio"
             accessibilityState={{ checked: selected }}
+            aria-checked={selected}
             key={type}
             onPress={() => {
               void Haptics.selectionAsync();

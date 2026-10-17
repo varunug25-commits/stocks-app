@@ -4,7 +4,7 @@ import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export function SaveBriefButton({ saved, onPress }: { saved: boolean; onPress: () => void }) {
   return (
-    <Pressable accessibilityLabel={saved ? "Remove brief from saved" : "Save brief"} accessibilityRole="button" accessibilityState={{ selected: saved }} onPress={onPress} style={[styles.button, saved && styles.selected]}>
+    <Pressable accessibilityLabel={saved ? "Remove brief from saved" : "Save brief"} accessibilityRole="button" accessibilityState={{ selected: saved }} aria-pressed={saved} onPress={onPress} style={[styles.button, saved && styles.selected]}>
       <Ionicons color={saved ? colors.warning : colors.teal} name={saved ? "bookmark" : "bookmark-outline"} size={20} />
       <Text style={styles.text}>{saved ? "Saved" : "Save"}</Text>
     </Pressable>

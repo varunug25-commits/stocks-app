@@ -3,7 +3,7 @@ import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { DemoDataBadge, OfflineBanner } from "@/components/foundation/Feedback";
+import { OfflineBanner } from "@/components/foundation/Feedback";
 import { Screen } from "@/components/foundation/Screen";
 import { SearchField } from "@/components/search/SearchField";
 import { SearchResultRow } from "@/components/search/SearchResultRow";
@@ -97,7 +97,6 @@ export default function SearchScreen() {
           <Ionicons color={colors.textPrimary} name="arrow-back" size={22} />
         </Pressable>
         <Text style={s.headerTitle}>Find a stock</Text>
-        {mode === "DEMO" ? <DemoDataBadge /> : <View />}
       </View>
       <View style={s.search}>
         <SearchField
@@ -121,7 +120,7 @@ export default function SearchScreen() {
           <>
             <View style={s.resultMeta}>
               <Text style={s.sectionTitle}>Results</Text>
-              <Text style={s.count}>{searching ? "Searching…" : `${results.length} matches`}</Text>
+              <Text style={s.count}>{searching ? "Searching…" : `${results.length} ${results.length === 1 ? "match" : "matches"}`}</Text>
             </View>
             {searchError ? (
               <EmptyState actionLabel="Retry" description={searchError} onAction={() => setRetryNonce((value) => value + 1)} title="Search unavailable" />

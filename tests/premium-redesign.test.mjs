@@ -79,6 +79,29 @@ test("all five bottom-tab destinations remain registered", async () => {
   }
 });
 
+test("selected mobile controls expose equivalent native and web accessibility state", async () => {
+  const [chart, editions, tabs, actions] = await Promise.all([
+    read("src/components/stock/ChartRangeSelector.tsx"),
+    read("src/components/briefs/BriefTypeSelector.tsx"),
+    read("src/components/navigation/BottomTabBar.tsx"),
+    read("src/components/briefs/BriefActions.tsx"),
+  ]);
+  // React Native Web does not serialize accessibilityState for these controls.
+  for (const [source, expression] of [[chart, "value === range"], [editions, "selected"]]) {
+    assert.ok(source.includes(`accessibilityState={{ checked: ${expression} }}`));
+    assert.ok(source.includes(`aria-checked={${expression}}`));
+    assert.match(source, /accessibilityRole="radio"/);
+  }
+  assert.match(tabs, /accessibilityState=\{\{ selected: focused \}\}/);
+  assert.match(tabs, /aria-selected=\{focused\}/);
+  assert.match(actions, /aria-pressed=\{saved\}/);
+  const chartView = await read("src/components/stock/PriceChart.tsx");
+  assert.match(chartView, /new ResizeObserver\(measure\)/);
+  assert.match(chartView, /observer\?\.disconnect\(\)/);
+  assert.match(chartView, /\}, \[unavailable\]\)/);
+  assert.match(chartView, /viewBox=\{`0 0 \$\{width\} \$\{H\}`\}/);
+});
+
 test("stock stories preserve non-ISO provider labels instead of showing Invalid Date", async () => {
   const storyRow = await read("src/components/stock/StoryRow.tsx");
   assert.match(storyRow, /Number\.isFinite\(parsedPublishedAt\)/);
