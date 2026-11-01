@@ -73,6 +73,8 @@ Normal financial information uses solid dark surfaces. Glass is limited to botto
 
 ## Motion and haptics
 
+The premium motion pass is governed by `MOTION_EXPERIENCE.md`: tactile spring presses, measured sliding selection, real-chart reveal, visible sheet dismissal, and fully static reduced-motion equivalents. Motion must be visible in interaction recordings, not merely declared in component names.
+
 - Fast: 160 ms.
 - Standard: 260 ms.
 - Deliberate: 420 ms.

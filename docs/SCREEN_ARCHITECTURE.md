@@ -1,5 +1,9 @@
 # MarketBrief Mobile Screen Architecture
 
+## Premium motion pass
+
+See `MOTION_EXPERIENCE.md`. Keep all five existing destinations and providers. Today will use a compact shared-watchlist lead and horizontal mover rail before existing changes, events and publication content. No backend or AI route is added. Navigation selection and publication/range controls gain measured transitions without delaying routing or data fetching.
+
 ## Current mobile UI refresh
 
 The historical milestone descriptions below record earlier implementations. Current routes remain Today (`/`), Pulse (`/markets`), Watchlist (`/watchlist`), Briefs (`/briefs`), and Profile (`/profile`), with Search, Stock Detail, Brief Detail, and contextual Ask on the root stack. No new route is introduced.

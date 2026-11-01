@@ -1,5 +1,9 @@
 # MarketBrief Mobile Component Inventory
 
+## Premium motion additions
+
+Plan reusable press feedback and measured selection primitives, then apply them to existing navigation, financial rows and edition/range controls. Financial data surfaces stay solid. See `MOTION_EXPERIENCE.md` for accessibility, reduced-motion and verification requirements.
+
 ## Current mobile UI refresh
 
 - `LogoMark`: original local SVG mark; no gradient or remote artwork.

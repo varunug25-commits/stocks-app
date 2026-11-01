@@ -1,5 +1,7 @@
 # MarketBrief Image and Media Policy
 
+The premium motion pass may add original generated abstract publication artwork, stored locally and explicitly treated as artwork. Never use generated app screenshots as evidence of implementation, or depict invented financial events as documentary photography. Prompts and asset provenance belong in `MOTION_EXPERIENCE.md`.
+
 The Phase 2 Milestone 1 auth/onboarding shell uses original vector shapes, icons, text, and company-letter fallbacks only. It adds no scraped or remotely fetched imagery. The master-spec UI kit stored under `docs/design/` was supplied by the user as an implementation reference.
 
 ## Allowed sources
