@@ -1,6 +1,7 @@
 import * as Haptics from "expo-haptics";
 import type { PropsWithChildren } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, StyleSheet, Text } from "react-native";
+import { MotionPressable as Pressable } from "@/components/motion";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 type Props = PropsWithChildren<{ label: string; onPress: () => void; disabled?: boolean; loading?: boolean; accessibilityLabel?: string }>;

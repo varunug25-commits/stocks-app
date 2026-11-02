@@ -74,6 +74,10 @@ export const shadows = {
 } as const;
 
 export const motion = {
+  press: 110,
+  selection: 220,
+  reveal: 560,
+  settle: { damping: 22, stiffness: 260, mass: 0.8 },
   fast: 160,
   standard: 260,
   deliberate: 420,

@@ -3,12 +3,12 @@ import type { DataResource } from "@/data/real";
 import { formatFreshness } from "@/data/real";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
-export function ResourceStateNotice<T>({ resource, onRetry }: { resource: DataResource<T> | undefined; onRetry?: () => void }) {
-  if (!resource) return <Text style={styles.loading}>Loading verified data…</Text>;
+export function ResourceStateNotice<T>({ resource, onRetry, label }: { resource: DataResource<T> | undefined; onRetry?: () => void; label?: string }) {
+  if (!resource) return <Text style={styles.loading}>Loading {label?.toLowerCase() ?? "data"}…</Text>;
   if (resource.status === "idle" || resource.status === "loading")
-    return <Text style={styles.loading}>Loading verified data…</Text>;
+    return <Text style={styles.loading}>Loading {label?.toLowerCase() ?? "data"}…</Text>;
   if (resource.status === "ready" || resource.status === "stale")
-    return <Text style={[styles.freshness, resource.status === "stale" && styles.warning]}>{formatFreshness(resource.meta)} · {resource.meta.source}</Text>;
+    return <Text style={[styles.freshness, resource.status === "stale" && styles.warning]}>{label ? `${label} · ` : ""}{formatFreshness(resource.meta)} · {resource.meta.source}</Text>;
   const code = "code" in resource ? resource.code : "UPSTREAM_UNAVAILABLE";
   const message = code === "NETWORK_FAILURE"
     ? "Network unavailable."

@@ -3,7 +3,8 @@ import * as Haptics from "expo-haptics";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { MotionPressable as Pressable } from "@/components/motion";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 
 import { EventCard } from "@/components/finance/EventCard";
@@ -11,7 +12,6 @@ import { StockRow } from "@/components/finance/StockRow";
 import { ErrorState, OfflineBanner } from "@/components/foundation/Feedback";
 import { IconButton } from "@/components/foundation/IconButton";
 import { ProductHeader } from "@/components/foundation/ProductHeader";
-import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
 import { Screen } from "@/components/foundation/Screen";
 import { SectionHeader } from "@/components/foundation/SectionHeader";
 import { AskMarketBriefEntry, IntelligencePanel } from "@/components/intelligence";
@@ -34,7 +34,7 @@ const enter = (delay: number) => FadeInDown.duration(260).delay(delay);
 function relativeCheck(value: string | null, now: number) {
   if (!value) return "Baseline in progress";
   const minutes = Math.max(0, Math.floor((now - Date.parse(value)) / 60_000));
-  if (minutes < 1) return "Compared with just now";
+  if (minutes < 1) return "Checked just now";
   if (minutes < 60) return `Compared with ${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   return hours < 24 ? `Compared with ${hours}h ago` : `Compared with ${new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
@@ -118,11 +118,15 @@ export default function TodayScreen() {
             <ProductHeader actions={<IconButton accessibilityLabel="Search stocks" icon="search" onPress={() => router.push("/search" as Href)} />} eyebrow={date} title="MarketBrief" />
           </Animated.View>
 
-          {watchlist.symbols.length ? <Animated.View entering={animation(15)} style={styles.watchlistSurface}>
-            <GlassBackdrop intensity={16} />
-            <View style={styles.watchlistHeading}><Text style={styles.watchlistLabel}>YOUR WATCHLIST</Text><Pressable accessibilityLabel="View all watchlist stocks" accessibilityRole="button" onPress={() => router.push("/watchlist" as Href)} style={styles.inlineAction}><Text style={styles.inlineActionText}>View all</Text><Ionicons color={colors.teal} name="arrow-forward" size={15} /></Pressable></View>
-            <View style={styles.breadthRow}><Text style={styles.breadthText}><Text style={styles.up}>↑ {breadth.higher} up</Text>{"   "}<Text style={styles.down}>↓ {breadth.lower} down</Text></Text><Text style={styles.watchlistMeta}>{mode === "DEMO" ? "Demo · " : ""}Daily moves · USD</Text></View>
-            <View style={styles.baselineList}>{baselineMovers.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} />)}</View>
+          {watchlist.symbols.length ? <Animated.View entering={animation(15)}>
+            <View style={styles.watchlistSurface}>
+              <View style={styles.watchlistHeading}><View><Text style={styles.watchlistLabel}>YOUR WATCHLIST</Text><Text style={styles.watchlistTitle}>In focus.</Text></View><Pressable accessibilityLabel="View all watchlist stocks" accessibilityRole="button" onPress={() => router.push("/watchlist" as Href)} style={styles.inlineAction}><Text style={styles.inlineActionText}>View all</Text><Ionicons color={colors.teal} name="arrow-forward" size={15} /></Pressable></View>
+              <View style={styles.breadthRow}><View style={styles.breadthLead}><Text style={styles.breadthNumber}>{breadth.higher}</Text><View><Text style={styles.breadthLabel}>moving higher</Text><Text style={styles.watchlistMeta}>↓ {breadth.lower} lower · {breadth.unchanged} unchanged</Text></View></View><Text style={styles.watchlistMeta}>{watchlist.symbols.length} companies{"\n"}{mode === "DEMO" ? "Demo · " : ""}Daily · USD</Text></View>
+              <View accessibilityLabel={`${breadth.higher} higher, ${breadth.lower} lower, ${breadth.unchanged} unchanged, ${breadth.unavailable} unavailable`} style={styles.breadthBar}>{breadth.higher ? <View style={[styles.upSegment, { flex: breadth.higher }]} /> : null}{breadth.lower ? <View style={[styles.downSegment, { flex: breadth.lower }]} /> : null}{breadth.unchanged + breadth.unavailable ? <View style={[styles.neutralSegment, { flex: breadth.unchanged + breadth.unavailable }]} /> : null}</View>
+            </View>
+            <ScrollView contentContainerStyle={styles.moverRail} decelerationRate="fast" horizontal showsHorizontalScrollIndicator={false} snapToAlignment="start" snapToInterval={188}>
+              {baselineMovers.map((stock) => <StockRow key={stock.symbol} onPress={() => router.push(`/stock/${stock.symbol}` as Href)} quote={isStockSymbol(stock.symbol) ? quotes[stock.symbol] : undefined} stock={stock} variant="card" />)}
+            </ScrollView>
             {breadth.unavailable ? <Text style={styles.unavailable}>{breadth.unavailable} {breadth.unavailable === 1 ? "quote" : "quotes"} currently unavailable</Text> : null}
           </Animated.View> : null}
 
@@ -130,13 +134,10 @@ export default function TodayScreen() {
             <EmptyState actionLabel="Search stocks" description="MarketBrief will track what changes and filter out the noise." onAction={() => router.push("/search" as Href)} title="Follow a few companies" />
           </Animated.View> : result?.baselineReady ? <Animated.View entering={animation(25)} style={styles.section}>
             <Text style={styles.eyebrow}>SINCE YOU LAST CHECKED</Text>
-            <View style={styles.reportTitleRow}><Text style={styles.heroTitle}>You’re all caught up.</Text><Ionicons color={colors.teal} name="checkmark-circle-outline" size={23} /></View>
-            <Text style={styles.heroBody}>Your baseline is ready. New developments will appear here after your next check.</Text>
+            <View style={styles.quietStatus}><View style={styles.quietStatusIcon}><Ionicons color={colors.teal} name="checkmark" size={20} /></View><View style={styles.quietCopy}><Text style={styles.quietStatusTitle}>Your baseline is ready.</Text><Text style={styles.quietMeta}>New developments will appear after your next check.</Text></View></View>
           </Animated.View> : <Animated.View entering={animation(25)} style={styles.section}>
             <Text style={styles.eyebrow}>SINCE YOU LAST CHECKED</Text>
-            <View style={styles.reportTitleRow}><Text style={styles.heroTitle}>{material.length ? `${material.length} ${material.length === 1 ? "update worth a look" : "updates worth a look"}` : "Nothing material changed"}</Text><Ionicons color={colors.teal} name={material.length ? "layers-outline" : "checkmark-circle-outline"} size={23} /></View>
-            <Text style={styles.heroMeta}>{relativeCheck(changes.lastCheckedAt, referenceNow)}</Text>
-            {material.length ? <View style={styles.changeList}>{material.map((change, index) => <MaterialChangeRow change={change} index={index} key={change.id} onPress={() => openChange(change)} />)}</View> : <Text style={styles.heroBody}>No significant new developments in your followed companies.</Text>}
+            {material.length ? <><View style={styles.reportTitleRow}><Text style={styles.heroTitle}>{`${material.length} ${material.length === 1 ? "update worth a look" : "updates worth a look"}`}</Text><Ionicons color={colors.teal} name="layers-outline" size={23} /></View><Text style={styles.heroMeta}>{relativeCheck(changes.lastCheckedAt, referenceNow)}</Text><View style={styles.changeList}>{material.map((change, index) => <MaterialChangeRow change={change} index={index} key={change.id} onPress={() => openChange(change)} />)}</View></> : <View style={styles.quietStatus}><View style={styles.quietStatusIcon}><Ionicons color={colors.teal} name="checkmark" size={20} /></View><View style={styles.quietCopy}><Text style={styles.quietStatusTitle}>Nothing material changed</Text><Text style={styles.quietMeta}>{relativeCheck(changes.lastCheckedAt, referenceNow)} · No significant new developments.</Text></View></View>}
           </Animated.View>}
 
           {watchlist.symbols.length && material.length > 0 && !result?.baselineReady ? <Animated.View entering={animation(50)} style={styles.quietRow}>
@@ -150,6 +151,7 @@ export default function TodayScreen() {
           </Animated.View>
 
           <Animated.View entering={animation(90)} style={[styles.section, styles.brief]}>
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.briefArtwork}><Image resizeMode="cover" source={require("../../../assets/editorial/signal-original-v2.jpg")} style={styles.briefImage} /><Text style={styles.artworkLabel}>ORIGINAL ARTWORK</Text></View>
             <SectionHeader eyebrow="CURRENT EDITION" title="Morning brief" />
             {mode === "REAL" ? watchlist.symbols.length ? <IntelligencePanel onRetry={() => void retryBrief()} resource={briefResource} compact /> : null : <><Text style={styles.briefTitle}>{demoBrief!.headline}</Text>{demoBrief!.developments.slice(0, 2).map((point, index) => <View key={point} style={styles.briefPoint}><Text style={styles.number}>{String(index + 1).padStart(2, "0")}</Text><Text numberOfLines={3} style={styles.briefText}>{point}</Text></View>)}</>}
             <Pressable accessibilityRole="button" onPress={() => router.push(mode === "REAL" ? "/briefs" as Href : `/brief/${demoBrief!.id}` as Href)} style={styles.link}><Text style={styles.linkText}>Open current brief</Text><Ionicons color={colors.textPrimary} name="arrow-forward" size={17} /></Pressable>
@@ -170,10 +172,19 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 36, backgroundColor: colors.background },
   column: { width: "100%", maxWidth: 680, alignSelf: "center", paddingHorizontal: spacing.lg },
   state: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.lg },
-  section: { marginTop: spacing.xxl },
-  watchlistSurface: { paddingHorizontal: spacing.md, paddingBottom: 4, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: "hidden" },
+  section: { marginTop: spacing.xl },
+  watchlistSurface: { paddingTop: 4, paddingBottom: spacing.md },
   watchlistHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },
   watchlistLabel: { ...typography.caption, color: colors.textSecondary, letterSpacing: 1.2, fontWeight: "600" },
+  watchlistTitle: { fontSize: 38, lineHeight: 44, letterSpacing: -1.5, fontWeight: "700", color: colors.textPrimary, marginTop: 3 },
+  breadthLead: { flexDirection: "row", gap: 9, alignItems: "center" },
+  breadthNumber: { fontSize: 44, lineHeight: 52, fontWeight: "600", color: colors.positive, fontVariant: ["tabular-nums"], letterSpacing: -1.5 },
+  breadthLabel: { ...typography.label, color: colors.textPrimary },
+  breadthBar: { height: 3, flexDirection: "row", gap: 3, borderRadius: 2, overflow: "hidden", marginTop: 5 },
+  upSegment: { backgroundColor: colors.positive },
+  downSegment: { backgroundColor: colors.negative },
+  neutralSegment: { backgroundColor: colors.border },
+  moverRail: { gap: spacing.sm, paddingBottom: 3, paddingRight: spacing.lg },
   breadthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs, paddingBottom: spacing.xs },
   breadthText: { ...typography.caption },
   up: { color: colors.positive },
@@ -189,12 +200,18 @@ const styles = StyleSheet.create({
   baselineList: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   quietRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   quietCopy: { flex: 1 },
+  quietStatus: { flexDirection: "row", gap: spacing.sm, alignItems: "center", marginTop: spacing.sm, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  quietStatusIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.tealMuted, justifyContent: "center", alignItems: "center" },
+  quietStatusTitle: { ...typography.label, fontSize: 17, lineHeight: 23, color: colors.textPrimary },
   quietTitle: { ...typography.label, color: colors.textPrimary },
   quietMeta: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   inlineAction: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.xs, paddingHorizontal: 2 },
   inlineActionText: { ...typography.caption, fontWeight: "600", color: colors.teal },
   quietEvent: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   brief: { padding: spacing.md, borderWidth: 1, borderRadius: 16, borderColor: colors.border, backgroundColor: colors.surface },
+  briefArtwork: { height: 112, margin: -spacing.md, marginBottom: spacing.md, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: "hidden", backgroundColor: colors.surfaceElevated },
+  briefImage: { width: "100%", height: "100%" },
+  artworkLabel: { ...typography.caption, fontSize: 9, color: colors.textPrimary, position: "absolute", right: 10, bottom: 8, letterSpacing: 1, backgroundColor: colors.background, paddingHorizontal: 6, borderRadius: 3 },
   briefTitle: { ...typography.heading, color: colors.textPrimary, marginTop: spacing.sm },
   briefPoint: { minHeight: 52, flexDirection: "row", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSoft },
   number: { ...typography.label, width: 26, color: colors.textTertiary },

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
+import { MotionPressable as Pressable } from "@/components/motion";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 export function WatchlistButton({
   added,
@@ -16,6 +17,7 @@ export function WatchlistButton({
       accessibilityLabel={added ? "Remove from watchlist" : "Add to watchlist"}
       accessibilityRole="button"
       accessibilityState={{ disabled, selected: added }}
+      aria-pressed={added}
       disabled={disabled}
       onPress={() => {
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

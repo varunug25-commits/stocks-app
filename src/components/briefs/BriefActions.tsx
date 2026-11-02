@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
+import { MotionPressable as Pressable } from "@/components/motion";
 import { colors, radii, spacing, typography } from "@/theme/tokens";
 
 export function SaveBriefButton({ saved, onPress }: { saved: boolean; onPress: () => void }) {

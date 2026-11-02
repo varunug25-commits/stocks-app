@@ -1,5 +1,6 @@
 import { catalysts, demoCompanyForSymbol, filings, getChartSeries, prices, stockStories } from "@/data/stocks";
 import type { ChartRange, StockSymbol } from "@/data/stocks";
+import { demoBarTimestamp } from "./demoTimeline";
 import type {
   CompanyIdentity,
   CompanyNewsArticle,
@@ -36,12 +37,13 @@ export const demoQuote = (symbol: StockSymbol): DataEnvelope<MarketQuote> => {
   const price = required(prices[symbol], `${symbol} quote`);
   return envelope({ companyId: required(ids[symbol], `${symbol} id`), symbol, price: price.price, change: price.change, changePercent: price.changePercent, previousClose: price.previousClose, open: null, high: null, low: null, volume: null, exchange: demoCompanyForSymbol(symbol).exchange, currency: "USD", marketStatus: price.status === "Market open" ? "open" : "closed", providerTimestamp: null });
 };
-export const demoBars = (symbol: StockSymbol, range: ChartRange): DataEnvelope<PriceBar[]> => envelope(
-  getChartSeries(symbol, range, required(prices[symbol], `${symbol} quote`).price).map((point, index) => ({
-    timestamp: new Date(Date.UTC(2026, 7, 7, index)).toISOString(),
+export const demoBars = (symbol: StockSymbol, range: ChartRange): DataEnvelope<PriceBar[]> => {
+  const series = getChartSeries(symbol, range, required(prices[symbol], `${symbol} quote`).price);
+  return envelope(series.map((point, index) => ({
+    timestamp: demoBarTimestamp(range, index, series.length),
     open: point.value, high: point.value, low: point.value, close: point.value, volume: null,
-  })),
-);
+  })));
+};
 export const demoFilings = (symbol: StockSymbol): DataEnvelope<FilingData[]> => envelope(required(filings[symbol], `${symbol} filings`).map((filing) => ({
   accessionNumber: filing.id, formType: filing.form as FilingData["formType"], filingDate: filing.filed,
   reportDate: null, companyId: required(ids[symbol], `${symbol} id`), company: demoCompanyForSymbol(symbol).name, cik: required(ciks[symbol], `${symbol} CIK`), primaryDocument: "Illustrative", canonicalUrl: null, source: "Demo data",

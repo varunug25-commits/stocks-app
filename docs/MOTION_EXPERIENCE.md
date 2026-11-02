@@ -37,4 +37,29 @@ The ten-company DEMO catalogue does not safely generate illustrative briefs for 
 
 ## Results
 
-Implementation details, artwork provenance, checks and evidence will be recorded after actual app review.
+### Delivered
+
+- Added shared press, selection and measured-width motion primitives without changing the navigation, screen or provider architecture.
+- Applied short press feedback, a measured sliding tab dock and segmented selection, a true-path chart reveal, chart-direction and date labels based on the selected plotted range, visible sheet transitions, and restrained loading skeleton motion.
+- Reduced-motion settings remove spatial/scale movement and chart reveal while leaving controls usable.
+- Today now uses a compact watchlist-first summary and horizontal mover rail before the remaining editorial content.
+- Added original abstract publication artwork at `assets/editorial/signal-original-v2.jpg`. It is original decorative publication artwork, not a news photograph, mock interface, chart, or data source.
+- Corrected illustrative chart timestamps so each DEMO range spans its advertised duration and ends at the fixed illustrative session timestamp. This does not alter provider-backed/REAL resources or imply current live data.
+
+### Verification
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test`: passed, 211 tests.
+- `npm run functions:check`: passed for the existing `market-data`, `market-intelligence`, and `product-events` functions.
+- `EXPO_OFFLINE=1 npx expo export --platform web --output-dir /tmp/marketbrief-production --max-workers 2`: passed; exported 40 static routes.
+- Mobile-web interaction review: passed 32 checks at 390×844 and 320×844 where applicable. Covered five tabs, watchlist ordering/add/remove/empty/error states, search, briefs, chart range/reveal, reduced-motion behavior, and animated selection/press/sheet interactions. Updated screenshots and a 10-second interaction recording are under `docs/screenshots/premium-motion/`.
+- `npm run doctor`: 20/21 checks passed. The only failure is the existing Expo SDK patch-version mismatch across 12 packages; dependencies were not upgraded in this focused motion pass.
+- `app.json` retains its original static web output setting; temporary preview configuration was reverted.
+
+### Evidence and limitations
+
+- `docs/screenshots/premium-motion/review-results.json` records the DEMO-mode checks, no-overflow results, and explicit `nativeDeviceVerification: false` / `realProviderVerification: false` flags.
+- Preview screenshots are intentionally DEMO data. No native Android/iPhone validation or real-provider verification was performed; no claim of native haptic behavior or native frame-rate performance is made.
+- The existing DEMO catalogue still has ten companies and does not provide illustrative briefs for arbitrary imported symbols outside that catalogue. The tested five-stock watchlist flows remain within supported coverage.
+- No AI, backend, authentication, payment, API, secret, or M7 behavior was added or changed.

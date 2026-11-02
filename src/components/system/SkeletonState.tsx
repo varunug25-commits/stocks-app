@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import Animated, { cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 
 import { colors, radii, spacing } from "@/theme/tokens";
 
@@ -16,10 +16,12 @@ const labels: Record<SkeletonVariant, string> = {
 
 export function SkeletonState({ variant = "today" }: { variant?: SkeletonVariant }) {
   const reduceMotion = useReducedMotion();
-  const opacity = useSharedValue(reduceMotion ? 0.62 : 0.38);
+  const opacity = useSharedValue(reduceMotion ? 0.62 : 0.48);
 
   useEffect(() => {
-    opacity.value = reduceMotion ? 0.62 : withRepeat(withTiming(0.78, { duration: 900 }), -1, true);
+    cancelAnimation(opacity);
+    opacity.value = reduceMotion ? 0.62 : withRepeat(withTiming(0.72, { duration: 1100, easing: Easing.inOut(Easing.quad) }), -1, true);
+    return () => cancelAnimation(opacity);
   }, [opacity, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));

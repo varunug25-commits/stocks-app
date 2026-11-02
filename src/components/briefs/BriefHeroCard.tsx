@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
+import { MotionPressable as Pressable } from "@/components/motion";
 import type { BriefStatus, GeneratedBrief } from "@/data/briefs";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { demoCompanyForSymbol } from "@/data/stocks";
@@ -16,8 +18,9 @@ export function BriefHeroCard({
   status: BriefStatus;
   onPress: () => void;
 }) {
+  const reduced = useReducedMotion();
   const artwork = brief.type === "morning"
-    ? require("../../../assets/editorial/morning-brief-original.jpg")
+    ? require("../../../assets/editorial/signal-original-v2.jpg")
     : require("../../../assets/editorial/evening-brief-original.jpg");
 
   return (
@@ -36,8 +39,9 @@ export function BriefHeroCard({
         importantForAccessibility="no-hide-descendants"
         style={styles.artwork}
       >
-        <Image resizeMode="cover" source={artwork} style={styles.artworkImage} />
+        <Animated.View entering={reduced ? undefined : FadeIn.duration(240)} key={brief.type} style={styles.artworkImage}><Image resizeMode="cover" source={artwork} style={styles.artworkImage} /></Animated.View>
         <View style={styles.artworkShade} />
+        <Text style={styles.artworkLabel}>ORIGINAL ARTWORK</Text>
       </View>
       <Text style={styles.title}>{brief.headline}</Text>
       <Text style={styles.summary}>{brief.summary}</Text>
@@ -80,9 +84,10 @@ export function BriefHeroCard({
 
 const styles = StyleSheet.create({
   publication: { paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  artwork: { height: 132, marginTop: spacing.md, overflow: "hidden", borderRadius: 12, backgroundColor: colors.surfaceElevated },
+  artwork: { height: 150, marginTop: spacing.md, overflow: "hidden", borderRadius: 12, backgroundColor: colors.surfaceElevated },
   artworkImage: { width: "100%", height: "100%", borderRadius: 12 },
   artworkShade: { position: "absolute", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.12)" },
+  artworkLabel: { ...typography.caption, fontSize: 9, color: colors.textPrimary, position: "absolute", bottom: 10, right: 10, letterSpacing: 1, backgroundColor: colors.background, paddingHorizontal: 6, borderRadius: 3 },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   eyebrow: { ...typography.caption, color: colors.textTertiary, letterSpacing: 1 },

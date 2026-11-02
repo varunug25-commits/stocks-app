@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { MotionPressable as Pressable } from "@/components/motion";
 
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import type { SearchStock } from "@/data/search";

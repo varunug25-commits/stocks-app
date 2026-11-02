@@ -8,9 +8,19 @@ import {
   View,
 } from "react-native";
 import Svg, { Circle, Line, Path } from "react-native-svg";
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedProps,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import type { ChartPoint } from "@/data/stocks";
-import { colors, numerals, spacing, typography } from "@/theme/tokens";
+import { colors, motion, numerals, spacing, typography } from "@/theme/tokens";
 const H = 190;
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 export function PriceChart({
   points,
   positive,
@@ -28,6 +38,22 @@ export function PriceChart({
   const chartRef = useRef<View>(null);
   const [selection, setSelected] = useState<number | null>(null);
   const [scrubbing, setScrubbing] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const reveal = useSharedValue(reduceMotion ? 1 : 0);
+  // Compare values, not array identity: parent renders must not replay a chart.
+  const datasetKey = JSON.stringify(points.map(({ label, value }) => [label, value]));
+  useEffect(() => {
+    cancelAnimation(reveal);
+    if (reduceMotion || points.length === 1) {
+      reveal.set(1);
+    } else {
+      reveal.set(0);
+      if (!unavailable && points.length > 1) {
+        reveal.set(withTiming(1, { duration: motion.reveal, easing: Easing.out(Easing.cubic) }));
+      }
+    }
+    return () => cancelAnimation(reveal);
+  }, [datasetKey, points.length, reduceMotion, reveal, unavailable]);
   useEffect(() => {
     if (Platform.OS !== "web" || unavailable) return;
     const element = chartRef.current as unknown as HTMLElement | null;
@@ -60,6 +86,16 @@ export function PriceChart({
   const path = coordinates
     .map(({ x, y }, i) => `${i ? "L" : "M"} ${x} ${y}`)
     .join(" ");
+  const pathLength = Math.max(1, coordinates.reduce((length, point, index) => {
+    const previous = coordinates[index - 1];
+    return previous ? length + Math.hypot(point.x - previous.x, point.y - previous.y) : length;
+  }, 0));
+  const pathAnimation = useAnimatedProps(() => ({
+    strokeDashoffset: pathLength * (1 - reveal.value),
+  }));
+  const endpointAnimation = useAnimatedProps(() => ({
+    opacity: Math.max(0, Math.min(1, (reveal.value - 0.88) / 0.12)),
+  }));
   const update = (x: number) =>
     setSelected(
       Math.max(
@@ -73,12 +109,17 @@ export function PriceChart({
   const pan = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (e) => { setScrubbing(true); update(e.nativeEvent.locationX); },
+    onPanResponderGrant: (e) => {
+      cancelAnimation(reveal);
+      reveal.set(1);
+      setScrubbing(true);
+      update(e.nativeEvent.locationX);
+    },
     onPanResponderMove: (e) => update(e.nativeEvent.locationX),
     onPanResponderRelease: () => setScrubbing(false),
     onPanResponderTerminate: () => setScrubbing(false),
   });
-  if (unavailable)
+  if (unavailable || !points.length)
     return (
       <View style={s.unavailable}>
         <Text style={s.unavailableTitle}>Chart unavailable</Text>
@@ -104,12 +145,14 @@ export function PriceChart({
       </View>
       <Svg height={H} viewBox={`0 0 ${width} ${H}`} width="100%">
         {[0.25, 0.6, 0.95].map((fraction) => <Line key={fraction} stroke={colors.borderSoft} strokeDasharray="3 5" x1={0} x2={width} y1={H * fraction} y2={H * fraction} />)}
-        <Path
+        <AnimatedPath
+          animatedProps={pathAnimation}
           d={path}
           fill="none"
           stroke={positive ? colors.positive : colors.negative}
           strokeLinecap="round"
           strokeLinejoin="round"
+          strokeDasharray={[pathLength, pathLength]}
           strokeWidth={3}
         />
         {scrubbing ? <Line
@@ -120,7 +163,8 @@ export function PriceChart({
           y1={24}
           y2={H - 10}
         /> : null}
-        <Circle
+        <AnimatedCircle
+          animatedProps={endpointAnimation}
           cx={coordinate.x}
           cy={coordinate.y}
           fill={colors.background}

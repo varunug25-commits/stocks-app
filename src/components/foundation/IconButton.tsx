@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import { MotionPressable as Pressable } from "@/components/motion";
 
 import { colors, radii } from "@/theme/tokens";
 

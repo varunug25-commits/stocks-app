@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Animated, { LinearTransition, useReducedMotion } from "react-native-reanimated";
+import { MotionPressable as Pressable } from "@/components/motion";
 
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { Sparkline } from "@/components/finance/Sparkline";
 import type { DataResource, MarketQuote } from "@/data/real";
 import { formatFreshness } from "@/data/real";
 import { formatPrice } from "@/data/stocks";
-import { colors, numerals, spacing, typography } from "@/theme/tokens";
+import { colors, motion, numerals, spacing, typography } from "@/theme/tokens";
 
 export function WatchlistRow({
   company,
@@ -28,6 +30,7 @@ export function WatchlistRow({
   onMoveUp: () => void;
   onMoveDown: () => void;
 }) {
+  const reduced = useReducedMotion();
   const resolved = quote?.status === "ready" || quote?.status === "stale" ? quote.data : null;
   const changePercent = resolved?.changePercent ?? null;
   const up = (changePercent ?? 0) >= 0;
@@ -39,7 +42,7 @@ export function WatchlistRow({
       : "Quote unavailable";
 
   return (
-    <View style={styles.row}>
+    <Animated.View layout={reduced ? undefined : LinearTransition.duration(motion.standard)} style={styles.row}>
       <Pressable
         accessibilityLabel={`Open ${company.name} stock detail, ${displayPrice}${changePercent === null ? "" : `, ${up ? "up" : "down"} ${Math.abs(changePercent).toFixed(2)} percent today`}`}
         accessibilityRole="button"
@@ -73,7 +76,7 @@ export function WatchlistRow({
           <Action label={`Remove ${company.symbol}`} icon="trash-outline" negative onPress={onRemove} />
         </View>
       ) : <Ionicons color={colors.textTertiary} name="chevron-forward" size={17} />}
-    </View>
+    </Animated.View>
   );
 }
 

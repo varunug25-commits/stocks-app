@@ -1,6 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { MotionPressable as Pressable, SelectionTrack, useMeasuredWidth } from "@/components/motion";
 import { GlassBackdrop } from "@/components/foundation/GlassBackdrop";
 import type { BriefType } from "@/data/briefs";
 import { colors, glass, radii, typography } from "@/theme/tokens";
@@ -12,9 +13,12 @@ export function BriefTypeSelector({
   value: BriefType;
   onChange: (value: BriefType) => void;
 }) {
+  const { ref, onLayout, width } = useMeasuredWidth();
+  const optionWidth = Math.max(0, width - 10) / 2;
   return (
-    <View accessibilityLabel="Brief type" accessibilityRole="radiogroup" style={styles.wrap}>
+    <View accessibilityLabel="Brief type" accessibilityRole="radiogroup" onLayout={onLayout} ref={ref} style={styles.wrap}>
       <GlassBackdrop intensity={18} />
+      <SelectionTrack frame={width ? { x: 5 + (value === "evening" ? optionWidth : 0), y: 5, width: optionWidth, height: 46 } : null} radius={radii.sm} tone="neutral" />
       {(["morning", "evening"] as const).map((type) => {
         const selected = value === type;
         return (
@@ -25,10 +29,12 @@ export function BriefTypeSelector({
             aria-checked={selected}
             key={type}
             onPress={() => {
-              void Haptics.selectionAsync();
-              onChange(type);
+              if (value !== type) {
+                void Haptics.selectionAsync().catch(() => undefined);
+                onChange(type);
+              }
             }}
-            style={[styles.option, selected && styles.selected]}
+            style={styles.option}
           >
             <Ionicons color={selected ? colors.teal : colors.textTertiary} name={type === "morning" ? "sunny-outline" : "moon-outline"} size={17} />
             <Text style={[styles.text, selected && styles.selectedText]}>
@@ -60,7 +66,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radii.sm,
   },
-  selected: { backgroundColor: colors.surfaceSoft },
   text: { ...typography.label, color: colors.textTertiary },
   selectedText: { color: colors.teal },
 });

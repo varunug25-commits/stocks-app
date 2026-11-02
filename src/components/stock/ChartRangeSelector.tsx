@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { MotionPressable, SelectionTrack, useMeasuredWidth } from "@/components/motion";
 import type { ChartRange } from "@/data/stocks";
 import { chartRanges } from "@/data/stocks";
 import { colors, radii, typography } from "@/theme/tokens";
@@ -10,24 +11,31 @@ export function ChartRangeSelector({
   value: ChartRange;
   onChange: (range: ChartRange) => void;
 }) {
+  const { ref, onLayout, width } = useMeasuredWidth();
+  const itemWidth = Math.max(0, width - 6) / chartRanges.length;
   return (
-    <View accessibilityLabel="Chart range" accessibilityRole="radiogroup" style={s.row}>
+    <View accessibilityLabel="Chart range" accessibilityRole="radiogroup" onLayout={onLayout} ref={ref} style={s.row}>
+      <SelectionTrack frame={width ? { x: 3 + chartRanges.indexOf(value) * itemWidth, y: 3, width: itemWidth, height: 44 } : null} radius={radii.sm} tone="teal" />
       {chartRanges.map((range) => (
-        <Pressable
+        <MotionPressable
+          accessibilityLabel={range}
           accessibilityRole="radio"
           accessibilityState={{ checked: value === range }}
           aria-checked={value === range}
           key={range}
           onPress={() => {
-            void Haptics.selectionAsync();
-            onChange(range);
+            if (range !== value) {
+              void Haptics.selectionAsync();
+              onChange(range);
+            }
           }}
-          style={[s.item, value === range && s.selected]}
+          scaleTo={0.98}
+          style={s.item}
         >
           <Text style={[s.text, value === range && s.selectedText]}>
             {range}
           </Text>
-        </Pressable>
+        </MotionPressable>
       ))}
     </View>
   );
@@ -42,7 +50,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radii.sm,
   },
-  selected: { backgroundColor: colors.tealMuted },
   text: { ...typography.label, color: colors.textTertiary },
   selectedText: { color: colors.teal },
 });

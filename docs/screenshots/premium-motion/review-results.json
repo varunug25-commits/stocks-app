@@ -1,0 +1,188 @@
+{
+  "reviewedAt": "2026-11-02T17:04:15.219Z",
+  "mode": "DEMO",
+  "nativeDeviceVerification": false,
+  "realProviderVerification": false,
+  "checks": [
+    {
+      "screen": "today",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "today",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "search",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "search",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "pulse",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "pulse",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "briefs",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "briefs",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "profile",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "profile",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "stock",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "stock",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "behavior": "320px chart geometry and full endpoint",
+      "width": 280,
+      "modelWidth": 280,
+      "pointRight": 298,
+      "right": 300,
+      "passed": true
+    },
+    {
+      "screen": "stock-1m",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "stock-1y",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-edit",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "search-added",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "behavior": "Persisted reorder/removal, Search add/duplicate protection and immediate Today shared membership",
+      "passed": true
+    },
+    {
+      "screen": "briefs-evening",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "brief-detail",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "behavior": "Brief edition/detail/save and group creation/deletion",
+      "passed": true
+    },
+    {
+      "screen": "watchlist-empty",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-error",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-loading",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-offline",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "screen": "watchlist-limit",
+      "width": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "behavior": "Loading, empty, offline, error/retry and reduced-motion sheet dismissal",
+      "passed": true
+    },
+    {
+      "behavior": "Motion-enabled sliding dock",
+      "before": {
+        "x": 12,
+        "center": 48.59375,
+        "width": 73.1875
+      },
+      "during": {
+        "x": 141.4707794189453,
+        "center": 178.0645294189453,
+        "width": 73.1875
+      },
+      "after": {
+        "x": 158.39999389648438,
+        "center": 194.99374389648438,
+        "width": 73.1875
+      },
+      "passed": true
+    },
+    {
+      "behavior": "Motion-enabled press and genuine-path reveal",
+      "scale": 0.980001,
+      "offsetAtStart": 354.767,
+      "offsetAtEnd": 0,
+      "passed": true
+    },
+    {
+      "behavior": "Motion-enabled edition changes and visible sheet dismissal",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "Full imported 15-symbol watchlist remains outside the supported ten-company DEMO brief catalogue. Limit sheet reviewed via explicit preview only.",
+    "Web capture is not native haptic, native performance or real-provider verification."
+  ]
+}

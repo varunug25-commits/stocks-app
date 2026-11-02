@@ -82,7 +82,7 @@ export default function StockDetailScreen() {
   const quote = quoteResource?.status === "ready" || quoteResource?.status === "stale" ? quoteResource.data : null;
   const barResource = bars[barKey(symbol, range)];
   const barData = barResource?.status === "ready" || barResource?.status === "stale" ? barResource.data : [];
-  const chartPoints = barData.map((bar) => ({ label: range === "1D" ? new Date(bar.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : new Date(bar.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }), value: bar.close }));
+  const chartPoints = barData.map((bar) => ({ label: range === "1D" ? new Date(bar.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : new Date(bar.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: range === "1Y" ? "2-digit" : undefined }), value: bar.close }));
   const filingResource = filingResources[symbol];
   const filingData = filingResource?.status === "ready" || filingResource?.status === "stale" ? filingResource.data : null;
   const latestFilings = filingData ? latestFilingsForPresentation(filingData) : null;
@@ -115,8 +115,11 @@ export default function StockDetailScreen() {
         <SkeletonState variant="stock" />
       </Screen>
     );
-  const summary = quote && quote.changePercent !== null
-    ? `${company.name} ${range} chart. ${quote.changePercent >= 0 ? "Gain" : "Loss"} of ${Math.abs(quote.changePercent).toFixed(2)} percent. Selected range ends at ${formatPrice(quote.price)}.`
+  const firstChartPoint = chartPoints[0];
+  const lastChartPoint = chartPoints[chartPoints.length - 1];
+  const chartPositive = firstChartPoint && lastChartPoint ? lastChartPoint.value >= firstChartPoint.value : (quote?.change ?? 0) >= 0;
+  const summary = firstChartPoint && lastChartPoint
+    ? `${company.name} ${range} chart. First plotted close ${formatPrice(firstChartPoint.value)}. Last plotted close ${formatPrice(lastChartPoint.value)}.${quote?.changePercent != null ? ` Latest quote daily change ${quote.changePercent >= 0 ? "up" : "down"} ${Math.abs(quote.changePercent).toFixed(2)} percent.` : ""}`
     : `${company.name} ${range} chart data is unavailable.`;
   const sources = [quoteResource, barResource, filingResource, newsResource, eventResource].flatMap((resource, index) =>
     resource?.status === "ready" || resource?.status === "stale"
@@ -137,15 +140,15 @@ export default function StockDetailScreen() {
           onToggle={toggle}
         />
         <View style={styles.priceBlock}>
-          <ResourceStateNotice onRetry={() => void loadQuote(symbol)} resource={quoteResource} />
+          <ResourceStateNotice label="Quote" onRetry={() => void loadQuote(symbol)} resource={quoteResource} />
           {quote ? <>{quote.change !== null && quote.changePercent !== null ? <PriceMovement change={quote.change} percent={quote.changePercent} price={formatPrice(quote.price)} /> : <View><Text style={styles.standalonePrice}>{formatPrice(quote.price)}</Text><Text style={styles.updated}>Daily change unavailable from provider</Text></View>}<View style={styles.metaRow}><View style={styles.status}><View style={[styles.dot, quote.marketStatus !== "open" && styles.dotMuted]} /><Text style={styles.statusText}>Market {quote.marketStatus}</Text></View><DataFreshnessBadge label={quoteResource?.status === "stale" ? "STALE" : mode === "REAL" ? "PROVIDER DATA" : "DEMO · ILLUSTRATIVE"} /></View></> : null}
         </View>
         <View style={styles.chartCard}>
-          <ResourceStateNotice onRetry={() => void loadBars(symbol, range)} resource={barResource} />
+          <ResourceStateNotice label="Chart" onRetry={() => void loadBars(symbol, range)} resource={barResource} />
           <PriceChart
             key={`${symbol}-${range}`}
             points={chartPoints}
-            positive={(quote?.change ?? 0) >= 0}
+            positive={chartPositive}
             summary={summary}
             timeLabel={range === "1D" ? "INTRADAY · LOCAL TIME" : "PRICE HISTORY"}
             unavailable={params.preview === "chart-unavailable" || !chartPoints.length}
@@ -159,8 +162,8 @@ export default function StockDetailScreen() {
         </View>
         <View style={styles.section}>
           <SectionHeader eyebrow={mode === "REAL" ? "COMPANY TIMELINE" : "ILLUSTRATIVE TIMELINE"} title="What changed" />
-          <ResourceStateNotice onRetry={() => void loadNews(symbol)} resource={newsResource} />
-          <ResourceStateNotice onRetry={() => void loadFilings(symbol)} resource={filingResource} />
+          <ResourceStateNotice label="News" onRetry={() => void loadNews(symbol)} resource={newsResource} />
+          <ResourceStateNotice label="Filings" onRetry={() => void loadFilings(symbol)} resource={filingResource} />
           <View style={styles.list}>
             {timelineGroups.map((group) => <View key={group.key}><Text style={styles.timelineDate}>{group.label}</Text>{group.entries.map((item) => <TimelineRow item={item} key={item.id} />)}</View>)}
           </View>
@@ -184,7 +187,7 @@ export default function StockDetailScreen() {
             eyebrow="WHAT MATTERS NEXT"
             title="Company events"
           />
-          <ResourceStateNotice onRetry={() => void loadEvents(symbol)} resource={eventResource} />
+          <ResourceStateNotice label="Events" onRetry={() => void loadEvents(symbol)} resource={eventResource} />
           <View style={styles.stack}>
             {eventData?.map((item) => <CatalystCard item={{ id: item.id, date: item.scheduledAt ? new Date(item.scheduledAt).toLocaleDateString() : "Timing unknown", title: item.title, detail: `${item.source} · ${item.timing}`, tone: "event" }} key={item.id} />)}
           </View>

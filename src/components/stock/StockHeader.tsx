@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { MotionPressable as Pressable } from "@/components/motion";
 import { Ionicons } from "@expo/vector-icons";
 import { CompanyLogo } from "@/components/finance/CompanyLogo";
 import { WatchlistButton } from "./WatchlistButton";
